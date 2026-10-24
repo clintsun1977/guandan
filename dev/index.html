@@ -2425,7 +2425,7 @@ function openRoom(){
   peer.on('connection',conn=>{
     conn.on('open',()=>{
       if(NET.started){conn.send({t:'full'});setTimeout(()=>conn.close(),500);return}
-      NET.conns.set(conn.peer,{conn,dir:'',name:''});
+      NET.conns.set(conn.peer,{conn,dir:'',name:'',seen:Date.now()});
       conn.send({t:'lobby',seats:NET.lobby,you:''});
     });
     conn.on('data',d=>hostOnData(conn,d));
@@ -2436,6 +2436,7 @@ function broadcast(msg){for(const v of NET.conns.values())if(v.conn.open)v.conn.
 function broadcastLobby(){for(const v of NET.conns.values())if(v.conn.open)v.conn.send({t:'lobby',seats:NET.lobby,you:v.dir})}
 function hostOnData(conn,d){
   const info=NET.conns.get(conn.peer);if(!info||!d)return;
+  info.seen=Date.now();
   if(d.t==='sit'&&!NET.started){
     if(!DIRS.includes(d.dir)||(NET.lobby[d.dir]&&info.dir!==d.dir))return;
     if(info.dir)NET.lobby[info.dir]=null;
@@ -2507,7 +2508,7 @@ function joinRoom(code){
     if(NET.peer!==peer)return;
     const conn=peer.connect(ROOM_PREFIX+code,{reliable:true});
     NET.hostConn=conn;
-    conn.on('open',()=>{lobbyStatus('选一个空座位');$('#roomCodeShow').textContent=code;$('#roomInfo').hidden=false;renderLobby()});
+    conn.on('open',()=>{NET.hostSeen=Date.now();lobbyStatus('选一个空座位');$('#roomCodeShow').textContent=code;$('#roomInfo').hidden=false;renderLobby()});
     conn.on('data',guestOnData);
     conn.on('close',hostGone);
   });
@@ -2519,6 +2520,8 @@ function joinRoom(code){
 function sendSit(d){if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'sit',dir:d,name:nickNow()})}
 function guestOnData(d){
   if(!d)return;
+  NET.hostSeen=Date.now();
+  if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
   if(d.t==='lobby'){
     NET.lobby=d.seats;myDir=d.you||'';
     lobbyStatus(myDir?'已坐下，等房主开始':'选一个空座位');
@@ -2536,7 +2539,9 @@ function guestOnData(d){
   }
 }
 function hostGone(){
+  if(NET.gone)return;
   if(NET.mode==='guest'){
+    NET.gone=true;
     G.tok++;G.clock=null;
     showPanel(`<h2>房主已离开</h2><div class="btns"><button class="btn primary" id="backBtn">回到大厅</button></div>`);
     $('#backBtn').onclick=()=>location.reload();
@@ -2544,6 +2549,19 @@ function hostGone(){
     NET.hostConn=null;myDir='';lobbyStatus('和房间断开了，请重新加入');renderLobby();
   }
 }
+// a closed tab or a lost phone signal is not always reported by the connection itself, so both ends say hello
+// every two seconds, and 20 seconds of silence counts as leaving
+const SILENT_MS=20000;
+setInterval(()=>{
+  const now=Date.now();
+  for(const v of [...NET.conns.values()]){
+    if(now-v.seen>SILENT_MS){try{v.conn.close()}catch(_){}hostOnClose(v.conn);continue}
+    if(v.conn.open)v.conn.send({t:'ping'});
+  }
+  if(NET.hostConn&&NET.hostSeen&&now-NET.hostSeen>SILENT_MS){
+    const c=NET.hostConn;NET.hostSeen=0;try{c.close()}catch(_){}hostGone();
+  }
+},2000);
 window.claude?.hot?.snapshot?.(()=>({G}));
 window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??{});
 </script>
