@@ -256,11 +256,22 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .lobby-label{font-size:18px;color:var(--muted);text-align:left}
 .lobby-nick{font:inherit;font-size:24px;padding:12px 16px;border-radius:12px;border:1.5px solid var(--line-strong);background:var(--felt-deep);color:var(--ink);text-align:center}
 .lobby-nick:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(221,176,80,.25)}
-.lobby-table{display:grid;grid-template-columns:1fr 1.3fr 1fr;grid-template-rows:auto minmax(120px,22vh) auto;gap:10px;
+.lobby-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mode-btn{font:inherit;font-size:19px;padding:10px 6px;border-radius:12px;cursor:pointer;background:var(--shade);color:var(--ink);border:1.5px solid var(--line-strong)}
+.mode-btn.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700}
+.lobby-join{display:flex;gap:8px}
+.lobby-join .lobby-nick{flex:1;min-width:0;letter-spacing:.3em}
+.lobby-join .btn{font-size:20px;padding:10px 22px}
+.lobby-room{display:flex;align-items:baseline;justify-content:center;gap:12px;font-size:18px;color:var(--muted)}
+.lobby-room b{font-family:var(--font-display);font-size:44px;letter-spacing:.18em;color:var(--gold)}
+.lobby-status{min-height:1.4em;font-size:17px;color:var(--muted)}
+.seat-btn.taken{border-style:solid;border-color:var(--latest);cursor:default}
+.seat-btn.taken span{color:var(--ink)}
+.lobby-table{display:grid;grid-template-columns:1fr 1.3fr 1fr;grid-template-rows:auto minmax(80px,16vh) auto;gap:10px;
   grid-template-areas:". n ." "w c e" ". s .";margin:6px 0}
 .lobby-felt{border-radius:14px;background:var(--felt);border:2px solid var(--line-strong);box-shadow:inset 0 0 30px rgba(0,0,0,.35)}
 .seat-btn{font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 6px;border-radius:14px;cursor:pointer;
-  background:var(--shade);color:var(--ink);border:2px dashed var(--line-strong);min-height:84px;align-self:center}
+  background:var(--shade);color:var(--ink);border:2px dashed var(--line-strong);min-height:76px;align-self:center}
 .seat-btn b{font-family:var(--font-display);font-size:24px;color:var(--gold)}
 .seat-btn span{font-size:17px;color:var(--muted)}
 .seat-btn:hover:not(:disabled){border-color:var(--gold)}
@@ -372,6 +383,17 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
     <h1 class="lobby-title">掼蛋</h1>
     <label class="lobby-label" for="nick">昵称</label>
     <input class="lobby-nick" id="nick" maxlength="8" autocomplete="off" placeholder="输入你的昵称">
+    <div class="lobby-modes">
+      <button class="mode-btn on" data-mode="solo">单人</button>
+      <button class="mode-btn" data-mode="host">开房间</button>
+      <button class="mode-btn" data-mode="join">加入房间</button>
+    </div>
+    <div class="lobby-join" id="joinRow" hidden>
+      <input class="lobby-nick" id="roomCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="房间号">
+      <button class="btn primary" id="joinBtn">加入</button>
+    </div>
+    <div class="lobby-room" id="roomInfo" hidden><span>房间号</span><b id="roomCodeShow">----</b></div>
+    <div class="lobby-status" id="lobbyStatus"></div>
     <div class="lobby-table" id="lobbyTable">
       <button class="seat-btn" data-seat="N" style="grid-area:n"><b>北</b><span>空位</span></button>
       <button class="seat-btn" data-seat="W" style="grid-area:w"><b>西</b><span>空位</span></button>
@@ -383,6 +405,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   </div>
 </div>
 
+<!-- PeerJS: browser-to-browser connections for playing with friends (room codes) -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 /* ---------- cards ---------- */
 const SUITS=['S','H','C','D'];
@@ -390,7 +414,9 @@ const SUIT_CH={S:'♠',H:'♥',C:'♣',D:'♦'};
 const SUIT_ORDER={S:0,H:1,C:2,D:3,J:4};
 const RN={11:'J',12:'Q',13:'K',14:'A'};
 const rankName=r=>RN[r]||String(r);
-const NAMES=['你','下家','对家','上家'];
+// what each seat is called, seen from your chair; online games put your friends' nicknames on their seats
+const BASE_NAMES=['你','下家','对家','上家'];
+let NAMES=BASE_NAMES.slice();
 const PLACE=['头游','二游','三游','末游'];
 const TYPE_NAME={single:'单张',pair:'对子',triple:'三张',full:'三带二',straight:'顺子',pairs3:'连对',trip2:'钢板',bomb:'炸弹',sflush:'同花顺',jokers:'天王炸'};
 const SEQS=[[5,1],[3,2],[2,3]];
@@ -657,27 +683,46 @@ const tributeCard=(hand,L)=>hand.filter(c=>!isWild(c,L)).reduce((m,c)=>!m||val(c
 /* ---------- game state ---------- */
 let G=null;
 let sel=new Set();
+// Who sits where. Seat 0 is always you: every player's view is turned so they sit at the bottom.
+// Online, the host decides everything (deals, computer moves, timeouts) and sends each step as an event;
+// events name seats in the host's numbering, and NET.off turns those into your own.
+const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),lobby:{S:null,E:null,N:null,W:null}};
+const isHost=()=>NET.mode!=='guest';
+const isHumanSeat=p=>NET.humans.has(p);
+const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
 let hints=[],hintIdx=0;
 let msgTimer=0;
 
-function newGame(){
-  G={levels:[2,2],lvlTeam:0,L:2,round:0,hands:[[],[],[],[]],trick:null,passes:0,last:[null,null,null,null],
-     out:[],prevOut:null,turn:0,phase:'play',notice:'',fresh:[],returns:[],leader:0,result:null,tok:0};
-  startRound();
+function resetGame(){
+  // levels start at 2 for both sides; lvlTeam counts from the host's side, so a seat across a gap of one sees it flipped
+  G={levels:[2,2],lvlTeam:NET.off%2,L:2,round:0,hands:[[],[],[],[]],trick:null,passes:0,last:[null,null,null,null],
+     out:[],prevOut:null,turn:-1,phase:'start',notice:'',fresh:[],returns:[],leader:0,result:null,tok:(G&&G.tok||0)+1,
+     trickPlays:[],heapN:0,ready:[]};
 }
-function startRound(){
+function newGame(){
+  resetGame();render();
+  if(isHost())act(roundEvt(true));
+}
+// the host shuffles: the deck order, who cuts and (first round) who leads all travel in the event
+function roundEvt(reset){
+  const cutter=!reset&&G.prevOut?toAbs(G.prevOut[0]):Math.random()*4|0;
+  return{k:'round',reset,deck:shuffle(makeDeck()).map(c=>c.id),cutter,first:Math.random()*4|0};
+}
+function startRound(e){
+  if(e.reset)resetGame();
   G.tok++;
   G.round++;
   G.L=G.levels[G.lvlTeam];
-  G.deck=shuffle(makeDeck());
+  const byId=new Map(makeDeck().map(c=>[c.id,c]));
+  G.deck=e.deck.map(id=>byId.get(id));
   G.hands=[[],[],[],[]];
   G.trick=null;G.passes=0;G.last=[null,null,null,null];G.out=[];G.fresh=[];G.result=null;
   G.turn=-1;G.notice='';G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.myOrder=[];G.blocks=[];pileRebuild();G.dealCount=0;
   // as at a real table: the last round's first-out cuts and the player before them shuffles
   // (the very first round picks the cutter at random)
-  G.cutter=G.prevOut?G.prevOut[0]:Math.random()*4|0;
+  G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
   G.shuffler=(G.cutter+3)%4;
-  G.dealIdx=G.cutter;
+  G.dealIdx=G.cutter;G.ready=[];
   sel=new Set();
   hideOverlay();
   removeDeck();
@@ -690,9 +735,9 @@ function startShuffle(){
   showDeck();
   markActor(G.shuffler,'洗牌');
   slideDeck(actorSpot(G.shuffler));
-  if(G.shuffler===0){G.clock={who:'deck',left:DECK_MS,total:DECK_MS};render();return}
+  if(isHumanSeat(G.shuffler)){G.clock={who:'deck',seat:G.shuffler,left:DECK_MS,total:DECK_MS};render();return}
   render();
-  later(doShuffle,1000);
+  if(isHost())later(()=>act({k:'shuffle'}),1000);
 }
 function doShuffle(){
   if(G.phase!=='shuffle'||G.busy)return;
@@ -703,9 +748,9 @@ function startCut(){
   G.phase='cut';
   markActor(G.cutter,'切牌');
   slideDeck(actorSpot(G.cutter));
-  if(G.cutter===0){G.clock={who:'deck',left:DECK_MS,total:DECK_MS};render();return}
+  if(isHumanSeat(G.cutter)){G.clock={who:'deck',seat:G.cutter,left:DECK_MS,total:DECK_MS};render();return}
   render();
-  later(doCut,1000);
+  if(isHost())later(()=>act({k:'cut'}),1000);
 }
 function doCut(){
   if(G.phase!=='cut'||G.busy)return;
@@ -770,7 +815,7 @@ function finishDeal(){
   for(const h of G.hands)sortHand(h,G.L);
   removeDeck();
   if(!G.prevOut){
-    G.turn=Math.random()*4|0;
+    G.turn=G.firstLeader;
     G.notice='';
     startPrep(G.turn);
   }else doTribute();
@@ -815,14 +860,14 @@ async function runGives(){
 function processReturns(){
   if(!G.returns.length){startPrep(G.leader);return}
   const x=G.returns[0];
-  if(x.from===0){G.phase='return';sel=new Set();G.clock={who:'return',left:TURN_MS,total:TURN_MS};render();return}
+  if(isHumanSeat(x.from)){G.phase='return';if(x.from===0)sel=new Set();G.clock={who:'return',seat:x.from,left:TURN_MS,total:TURN_MS};render();return}
   const c=aiReturnCard(G.hands[x.from],G.L);
   G.returns.shift();
   G.gives.push({from:x.from,to:x.to,id:c.id,label:'还贡'});
   later(runGives,400);
 }
 function startPrep(leader){
-  G.phase='prep';G.turn=leader;
+  G.phase='prep';G.turn=leader;G.ready=[];
   G.clock={who:'prep',left:PREP_MS,total:PREP_MS};
   render();
 }
@@ -847,7 +892,8 @@ function startTurn(){
   render();
   if(G.phase!=='play')return;
   const p=G.turn;
-  if(p===0){
+  NET.pending=false;
+  if(p===0&&isHumanSeat(0)){
     const cur=G.trick?G.trick.play:null;
     hints=sortHints(genPlays(G.hands[0],G.L).filter(pl=>beats(pl,cur)));
     Sound.play('turn');
@@ -855,9 +901,11 @@ function startTurn(){
     render();
     return;
   }
-  // once you are out the computers stop pretending to think so long
+  // a friend's turn: their clock runs here too, and their move arrives as an event
+  if(isHumanSeat(p)){G.clock={who:p,left:TURN_MS,total:TURN_MS};renderClocks();return}
+  // once you are out the computers stop pretending to think so long; only the host's computers actually move
   const think=active(0)?AI_THINK_MIN+Math.random()*(AI_THINK_MAX-AI_THINK_MIN):400+Math.random()*300;
-  G.clock={who:p,left:TURN_MS,total:TURN_MS,think};
+  G.clock={who:p,left:TURN_MS,total:TURN_MS,think:isHost()?think:undefined};
   renderClocks();
 }
 
@@ -870,36 +918,36 @@ setInterval(()=>{
   const now=performance.now(),dt=Math.min(now-lastTick,1000);
   lastTick=now;
   const c=G&&G.clock;
-  if(!c||!$('#overlay').hidden)return; // paused while a panel is open
+  if(!c||(NET.mode==='solo'&&!$('#overlay').hidden))return; // a solo game pauses while a panel is open
   const before=c.left;
   c.left-=dt;
   if(c.think==null&&c.left>0&&c.left<=HURRY_MS&&Math.ceil(before/1000)!==Math.ceil(c.left/1000))Sound.play('tick');
-  if(c.think!=null&&c.total-c.left>=c.think){G.clock=null;doPlay(c.who,c.who===0?null:aiDecide(c.who));return}
-  if(c.left<=0){G.clock=null;timeUp(c.who);return}
+  if(c.think!=null&&c.total-c.left>=c.think){G.clock=null;act(playEvt(c.who,aiDecide(c.who)));return}
+  if(c.left<=0){if(isHost()){G.clock=null;timeUp(c)}else c.left=0;return}
   renderClocks();
 },100);
-function timeUp(who){
-  if(who==='prep'){beginPlay();return}
-  if(who==='deck'){G.phase==='shuffle'?doShuffle():doCut();return}
+// a clock ran out (host only): the computer makes the move for whoever's turn it was
+function timeUp(c){
+  const who=c.who;
+  if(who==='prep'){act({k:'begin'});return}
+  if(who==='deck'){act({k:G.phase==='shuffle'?'shuffle':'cut'});return}
   if(who==='return'){
-    const c=aiReturnCard(G.hands[0],G.L);
-    sel=new Set([c.id]);
-    onReturn();
-    setMsg(`时间到，已自动还贡 ${cardText(c)}`);
+    const s=c.seat,card=aiReturnCard(G.hands[s],G.L);
+    if(s===0)setMsg(`时间到，已自动还贡 ${cardText(card)}`);
+    act({k:'return',p:toAbs(s),id:card.id});
     return;
   }
-  if(who===0&&G.phase==='play'&&G.turn===0){
-    const pl=aiDecide(0)||(G.trick?null:hints[0]);
-    sel=new Set();
-    setMsg(pl?'时间到，已自动出牌':'时间到，自动不出');
-    doPlay(0,pl);
+  if(typeof who==='number'&&G.phase==='play'&&G.turn===who){
+    const pl=aiDecide(who)||(G.trick||who!==0?null:hints[0]);
+    if(who===0){sel=new Set();setMsg(pl?'时间到，已自动出牌':'时间到，自动不出')}
+    act(playEvt(who,pl));
   }
 }
 function renderClocks(){
   const c=G.clock;
   for(let p=0;p<4;p++){
     const el=p===0?$('#myClock'):$('#seat'+p+' .clock');
-    const on=!!c&&(c.who===p||(p===0&&(c.who==='return'||c.who==='deck')));
+    const on=!!c&&(c.who===p||((c.who==='return'||c.who==='deck')&&c.seat===p));
     const n=on?String(Math.max(0,Math.ceil(c.left/1000))):'';
     if(el.dataset.n!==n){el.dataset.n=n;el.innerHTML=n?`<b>${n}</b>`:''}
     el.classList.toggle('hurry',on&&c.left<=HURRY_MS);
@@ -910,6 +958,7 @@ function renderClocks(){
     $('#prepNum').textContent=Math.max(0,Math.ceil(c.left/1000));
     $('#prepNum').classList.toggle('hurry',c.left<=HURRY_MS);
     $('#prepText').textContent=`秒后${G.turn===0?'由你':NAMES[G.turn]}先出`;
+    $('#readyBtn').hidden=(G.ready||[]).includes(0);
   }
 }
 function sortHints(plays){
@@ -1020,14 +1069,13 @@ function onPlay(){
   if(!reads.length){setMsg('这几张牌不成牌型',true);return}
   const ok=reads.filter(r=>beats(r,cur)).sort((a,b)=>strength(b)-strength(a));
   if(!ok.length){setMsg(`管不上${cur?TYPE_NAME[cur.type]:''}`,true);return}
-  const r=ok[0];
-  const wu=cards.filter(c=>isWild(c,G.L)).length;
-  doPlay(0,{...r,cards,wu});
+  if(NET.pending)return;
+  act(playEvt(0,{...ok[0],cards}));
 }
 function onPass(){
-  if(G.phase!=='play'||G.turn!==0||!G.trick)return;
+  if(G.phase!=='play'||G.turn!==0||!G.trick||NET.pending)return;
   sel=new Set();
-  doPlay(0,null);
+  act(playEvt(0,null));
 }
 function onHint(){
   if(G.phase!=='play'||G.turn!==0)return;
@@ -1037,17 +1085,87 @@ function onHint(){
   renderHand();
 }
 function onReturn(){
-  if(G.phase!=='return')return;
+  if(G.phase!=='return'||G.returns[0].from!==0||NET.pending)return;
   const cards=selectedCards();
   if(cards.length!==1){setMsg('选一张 10 或以下的牌还贡',true);return}
   const c=cards[0];
   if(c.r>10||isWild(c,G.L)){setMsg('还贡的牌要在 10 或以下，且不能是百搭',true);return}
-  const x=G.returns.shift();
-  G.fresh=G.fresh.filter(id=>id!==c.id);
-  sel=new Set();
-  G.clock=null;
-  G.gives.push({from:0,to:x.to,id:c.id,label:'还贡'});
-  runGives();
+  act({k:'return',p:toAbs(0),id:c.id});
+}
+
+/* ---------- events: every move goes through the host, which applies it and passes it on ---------- */
+function playEvt(p,pl){
+  return pl?{k:'play',p:toAbs(p),ids:pl.cards.map(c=>c.id),type:pl.type,value:pl.value,n:pl.n}:{k:'pass',p:toAbs(p)};
+}
+// solo and host: apply now (and, as host, send it on); a friend's page sends its move to the host and
+// waits for it to come back, so every table applies the same moves in the same order
+function act(e){
+  if(NET.mode==='guest'){
+    if(NET.hostConn&&NET.hostConn.open){NET.pending=['play','pass','return'].includes(e.k);NET.hostConn.send({t:'act',e})}
+    return;
+  }
+  if(applyEvt(e)&&NET.mode==='host')broadcast({t:'evt',e});
+}
+// apply one event if this table has reached the point where it fits; false means "not yet", so a friend's page
+// keeps it queued until its own animations and pauses catch up with the host's
+function applyEvt(e){
+  const p=e.p!=null?toLocal(e.p):null;
+  switch(e.k){
+    case'round':
+      if(!e.reset&&!['roundEnd','start'].includes(G.phase))return false;
+      startRound(e);return true;
+    case'shuffle':
+      if(G.phase!=='shuffle'||G.busy)return false;
+      doShuffle();return true;
+    case'cut':
+      if(G.phase!=='cut'||G.busy)return false;
+      doCut();return true;
+    case'return':{
+      if(G.phase!=='return'||!G.returns.length||G.returns[0].from!==p)return false;
+      const card=G.hands[p].find(c=>c.id===e.id);if(!card)return true;
+      const x=G.returns.shift();
+      G.fresh=G.fresh.filter(id=>id!==e.id);
+      if(p===0){sel=new Set();NET.pending=false}
+      G.clock=null;
+      G.gives.push({from:p,to:x.to,id:e.id,label:'还贡'});
+      runGives();return true;
+    }
+    case'ready':
+      if(G.phase!=='prep')return false;
+      if(!G.ready.includes(p))G.ready.push(p);
+      if([...NET.humans].every(h=>G.ready.includes(h)))beginPlay();else render();
+      return true;
+    case'begin':
+      if(G.phase!=='prep')return false;
+      beginPlay();return true;
+    case'humans':
+      setHumans(e.list.map(toLocal),e.names);return true;
+    case'play':case'pass':{
+      if(G.phase!=='play'||G.turn!==p)return false;
+      if(e.k==='pass'){doPlay(p,null);return true}
+      const cards=e.ids.map(id=>G.hands[p].find(c=>c.id===id));
+      if(cards.some(c=>!c))return true;
+      doPlay(p,{type:e.type,value:e.value,n:e.n,cards,wu:cards.filter(c=>isWild(c,G.L)).length});
+      return true;
+    }
+  }
+  return true;
+}
+// a friend's page applies the host's events in order, each as soon as it fits
+setInterval(()=>{
+  if(NET.mode!=='guest')return;
+  for(let i=0;i<20&&NET.inbox.length;i++){
+    if(!applyEvt(NET.inbox[0]))break;
+    NET.inbox.shift();
+  }
+},60);
+// who is a person (local seats) and what their seats are called
+function setHumans(list,names){
+  NET.humans=new Set(list);
+  NAMES=BASE_NAMES.slice();
+  if(names)for(const a in names){const l=toLocal(+a);if(l!==0&&NET.humans.has(l))NAMES[l]=names[a]}
+  for(let q=1;q<4;q++)$('#seat'+q+' .name').textContent=NAMES[q];
+  if(G)render();
 }
 
 /* ---------- rendering ---------- */
@@ -1960,8 +2078,8 @@ function showResult(){
   }
   showPanel(`<h2>${head}</h2>${body}
     <div class="btns">${r.win?'<button class="btn primary" id="againBtn">再来一场</button>':'<button class="btn primary" id="nextBtn">下一局</button>'}</div>`,true);
-  const nb=$('#nextBtn');if(nb){nb.onclick=startRound;nb.focus()}
-  const ab=$('#againBtn');if(ab){ab.onclick=newGame;ab.focus()}
+  const nb=$('#nextBtn');if(nb){nb.onclick=()=>askHost('next');nb.focus()}
+  const ab=$('#againBtn');if(ab){ab.onclick=()=>askHost('again');ab.focus()}
 }
 function dblText(r){
   const o=r.order;
@@ -2136,8 +2254,14 @@ syncHandBtns();
 $('#sortBtn').onclick=()=>{G.myOrder=[];G.blocks=[];renderHand();Sound.play('shuffle')};
 $('#clearBtn').onclick=()=>{sel=new Set();renderHand()};
 $('#rulesBtn').onclick=showRules;
-$('#readyBtn').onclick=beginPlay;
-$('#deckBtn').onclick=()=>{G.phase==='shuffle'?doShuffle():doCut()};
+$('#readyBtn').onclick=()=>act({k:'ready',p:toAbs(0)});
+$('#deckBtn').onclick=()=>act({k:G.phase==='cut'?'cut':'shuffle'});
+// next round / another game: the host starts it; a friend's click asks the host to
+function askHost(what){
+  if(NET.mode==='guest'){if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'act',e:{k:what}});return}
+  if(what==='next'&&G.phase==='roundEnd')act(roundEvt(false));
+  if(what==='again'&&G.phase==='over')newGame();
+}
 $('#sfxBtn').onclick=()=>{Sound.toggle('sfx');syncAudioBtns()};
 $('#musicBtn').onclick=()=>{Sound.toggle('music');syncAudioBtns()};
 syncAudioBtns();
@@ -2176,44 +2300,265 @@ function boot(data){
     }else{if(G.phase==='roundEnd'||G.phase==='over')G.reveal=4;render();if(G.phase==='roundEnd'||G.phase==='over')showResult()}
   }else showStart();
 }
-// browsers only let a page make sound after a click, so the first game starts from a button:
-// that click switches the sound on and the very first shuffle is heard
-// the lobby: type a nickname, pick a seat at the table (the computer takes the other three), sit down.
-// Sitting down is the first click, which is also what lets the browser play sound from the very first shuffle.
-let myNick='',mySeat='';
+/* ---------- the lobby: a nickname, then play alone or with friends ---------- */
+// Solo: pick a seat and the computer takes the other three. Online: one player opens a room and gets a
+// four-digit number, friends type it in to join, everyone picks a seat, and the host starts; empty seats
+// are played by the computer. Sitting down is also the first click, which lets the browser play sound.
+let myNick='',myDir='',lobbyMode='solo';
 try{myNick=localStorage.getItem('guandan-nick')||''}catch(_){}
+// seats in turn order, each player's next being the one on their right
+const DIRS=['S','E','N','W'];
+const absOf=(d,hostDir)=>(DIRS.indexOf(d)-DIRS.indexOf(hostDir)+4)%4;
+const seatBtns=[...document.querySelectorAll('.seat-btn')];
+const lobbyStatus=t=>{$('#lobbyStatus').textContent=t||''};
+const nickNow=()=>$('#nick').value.trim().slice(0,8);
 function showStart(){
-  G={levels:[2,2],lvlTeam:0,L:2,round:0,hands:[[],[],[],[]],last:[null,null,null,null],out:[],phase:'start',turn:-1,tok:0,trickPlays:[],heapN:0};
-  render();
+  resetGame();render();
   $('#nick').value=myNick;
-  mySeat='';
-  renderLobby();
+  setMode('solo');
   $('#lobby').hidden=false;
   if(!myNick)$('#nick').focus();
 }
-function renderLobby(){
-  const nick=$('#nick').value.trim();
-  for(const b of document.querySelectorAll('.seat-btn')){
-    const me=b.dataset.seat===mySeat;
-    b.classList.toggle('mine',me);
-    b.classList.toggle('bot',!!mySeat&&!me);
-    b.querySelector('span').textContent=me?(nick||'你'):mySeat?'电脑':'空位';
-  }
-  $('#sitBtn').disabled=!nick||!mySeat;
+function setMode(m){
+  leaveNet();
+  lobbyMode=m;myDir='';
+  NET.lobby={S:null,E:null,N:null,W:null};
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+  $('#joinRow').hidden=m!=='join';
+  $('#roomInfo').hidden=true;
+  lobbyStatus('');
+  if(m==='host')openRoom();
+  if(m==='join')$('#roomCode').focus();
+  renderLobby();
 }
-$('#nick').addEventListener('input',renderLobby);
-$('#nick').addEventListener('keydown',e=>{if(e.key==='Enter'&&!$('#sitBtn').disabled)$('#sitBtn').click()});
-document.querySelectorAll('.seat-btn').forEach(b=>b.addEventListener('click',()=>{mySeat=b.dataset.seat;renderLobby();Sound.unlock();Sound.play('select')}));
+function renderLobby(){
+  const nick=nickNow(),solo=lobbyMode==='solo';
+  for(const b of seatBtns){
+    const d=b.dataset.seat,me=d===myDir,who=NET.lobby[d],taken=!solo&&!!who&&!me;
+    b.classList.toggle('mine',me);
+    b.classList.toggle('bot',solo&&!!myDir&&!me);
+    b.classList.toggle('taken',taken);
+    b.disabled=taken||(lobbyMode==='join'&&!(NET.hostConn&&NET.hostConn.open))||(lobbyMode==='host'&&!NET.peerOpen);
+    b.querySelector('span').textContent=me?(nick||'你'):taken?who:solo&&myDir?'电脑':'空位';
+  }
+  const go=$('#sitBtn');
+  go.hidden=lobbyMode==='join';
+  go.textContent=lobbyMode==='host'?'开始':'坐下开始';
+  go.disabled=!nick||!myDir||(lobbyMode==='host'&&!NET.peerOpen);
+}
+document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{if(lobbyMode!==b.dataset.mode)setMode(b.dataset.mode)}));
+$('#nick').addEventListener('input',()=>{
+  // a nickname change while seated online is passed on so the others see it
+  if(myDir&&lobbyMode==='host'){NET.lobby[myDir]=nickNow()||'房主';broadcastLobby()}
+  if(myDir&&lobbyMode==='join')sendSit(myDir);
+  renderLobby();
+});
+$('#nick').addEventListener('keydown',e=>{if(e.key==='Enter'&&!$('#sitBtn').disabled&&!$('#sitBtn').hidden)$('#sitBtn').click()});
+seatBtns.forEach(b=>b.addEventListener('click',()=>{
+  if(!nickNow()){lobbyStatus('先输入昵称');$('#nick').focus();return}
+  const d=b.dataset.seat;
+  Sound.unlock();Sound.play('select');
+  if(lobbyMode==='host'){
+    if(NET.lobby[d]&&d!==myDir)return;
+    if(myDir)NET.lobby[myDir]=null;
+    myDir=d;NET.lobby[d]=nickNow();
+    broadcastLobby();
+  }else if(lobbyMode==='join'){
+    sendSit(d);return;
+  }else myDir=d;
+  renderLobby();
+}));
 $('#sitBtn').onclick=()=>{
-  myNick=$('#nick').value.trim().slice(0,8);
-  if(!myNick||!mySeat)return;
+  myNick=nickNow();
+  if(!myNick||!myDir)return;
   try{localStorage.setItem('guandan-nick',myNick)}catch(_){}
-  $('#myName').textContent=myNick;
   Sound.unlock();
-  $('#lobby').hidden=true;
-  newGame();
+  if(lobbyMode==='host')startOnline();
+  else{
+    NET.mode='solo';NET.off=0;setHumans([0]);
+    $('#myName').textContent=myNick;
+    $('#lobby').hidden=true;
+    newGame();
+  }
 };
+$('#joinBtn').onclick=()=>{
+  const code=$('#roomCode').value.replace(/\D/g,'');
+  if(!nickNow()){lobbyStatus('先输入昵称');$('#nick').focus();return}
+  if(code.length!==4){lobbyStatus('房间号是 4 位数字');return}
+  Sound.unlock();
+  joinRoom(code);
+};
+$('#roomCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('#joinBtn').click()});
 if(myNick)$('#myName').textContent=myNick;
+
+/* ---------- connections (PeerJS: browsers talk to each other directly, matched by the room number) ---------- */
+const ROOM_PREFIX='guandan-room-';
+// the claude.ai viewer (window.claude) does not allow direct connections between browsers
+const peerReady=()=>{if(window.Peer&&!window.claude)return true;lobbyStatus('联机需要在 clintsun1977.github.io/guandan 打开');return false};
+function leaveNet(){
+  try{NET.peer&&NET.peer.destroy()}catch(_){}
+  NET.peer=null;NET.peerOpen=false;NET.hostConn=null;NET.refused=false;NET.conns=new Map();NET.inbox=[];
+}
+// the host: claims a free room number and keeps the seat list
+function openRoom(){
+  if(!peerReady())return;
+  const code=String(1000+(Math.random()*9000|0));
+  const peer=new Peer(ROOM_PREFIX+code);
+  NET.peer=peer;
+  lobbyStatus('正在开房间…');
+  peer.on('open',()=>{
+    if(NET.peer!==peer)return;
+    NET.peerOpen=true;NET.code=code;
+    $('#roomCodeShow').textContent=code;$('#roomInfo').hidden=false;
+    lobbyStatus('把房间号告诉朋友，再选你的座位');
+    renderLobby();
+  });
+  peer.on('error',err=>{
+    if(NET.peer!==peer)return;
+    if(err.type==='unavailable-id'){peer.destroy();openRoom();return}
+    lobbyStatus('开房间失败，请检查网络后重试');
+  });
+  peer.on('connection',conn=>{
+    conn.on('open',()=>{
+      if(NET.started){conn.send({t:'full'});setTimeout(()=>conn.close(),500);return}
+      NET.conns.set(conn.peer,{conn,dir:'',name:'',seen:Date.now()});
+      conn.send({t:'lobby',seats:NET.lobby,you:''});
+    });
+    conn.on('data',d=>hostOnData(conn,d));
+    conn.on('close',()=>hostOnClose(conn));
+  });
+}
+function broadcast(msg){for(const v of NET.conns.values())if(v.conn.open)v.conn.send(msg)}
+function broadcastLobby(){for(const v of NET.conns.values())if(v.conn.open)v.conn.send({t:'lobby',seats:NET.lobby,you:v.dir})}
+function hostOnData(conn,d){
+  const info=NET.conns.get(conn.peer);if(!info||!d)return;
+  info.seen=Date.now();
+  if(d.t==='sit'&&!NET.started){
+    if(!DIRS.includes(d.dir)||(NET.lobby[d.dir]&&info.dir!==d.dir))return;
+    if(info.dir)NET.lobby[info.dir]=null;
+    info.dir=d.dir;info.name=String(d.name||'').slice(0,8)||'玩家';
+    NET.lobby[d.dir]=info.name;
+    broadcastLobby();renderLobby();
+  }
+  if(d.t==='act'&&NET.started&&info.dir)hostGuestAct(absOf(info.dir,NET.hostDir),d.e||{});
+}
+// a friend's move: only for their own seat, and a play must be legal, exactly what their own buttons check
+function hostGuestAct(seat,e){
+  if(!isHumanSeat(seat))return;
+  switch(e.k){
+    case'next':case'again':askHost(e.k);return;
+    case'shuffle':if(G.shuffler!==seat)return;break;
+    case'cut':if(G.cutter!==seat)return;break;
+    case'pass':case'return':case'ready':if(e.p!==seat)return;break;
+    case'play':{
+      if(e.p!==seat||G.phase!=='play'||G.turn!==seat)return;
+      const cards=(e.ids||[]).map(id=>G.hands[seat].find(c=>c.id===id));
+      if(!cards.length||cards.some(c=>!c))return;
+      const cur=G.trick?G.trick.play:null;
+      if(!analyze(cards,G.L).some(r=>r.type===e.type&&r.value===e.value&&beats(r,cur)))return;
+      break;
+    }
+    default:return;
+  }
+  act(e);
+}
+function hostOnClose(conn){
+  const info=NET.conns.get(conn.peer);if(!info)return;
+  NET.conns.delete(conn.peer);
+  if(!NET.started){if(info.dir)NET.lobby[info.dir]=null;broadcastLobby();renderLobby();return}
+  if(!info.dir)return;
+  // a friend who drops out mid-game: the computer takes over their seat from here on
+  const seat=absOf(info.dir,NET.hostDir);
+  const list=[...NET.humans].filter(h=>h!==seat);
+  act({k:'humans',list,names:NET.names});
+  const c=G.clock;
+  if(c&&(c.who===seat||c.seat===seat)){G.clock=null;timeUp(c)}
+  if(G.phase==='prep'&&[...NET.humans].every(h=>G.ready.includes(h)))act({k:'begin'});
+}
+// the host starts: everyone learns where everyone sits, then the first deal goes out
+function startOnline(){
+  NET.started=true;NET.hostDir=myDir;
+  const names={};
+  for(const d of DIRS)if(NET.lobby[d])names[absOf(d,myDir)]=NET.lobby[d];
+  NET.names=names;
+  broadcast({t:'start',hostDir:myDir,names});
+  enterOnline('host',myDir,names);
+  newGame();
+}
+function enterOnline(mode,hostDir,names){
+  NET.mode=mode;NET.off=absOf(myDir,hostDir);
+  setHumans(Object.keys(names).map(a=>toLocal(+a)),names);
+  $('#myName').textContent=myNick;
+  $('#lobby').hidden=true;
+  // only the host can start a fresh game for everyone
+  $('#newBtn').hidden=mode==='guest';
+}
+// a friend: connects to the room number and follows the host
+function joinRoom(code){
+  if(!peerReady())return;
+  leaveNet();
+  lobbyStatus('正在连接…');
+  const peer=new Peer();
+  NET.peer=peer;
+  peer.on('open',()=>{
+    if(NET.peer!==peer)return;
+    const conn=peer.connect(ROOM_PREFIX+code,{reliable:true});
+    NET.hostConn=conn;
+    conn.on('open',()=>{NET.hostSeen=Date.now();lobbyStatus('选一个空座位');$('#roomCodeShow').textContent=code;$('#roomInfo').hidden=false;renderLobby()});
+    conn.on('data',guestOnData);
+    conn.on('close',hostGone);
+  });
+  peer.on('error',err=>{
+    if(NET.peer!==peer)return;
+    lobbyStatus(err.type==='peer-unavailable'?'没有这个房间，请核对房间号':'连接失败，请检查网络后重试');
+  });
+}
+function sendSit(d){if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'sit',dir:d,name:nickNow()})}
+function guestOnData(d){
+  if(!d)return;
+  NET.hostSeen=Date.now();
+  if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
+  if(d.t==='lobby'){
+    NET.lobby=d.seats;myDir=d.you||'';
+    lobbyStatus(myDir?'已坐下，等房主开始':'选一个空座位');
+    renderLobby();
+  }else if(d.t==='full'){
+    NET.refused=true;lobbyStatus('这个房间已经开始打了');
+  }else if(d.t==='start'){
+    if(!myDir)return;
+    myNick=nickNow();
+    try{localStorage.setItem('guandan-nick',myNick)}catch(_){}
+    enterOnline('guest',d.hostDir,d.names);
+    resetGame();render();
+  }else if(d.t==='evt'){
+    NET.inbox.push(d.e);
+  }
+}
+function hostGone(){
+  if(NET.gone)return;
+  if(NET.mode==='guest'){
+    NET.gone=true;
+    G.tok++;G.clock=null;
+    showPanel(`<h2>房主已离开</h2><div class="btns"><button class="btn primary" id="backBtn">回到大厅</button></div>`);
+    $('#backBtn').onclick=()=>location.reload();
+  }else if(lobbyMode==='join'){
+    if(NET.refused)return;
+    NET.hostConn=null;myDir='';lobbyStatus('和房间断开了，请重新加入');renderLobby();
+  }
+}
+// a closed tab or a lost phone signal is not always reported by the connection itself, so both ends say hello
+// every two seconds, and 20 seconds of silence counts as leaving
+const SILENT_MS=20000;
+setInterval(()=>{
+  const now=Date.now();
+  for(const v of [...NET.conns.values()]){
+    if(now-v.seen>SILENT_MS){try{v.conn.close()}catch(_){}hostOnClose(v.conn);continue}
+    if(v.conn.open)v.conn.send({t:'ping'});
+  }
+  if(NET.hostConn&&NET.hostSeen&&now-NET.hostSeen>SILENT_MS){
+    const c=NET.hostConn;NET.hostSeen=0;try{c.close()}catch(_){}hostGone();
+  }
+},2000);
 window.claude?.hot?.snapshot?.(()=>({G}));
 window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??{});
 </script>
