@@ -2401,7 +2401,7 @@ const ROOM_PREFIX='guandan-room-';
 const peerReady=()=>{if(window.Peer)return true;lobbyStatus('联机需要在 clintsun1977.github.io/guandan 打开');return false};
 function leaveNet(){
   try{NET.peer&&NET.peer.destroy()}catch(_){}
-  NET.peer=null;NET.peerOpen=false;NET.hostConn=null;NET.conns=new Map();NET.inbox=[];
+  NET.peer=null;NET.peerOpen=false;NET.hostConn=null;NET.refused=false;NET.conns=new Map();NET.inbox=[];
 }
 // the host: claims a free room number and keeps the seat list
 function openRoom(){
@@ -2527,7 +2527,7 @@ function guestOnData(d){
     lobbyStatus(myDir?'已坐下，等房主开始':'选一个空座位');
     renderLobby();
   }else if(d.t==='full'){
-    lobbyStatus('这个房间已经开始打了');
+    NET.refused=true;lobbyStatus('这个房间已经开始打了');
   }else if(d.t==='start'){
     if(!myDir)return;
     myNick=nickNow();
@@ -2546,6 +2546,7 @@ function hostGone(){
     showPanel(`<h2>房主已离开</h2><div class="btns"><button class="btn primary" id="backBtn">回到大厅</button></div>`);
     $('#backBtn').onclick=()=>location.reload();
   }else if(lobbyMode==='join'){
+    if(NET.refused)return;
     NET.hostConn=null;myDir='';lobbyStatus('和房间断开了，请重新加入');renderLobby();
   }
 }
