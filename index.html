@@ -302,8 +302,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .lobby-go{font-size:24px;padding:14px 20px;border-radius:14px}
 /* the table rules: chosen by whoever plays alone or opens the room, shown greyed to friends who join */
 .lobby-rules{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--shade)}
-.rule-row{display:grid;grid-template-columns:3em 1fr 1fr;gap:8px;align-items:center}
-.rule-k{font-size:18px;color:var(--muted);text-align:left}
+.rule-row{display:grid;grid-template-columns:116px 1fr 1fr;gap:8px;align-items:center}
+.rule-k{font-size:18px;color:var(--muted);text-align:left;white-space:nowrap}
 .rule-btn{font:inherit;font-size:17px;padding:8px 4px;border-radius:10px;cursor:pointer;background:transparent;color:var(--ink);border:1.5px solid var(--line-strong)}
 .rule-btn.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700}
 .rule-btn:disabled{cursor:default}
@@ -429,8 +429,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
       <button class="mode-btn" data-mode="join">加入房间</button>
     </div>
     <div class="lobby-rules" id="rulesBox">
-      <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">正常进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
-      <div class="rule-row"><span class="rule-k">打 A</span><button class="rule-btn" data-rule="aFail" data-val="draw">三次不过算平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">三次不过从 2 打</button></div>
+      <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
+      <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button></div>
       <div class="rule-note" id="rulesNote"></div>
     </div>
     <div class="lobby-join" id="joinRow" hidden>
