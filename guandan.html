@@ -114,7 +114,9 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 #seat0{grid-area:me;align-items:center;justify-content:flex-end;gap:4px;text-align:center;pointer-events:none}
 #seat0 .btn{pointer-events:auto}
 .table{position:relative}
-.seat{position:relative;z-index:2}
+/* a seat's box covers a whole corner of the table but only its plate is meant to be touched: the rest lets taps through */
+.seat{position:relative;z-index:2;pointer-events:none}
+.seat .whorow,.seat .who{pointer-events:auto}
 /* the table's cards are the ones everyone needs to read, so they get the larger size; your hand is a little smaller */
 #pile{position:absolute;inset:0;z-index:1;pointer-events:none;--cw:clamp(54px,7.2vw,90px)}
 #pile .probe{position:absolute;visibility:hidden;width:var(--cw)}
@@ -241,7 +243,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* on a computer the play buttons stand in a column just to the right of the cards, so the mouse barely travels */
 .handwrap{position:relative;flex:none}
 @media (min-width:561px){
-  #btns{position:absolute;left:0;top:0;z-index:1;flex-direction:column;flex-wrap:nowrap;gap:8px}
+  /* above the table's seats: with few cards left the hand area is short and the column reaches up over the table */
+  #btns{position:absolute;left:0;top:0;z-index:6;flex-direction:column;flex-wrap:nowrap;gap:8px}
   #btns .btn{min-width:86px}
 }
 .meinfo{display:flex;align-items:center;gap:8px;font-size:17px;padding:5px 10px;border-radius:10px;background:var(--shade);border:1px solid var(--line)}
