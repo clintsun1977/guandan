@@ -2020,8 +2020,6 @@ function placeButtons(g){
   if(!sideBtns()){b.style.left=b.style.top='';return}
   const el=$('#hand'),bw=b.offsetWidth||colW,bh=b.offsetHeight;
   b.style.left=el.clientWidth-actionInset(el.clientWidth)-bw/2+'px';
-  // a little above the middle of the hand, clear of the hand tools in the corner below
-  b.style.top=Math.max(0,(g.height-bh)/2-ACTION_LIFT)+'px';
   // a short hand (flat, few cards, or a tablet held upright) still leaves room for the whole column and,
   // below it, the hand tools in the corner
   if(bh+36>g.height)el.style.height=bh+36+'px';
@@ -2031,6 +2029,12 @@ function placeButtons(g){
 // or not the hand has been dealt yet (measured up from the bottom of the hand area); phones keep their own places
 function placeActionBtns(){
   const on=sideBtns(),h=$('#hand').getBoundingClientRect();
+  // the play buttons sit a little above the middle of the hand, clear of the hand tools in the corner below;
+  // when the column holds the tribute / return button, that button stands exactly on the action spot
+  if(on){
+    const b=$('#btns'),rb=$('#returnBtn'),H=h.height,spot=H-Math.max(H/2,110)-ACTION_LIFT;
+    b.style.top=(!rb.hidden?spot-rb.offsetHeight/2:Math.max(0,(H-b.offsetHeight)/2-ACTION_LIFT))+'px';
+  }
   for(const id of ['#deckBtn','#readyBtn']){
     const e=$(id);e.classList.toggle('atcol',on);
     if(!on){e.style.left=e.style.top='';continue}
