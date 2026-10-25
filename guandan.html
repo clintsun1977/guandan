@@ -69,7 +69,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .stack .sb,.flick{position:absolute;inset:0;border-radius:calc(var(--cw)*.1);border:2px solid var(--card);
   background:repeating-linear-gradient(45deg,var(--back-a) 0 3px,var(--back-b) 3px 6px);box-shadow:0 1px 2px rgba(0,0,0,.4)}
 .flick{left:0;top:0;width:var(--cw);height:calc(var(--cw)*1.4);margin:calc(var(--cw)*-.7) 0 0 calc(var(--cw)*-.5);inset:auto;z-index:7100;transition:transform .16s linear,opacity .16s}
-#seat0 #deckBtn{pointer-events:auto;padding:10px 30px;font-size:19px;animation:btnCall 1.2s ease-in-out infinite}
+#seat0 #deckBtn{position:fixed;z-index:20;transform:translateY(-50%);pointer-events:auto;padding:10px 30px;font-size:19px;animation:btnCall 1.2s ease-in-out infinite}
 /* the shuffle / cut button calls for a click with a soft pulse, so it never reads as a mere label */
 @keyframes btnCall{50%{box-shadow:0 0 0 6px rgba(221,176,80,.25),0 0 22px var(--gold)}}
 /* dealing */
@@ -776,7 +776,7 @@ function startRound(e){
   G.deck=e.deck.map(id=>byId.get(id));
   G.hands=[[],[],[],[]];
   G.trick=null;G.passes=0;G.last=[null,null,null,null];G.out=[];G.fresh=[];G.result=null;
-  G.turn=-1;G.notice='';G.trib=[];G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.myOrder=[];G.blocks=[];pileRebuild();G.dealCount=0;
+  G.turn=-1;G.notice='';G.trib=[];G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.myOrder=[];G.blocks=[];pileRebuild();G.dealCount=0;
   // as at a real table: the last round's first-out cuts and the player before them shuffles
   // (the very first round picks the cutter at random)
   G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
@@ -842,7 +842,7 @@ function markActor(p,text){
   (p===0?$('.meinfo'):$('#seat'+p+' .who')).classList.add('acting');
   // on your own turn the button is the only thing to look at, so no label competes with it
   if(p===0)return;
-  const q=placePoint(p),e=document.createElement('div');
+  const q=actPoint(p),e=document.createElement('div');
   e.className='fx fx-act';e.textContent=text;
   e.style.left=q.x+'px';e.style.top=q.y+'px';
   document.body.appendChild(e);
@@ -881,9 +881,9 @@ function finishDeal(){
     G.notice='';
     startPrep(G.prevOut[0]);
   }else{
-    // the tribute comes after the sorting minute; who leads is only known once it is paid
-    G.notice='';G.tribDue=true;
-    startPrep(-1);
+    // the tribute is paid straight after the deal; the returns come after the sorting minute
+    G.notice='';
+    doTribute();
   }
 }
 function doTribute(){
@@ -896,7 +896,7 @@ function doTribute(){
     G.notice=`${givers.map(g=>NAMES[g]).join('、')}手握两张大王，抗贡。`;
     G.phase='tribute';render();
     const tok=G.tok,jokers=givers.flatMap(g=>G.hands[g].filter(c=>c.r===17).map(c=>({g,c})));
-    kangAnim(jokers).then(()=>{if(G.tok===tok)startPlay(o[0])});
+    kangAnim(jokers).then(()=>{if(G.tok===tok)startPrep(o[0])});
     return;
   }
   G.tribGivers=givers;G.tribPick={};G.clock=null;
@@ -908,14 +908,16 @@ function tribOptions(p){
   const h=G.hands[p].filter(c=>!isWild(c,G.L)),m=Math.max(...h.map(c=>val(c,G.L)));
   return h.filter(c=>val(c,G.L)===m);
 }
-// the computer picks at once; a player has 20 seconds, after which their largest card goes for them
+// the largest card goes at once, for the computer and for a player who has only one kind of it; a player whose
+// largest card comes in several suits gets 30 seconds to choose, after which one goes for them
+const tribChoice=g=>new Set(tribOptions(g).map(c=>c.s)).size>1;
 function tribWait(){
-  for(const g of G.tribGivers)if(G.tribPick[g]==null&&!isHumanSeat(g))G.tribPick[g]=tributeCard(G.hands[g],G.L).id;
+  for(const g of G.tribGivers)if(G.tribPick[g]==null&&(!isHumanSeat(g)||!tribChoice(g)))G.tribPick[g]=tributeCard(G.hands[g],G.L).id;
   const left=G.tribGivers.filter(g=>G.tribPick[g]==null);
   if(!left.length){G.clock=null;payTribute();return}
   G.phase='tribPick';
   if(G.clock&&G.clock.who==='tribute')G.clock.seats=left;
-  else G.clock={who:'tribute',seats:left,left:TURN_MS,total:TURN_MS};
+  else G.clock={who:'tribute',seats:left,left:TRIB_MS,total:TRIB_MS};
   if(left.includes(0)&&!sel.size){const op=tribOptions(0);if(op.length===1)sel=new Set([op[0].id])}
   if(left.includes(0))Sound.play('turn');
   render();
@@ -929,7 +931,7 @@ function payTribute(){
   G.trib=[];
   G.leader=tribs[0].g;
   G.returns=tribs.map((t,i)=>({from:recv[i],to:t.g}));
-  G.notice='';
+  G.notice='';G.afterTrib=true;
   runGives();
 }
 // hand over queued cards one at a time, face up across the table, then carry on with the returns
@@ -959,6 +961,8 @@ async function runGives(){
     G.gives.shift();
     render();
   }
+  // the tribute is in: sort your cards first (whoever leads is known now), the returns follow
+  if(G.afterTrib){G.afterTrib=false;startPrep(G.leader);return}
   processReturns();
 }
 function processReturns(){
@@ -981,7 +985,7 @@ function retWait(){
   }
   G.phase='return';
   if(G.clock&&G.clock.who==='return')G.clock.seats=left;
-  else{G.clock={who:'return',seats:left,left:TURN_MS,total:TURN_MS};if(left.includes(0))Sound.play('turn')}
+  else{G.clock={who:'return',seats:left,left:RET_MS,total:RET_MS};if(left.includes(0))Sound.play('turn')}
   render();
 }
 const owesReturn=p=>G.phase==='return'&&G.returns.some(x=>x.from===p)&&G.retPick[p]==null;
@@ -993,7 +997,7 @@ function startPrep(leader){
 function beginPlay(){
   if(G.phase!=='prep')return;
   G.clock=null;
-  if(G.tribDue){G.tribDue=false;doTribute();return}
+  if(G.returns&&G.returns.length){processReturns();return}
   startPlay(G.turn);
 }
 function startPlay(leader){
@@ -1016,20 +1020,20 @@ function startTurn(){
     const cur=G.trick?G.trick.play:null;
     hints=sortHints(genPlays(G.hands[0],G.L).filter(pl=>beats(pl,cur)));
     Sound.play('turn');
-    G.clock={who:0,left:TURN_MS,total:TURN_MS};
+    G.clock={who:0,left:PLAY_MS,total:PLAY_MS};
     render();
     return;
   }
   // a friend's turn: their clock runs here too, and their move arrives as an event
-  if(isHumanSeat(p)){G.clock={who:p,left:TURN_MS,total:TURN_MS};renderClocks();return}
+  if(isHumanSeat(p)){G.clock={who:p,left:PLAY_MS,total:PLAY_MS};renderClocks();return}
   // once you are out the computers stop pretending to think so long; only the host's computers actually move
   const think=active(0)?AI_THINK_MIN+Math.random()*(AI_THINK_MAX-AI_THINK_MIN):400+Math.random()*300;
-  G.clock={who:p,left:TURN_MS,total:TURN_MS,think:isHost()?think:undefined};
+  G.clock={who:p,left:PLAY_MS,total:PLAY_MS,think:isHost()?think:undefined};
   renderClocks();
 }
 
 /* ---------- clocks: one ticker drives turn limits, computer thinking and the pre-play countdown ---------- */
-const TURN_MS=20000,PREP_MS=60000,HURRY_MS=5000;
+const PLAY_MS=60000,TRIB_MS=30000,RET_MS=20000,PREP_MS=60000,HURRY_MS=5000;
 // computer "thinking" time per move; shortened for testing (the full-feel setting was 2000-5000)
 const AI_THINK_MIN=500,AI_THINK_MAX=1000;
 let lastTick=performance.now();
@@ -1086,7 +1090,7 @@ function renderClocks(){
   if(prep){
     $('#prepBigNum').textContent=Math.max(0,Math.ceil(c.left/1000));
     $('#prepBig').classList.toggle('hurry',c.left<=HURRY_MS);
-    $('#prepText').textContent=G.turn<0?'理牌后进贡':`${G.turn===0?'你':NAMES[G.turn]}先出`;
+    $('#prepText').textContent=(G.returns&&G.returns.length?'理牌后还贡，':'')+`${G.turn===0?'你':NAMES[G.turn]}先出`;
     $('#readyBtn').hidden=(G.ready||[]).includes(0);
   }
 }
@@ -1153,7 +1157,7 @@ function advance(){
       pileSweep();
       G.heapN+=G.trickPlays.reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];
       G.trick=null;G.passes=0;G.last=[null,null,null,null];G.turn=leader;startTurn();
-    },TRICK_HOLD_MS);
+    },trickHold());
     return;
   }
   G.turn=nextActive(G.turn);
@@ -1382,6 +1386,8 @@ function displayOrder(play,L){
 let pileZ=1000,heapZ=1;
 const BIG=1.3; // how much the most recent play is enlarged
 const TRICK_HOLD_MS=2200; // a finished trick stays face up this long, so everyone can remember it, then turns over
+// a trick with many cards on the table stays up longer, up to about 5.5 seconds, so they can all be taken in
+const trickHold=()=>TRICK_HOLD_MS+Math.min(3300,150*Math.max(0,(G.trickPlays||[]).reduce((s,t)=>s+t.play.cards.length,0)-6));
 const pileEl=()=>$('#pile');
 // the open play area between the four plates
 function pileGeo(){
@@ -1614,6 +1620,7 @@ function renderControls(){
   const deckTurn=(G.phase==='shuffle'&&G.shuffler===0)||(G.phase==='cut'&&G.cutter===0);
   $('#deckBtn').hidden=!deckTurn||!!G.busy;
   $('#deckBtn').textContent=G.phase==='cut'?'切牌':'洗牌';
+  if(deckTurn&&!G.busy)placeDeckBtn();
   const passDefault=passIsDefault();
   $('#playBtn').classList.toggle('primary',!passDefault);
   $('#passBtn').classList.toggle('primary',passDefault);
@@ -1636,9 +1643,9 @@ function renderMsg(){
     if(G.tribGivers.includes(0)&&G.tribPick[0]==null)t=`<div class="trib">进贡最大的牌：${opts.map(cardTag).join(' ')}${opts.length>1?'，选一张':''}</div>`;
     const wait=G.tribGivers.filter(g=>g!==0&&G.tribPick[g]==null);
     if(wait.length)t+=`<div>等待${wait.map(g=>NAMES[g]).join('、')}进贡</div>`;
-  }else if(G.phase==='tribute'){
+  }else if(G.phase==='tribute'||G.phase==='prep'){
     t=tribHtml()+(G.notice?`<div>${G.notice}</div>`:'');
-  }else if(G.phase==='prep'||G.phase==='play'){
+  }else if(G.phase==='play'){
     t=G.notice?`<div>${G.notice}</div>`:'';
   }
   m.innerHTML=t;
@@ -1835,6 +1842,12 @@ function makeStack(n){
   return d;
 }
 const stackAt=(el,g,dx,dy,rot=0)=>{el.style.transform=`translate(${g.cx+dx}px,${g.hy+dy}px) rotate(${rot}deg)`};
+// your shuffle / cut button stands just to the right of the deck in front of you, not over the cards
+function placeDeckBtn(){
+  const b=$('#deckBtn'),g=pileGeo(),s=actorSpot(0);
+  const x=g.L.left+s.x+g.cw*.8+20,y=g.L.top+s.y;
+  b.style.left=Math.min(x,innerWidth-b.offsetWidth-8)+'px';b.style.top=y+'px';
+}
 function showDeck(){
   removeDeck();
   const g=pileGeo(),d=makeStack(8);d.id='deck';
@@ -2310,6 +2323,12 @@ function rain(x,y){
     return p.y<y+40;
   },1800);
 }
+// the shuffling / cutting label stands beside the player's plate on the side away from the deck
+function actPoint(p){
+  const R=q=>$(q).getBoundingClientRect();
+  if(p===2){const a=R('#seat2 .who');return{x:a.right+56,y:a.top+a.height/2}}
+  return placePoint(p);
+}
 // where a player's place label sits: on the table side of their plate (yours at the foot of the table)
 function placePoint(p){
   const R=q=>$(q).getBoundingClientRect();
@@ -2399,7 +2418,7 @@ function showRules(){
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
     <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排，按住一张牌拖动可以把它插到别处；先选中几张再拖，可以整组一起挪。平铺模式也一样。轮到你出牌时，按住滑过几张牌是连选这些牌；其他时候按住拖动才是挪牌。“复原”恢复成按大小排好的样子。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
-    <li>发完牌先有 60 秒理牌时间，然后进贡、还贡，各限时 20 秒；最大的牌有几种花色时，自己选进贡哪一张。每次出牌限时 20 秒，最后 5 秒倒计时会闪烁，超时由电脑代你出牌。</li>
+    <li>发完牌先进贡（最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒），有抗贡也在这时亮出；然后有 60 秒理牌时间，理完再还贡（限时 20 秒）。每次出牌限时 60 秒，最后 5 秒倒计时会闪烁，超时由电脑代你出牌。</li>
   </ul>
   <p class="muted">点选牌，双击任意一张牌直接出牌，“提示”会依次给出能出的牌。</p>
   <div class="btns"><button class="btn primary" id="closeBtn">知道了</button></div>`);
