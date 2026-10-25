@@ -477,8 +477,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
     <div class="btns" id="btns">
       <button class="btn primary" id="playBtn">出牌</button>
       <button class="btn primary" id="returnBtn" hidden>还贡</button>
-      <button class="btn" id="passBtn">不出</button>
       <button class="btn" id="hintBtn">提示</button>
+      <button class="btn" id="passBtn">不出</button>
       <button class="btn" id="clearBtn">重选</button>
     </div>
     <div id="hand"></div>
@@ -794,6 +794,68 @@ function aiReturnCard(hand,L){
   return best;
 }
 const tributeCard=(hand,L)=>hand.filter(c=>!isWild(c,L)).reduce((m,c)=>!m||val(c,L)>val(m,L)?c:m,null);
+
+/* ---------- hints: follow the shape of the hand, not strategy ---------- */
+// each rank's cards are one group (single, pair, three, bomb); four jokers are one group; wild cards belong to none
+const groupKey=(c,jk)=>c.r>=16&&jk===4?'J':c.r;
+function handGroups(hand,L){
+  const n={},jk=hand.filter(c=>c.r>=16).length;
+  for(const c of hand)if(!isWild(c,L)){const k=groupKey(c,jk);n[k]=(n[k]||0)+1}
+  return{n,jk};
+}
+// 0 whole groups, 1 breaks a pair, 2 breaks a three, 3 a bomb, 4 breaks a bomb, 5 uses wild cards
+function hintTier(pl,g){
+  if(pl.wu)return 5;
+  const used={};for(const c of pl.cards){const k=groupKey(c,g.jk);used[k]=(used[k]||0)+1}
+  let t=isBomb(pl)?3:0;
+  for(const k in used){const s=g.n[k];if(used[k]<s)t=Math.max(t,s>=4?4:s===3?2:1)}
+  return t;
+}
+// every three-with-a-pair without wild cards (move generation keeps only one pair per three)
+function fullHouses(hand,L){
+  const by={},out=[];
+  for(const c of hand)if(!isWild(c,L))(by[c.r]||(by[c.r]=[])).push(c);
+  for(const t in by)if(t<16&&by[t].length>=3)for(const p in by)if(p!==t&&by[p].length>=2){
+    const cards=by[t].slice(0,3).concat(by[p].slice(0,2));
+    for(const a of analyze(cards,L))if(a.type==='full')out.push({...a,cards,wu:0});
+  }
+  return out;
+}
+const cardSum=(pl,L)=>pl.cards.reduce((s,c)=>s+val(c,L),0);
+// following: whole groups first, then breaking a pair, a three, then bombs, broken bombs and wild cards;
+// smallest first at each step, bombs after the other plays of their step
+function followHints(hand,L,cur,plays){
+  const g=handGroups(hand,L);
+  const all=plays.filter(pl=>pl.type!=='full'||pl.wu).concat(fullHouses(hand,L).filter(pl=>beats(pl,cur)));
+  return all.map(pl=>({pl,t:hintTier(pl,g),b:isBomb(pl)}))
+    .sort((a,b)=>a.t-b.t||a.b-b.b||(a.b?power(a.pl)-power(b.pl):a.pl.value-b.pl.value)||cardSum(a.pl,L)-cardSum(b.pl,L))
+    .map(x=>x.pl);
+}
+// leading: the smallest card's whole group first (a three takes the smallest whole pair along), then upwards;
+// a run made only of whole groups comes before its lowest card's group; no wild cards, broken bombs or bombs
+function leadHints(hand,L,plays){
+  const g=handGroups(hand,L),by={},out=[];
+  for(const c of hand)if(!isWild(c,L))(by[c.r]||(by[c.r]=[])).push(c);
+  const v=r=>r>=16?+r:(r==L?15:+r);
+  for(const pl of plays)if(/straight|pairs3|trip2/.test(pl.type)&&hintTier(pl,g)===0)out.push({pl,k:pl.value,s:0});
+  const pairs=Object.keys(by).filter(r=>by[r].length===2&&g.n[groupKey(by[r][0],g.jk)]===2).sort((a,b)=>v(a)-v(b));
+  for(const r in by){
+    const cs=by[r];
+    if(g.n[groupKey(cs[0],g.jk)]>=4)continue;
+    const p=cs.length===3&&pairs.find(q=>q!==r);
+    const cards=p?cs.concat(by[p]):cs.slice();
+    const a=analyze(cards,L).find(a=>a.type===(p?'full':['single','pair','triple'][cs.length-1]));
+    if(a)out.push({pl:{...a,cards,wu:0},k:v(r),s:1});
+  }
+  return out.sort((a,b)=>a.k-b.k||a.s-b.s).map(x=>x.pl);
+}
+function hintOrder(hand,L,cur,plays){
+  const fin=plays.filter(pl=>pl.cards.length===hand.length);
+  let list=cur?followHints(hand,L,cur,plays):leadHints(hand,L,plays);
+  if(!list.length)list=plays.slice().sort((a,b)=>isBomb(a)-isBomb(b)||(isBomb(a)?power(a)-power(b):a.value-b.value));
+  const seen=new Set();
+  return fin.concat(list).filter(pl=>{const k=pl.cards.map(c=>c.id).sort((a,b)=>a-b).join();return!seen.has(k)&&seen.add(k)});
+}
 
 /* ---------- game state ---------- */
 let G=null;
@@ -1171,14 +1233,9 @@ function renderClocks(){
     $('#readyBtn').hidden=(G.ready||[]).includes(0);
   }
 }
-// hints are judged the way the computer players judge their own moves: when following, the play that leaves
-// the best-shaped hand comes first (a pair of 5s before breaking up three 4s), wild cards and bombs only when needed
+// hints go by the shape of your hand (see hintOrder): a pair of 5s before breaking up three 4s
 function sortHints(plays){
-  if(!G.trick)return rankLeads(0,plays).map(x=>x.pl);
-  const base=handCost(G.hands[0],G.L);
-  return scorePlays(0,plays)
-    .map(x=>({pl:x.pl,score:x.bomb?1000+power(x.pl)*.01+x.rc*.001:(x.rc-base)+x.pl.wu*.6+x.pl.value*.02}))
-    .sort((a,b)=>a.score-b.score).map(x=>x.pl);
+  return hintOrder(G.hands[0],G.L,G.trick?G.trick.play:null,plays);
 }
 
 function doPlay(p,play){
