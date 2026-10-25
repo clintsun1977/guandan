@@ -172,7 +172,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* the countdown is the same little alarm clock as the turn clocks, drawn large */
 .prepbig .bigclock{font-size:clamp(30px,5.4vh,46px);margin:0;box-shadow:inset 0 0 0 .1em var(--card-edge),0 6px 24px rgba(0,0,0,.45)}
 /* the seconds sit smaller in the middle of the face, clear of the bells and the feet */
-#prepBigNum{font-size:.72em;position:relative;top:.04em}
+#prepBigNum{font-size:.8em;line-height:1;position:relative;top:-.06em}
 .prepbig small{font-size:24px}
 
 /* the tribute: one line per pair, large, each card shown as a little white card face */
@@ -2836,7 +2836,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1107';
+const VERSION='1025-1108';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
