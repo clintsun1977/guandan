@@ -52,6 +52,10 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .score>span{padding:3px 10px;border:1.5px solid transparent;border-radius:8px}
 .score>span.playing{border-color:var(--gold);color:var(--ink);background:var(--shade)}
 .bar .acts{display:flex;gap:6px}
+/* who paid whom and what came back, kept in the corner while the round is played */
+.tribinfo{display:flex;flex-direction:column;gap:3px;font-size:16px;color:var(--ink);line-height:1.5}
+.tribinfo:empty{display:none}
+.tribinfo .ct{font-size:16px;padding:0 5px}
 .link{font:inherit;font-size:16px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer}
 .link:hover{color:var(--ink);border-color:var(--line-strong)}
 .tog{display:inline-flex;align-items:center;gap:6px}
@@ -74,6 +78,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   z-index:15;pointer-events:none;transition:transform .24s cubic-bezier(.2,.7,.3,1),opacity .24s ease-in}
 .gift{position:fixed;left:0;top:0;z-index:16;pointer-events:none;width:0;height:0;transition:transform .6s cubic-bezier(.3,.7,.3,1),opacity .25s}
 .gift .card{--cw:70px;position:absolute;left:-35px;top:-49px;box-shadow:0 0 0 3px var(--gold),0 8px 24px rgba(0,0,0,.5)}
+.gift .gback{position:absolute;left:-35px;top:-49px;width:70px;height:98px;border-radius:7px;border:2px solid var(--card);
+  background:repeating-linear-gradient(45deg,var(--back-a) 0 3px,var(--back-b) 3px 6px);box-shadow:0 0 0 3px var(--gold),0 8px 24px rgba(0,0,0,.5)}
 .gift .gl{position:absolute;left:50%;top:-80px;transform:translateX(-50%);white-space:nowrap;font-size:16px;font-weight:700;color:var(--on-gold);background:var(--gold);border-radius:999px;padding:3px 12px}
 
 /* table */
@@ -190,14 +196,14 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .pass{font-size:14px;color:var(--muted);letter-spacing:.2em;padding:4px 0}
 @keyframes drop{from{transform:translateY(-8px);opacity:0}}
 
-.emblem{width:86px;height:86px;border-radius:50%;border:1px solid var(--line-strong);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;gap:2px;background:var(--shade)}
-.emblem .r{font-family:var(--font-display);font-weight:900;font-size:46px;color:var(--gold)}
+.emblem{width:112px;height:112px;border-radius:50%;border:1px solid var(--line-strong);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;gap:2px;background:var(--shade)}
+.emblem .r{font-family:var(--font-display);font-weight:900;font-size:68px;color:var(--gold)}
 .msg{font-size:17px;color:var(--ink);min-height:2.6em;max-width:28em;line-height:1.35;text-wrap:balance}
 .msg.err{color:var(--warn)}
 .msg small{display:block;color:var(--muted);font-size:15px}
 
 /* controls */
-.mebar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.mebar{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}
 /* on a computer the play buttons stand in a column just to the right of the cards, so the mouse barely travels */
 .handwrap{position:relative;flex:none}
 @media (min-width:561px){
@@ -226,7 +232,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   box-shadow:0 0 16px rgba(221,176,80,.55);transform-origin:50% 50%;transition:left .15s ease,top .15s ease,width .15s ease}
 #hand .card.drag{transition:none;transform:translateY(-6px) scale(1.06);box-shadow:0 12px 26px rgba(0,0,0,.5);cursor:grabbing}
 .mebar .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.handtools{display:flex;gap:6px}
+.handtools{display:flex;gap:6px;justify-content:flex-end;margin-top:2px}
+@media (min-width:561px){.handwrap .handtools{position:absolute;right:0;bottom:2px;margin:0;z-index:1}}
 #hand .card.fresh{box-shadow:0 0 0 2px var(--gold),0 2px 4px rgba(0,0,0,.4)}
 
 /* card face */
@@ -322,8 +329,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   .overlay.dock .panel{width:100%}
   #btns{justify-content:center;margin-bottom:6px}
   .table{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr)}
-  .emblem{width:64px;height:64px}
-  .emblem .r{font-size:34px}
+  .emblem{width:84px;height:84px}
+  .emblem .r{font-size:50px}
   .who{font-size:15px;gap:6px}
   .btn{padding:8px 14px}
   .score{gap:8px}
@@ -360,7 +367,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   .bar{position:absolute;z-index:5;top:8px;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));
     align-items:flex-start;pointer-events:none}
   .bar>*{pointer-events:auto}
-  .bar{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"brand . acts" "score . .";row-gap:6px}
+  .bar{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"brand . acts" "score . ." "trib . .";row-gap:6px}
+  .tribinfo{grid-area:trib}
   .brand{grid-area:brand;line-height:1}
   .score{grid-area:score;flex-direction:column;align-items:flex-start;gap:4px}
   .bar .acts{grid-area:acts}
@@ -374,6 +382,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   <header class="bar">
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title="">我方<b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title="">对方<b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
+    <div class="tribinfo" id="tribInfo"></div>
     <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="rulesBtn">规则</button><button class="link" id="newBtn">新局</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
@@ -403,7 +412,6 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   <div class="mebar" id="mebar">
     <div class="left">
       <div class="whorow"><div class="meinfo"><span id="myName">你</span><span class="pass-chip"></span><span class="clock" id="myClock"></span></div><span class="cnt" id="myCnt"></span></div>
-      <div class="handtools"><button class="link tog" id="fanBtn" aria-pressed="true" title="像手里握着牌一样展开，可以拖动牌插到别处">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="按大小重新排好">理牌</button></div>
     </div>
   </div>
   <div class="handwrap">
@@ -415,6 +423,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
       <button class="btn" id="clearBtn">重选</button>
     </div>
     <div id="hand"></div>
+    <div class="handtools"><button class="link tog" id="fanBtn" aria-pressed="true" title="像手里握着牌一样展开，可以拖动牌插到别处">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
   </div>
 </div>
 
@@ -943,13 +952,28 @@ async function runGives(){
 }
 function processReturns(){
   if(!G.returns.length){startPlay(G.leader);return}
-  const x=G.returns[0];
-  if(isHumanSeat(x.from)){G.phase='return';if(x.from===0)sel=new Set();G.clock={who:'return',seat:x.from,left:TURN_MS,total:TURN_MS};render();return}
-  const c=aiReturnCard(G.hands[x.from],G.L);
-  G.returns.shift();
-  G.gives.push({from:x.from,to:x.to,id:c.id,label:'还贡'});
-  later(runGives,400);
+  G.retPick={};
+  if(G.returns.some(x=>x.from===0))sel=new Set();
+  retWait();
 }
+// everyone who owes a return chooses at the same time (the computer at once, a player within 20 seconds);
+// once all have chosen, the cards go back together
+function retWait(){
+  for(const x of G.returns)if(G.retPick[x.from]==null&&!isHumanSeat(x.from))G.retPick[x.from]=aiReturnCard(G.hands[x.from],G.L).id;
+  const left=G.returns.filter(x=>G.retPick[x.from]==null).map(x=>x.from);
+  if(!left.length){
+    G.clock=null;
+    G.gives=G.returns.map(x=>({from:x.from,to:x.to,id:G.retPick[x.from],label:'还贡'}));
+    G.returns=[];
+    later(runGives,400);
+    return;
+  }
+  G.phase='return';
+  if(G.clock&&G.clock.who==='return')G.clock.seats=left;
+  else{G.clock={who:'return',seats:left,left:TURN_MS,total:TURN_MS};if(left.includes(0))Sound.play('turn')}
+  render();
+}
+const owesReturn=p=>G.phase==='return'&&G.returns.some(x=>x.from===p)&&G.retPick[p]==null;
 function startPrep(leader){
   G.phase='prep';G.turn=leader;G.ready=[];
   G.clock={who:'prep',left:PREP_MS,total:PREP_MS};
@@ -1029,9 +1053,11 @@ function timeUp(c){
     return;
   }
   if(who==='return'){
-    const s=c.seat,card=aiReturnCard(G.hands[s],G.L);
-    if(s===0)setMsg(`时间到，已自动还贡 ${cardText(card)}`);
-    act({k:'return',p:toAbs(s),id:card.id});
+    for(const s of c.seats)if(owesReturn(s)){
+      const card=aiReturnCard(G.hands[s],G.L);
+      if(s===0){sel=new Set();setMsg(`时间到，已自动还贡 ${cardText(card)}`)}
+      act({k:'return',p:toAbs(s),id:card.id});
+    }
     return;
   }
   if(typeof who==='number'&&G.phase==='play'&&G.turn===who){
@@ -1044,7 +1070,7 @@ function renderClocks(){
   const c=G.clock;
   for(let p=0;p<4;p++){
     const el=p===0?$('#myClock'):$('#seat'+p+' .clock');
-    const on=!!c&&(c.who===p||((c.who==='return'||c.who==='deck')&&c.seat===p)||(c.who==='tribute'&&c.seats.includes(p)));
+    const on=!!c&&(c.who===p||(c.who==='deck'&&c.seat===p)||((c.who==='tribute'||c.who==='return')&&c.seats.includes(p)));
     const n=on?String(Math.max(0,Math.ceil(c.left/1000))):'';
     if(el.dataset.n!==n){el.dataset.n=n;el.innerHTML=n?`<b>${n}</b>`:''}
     el.classList.toggle('hurry',on&&c.left<=HURRY_MS);
@@ -1120,7 +1146,7 @@ function advance(){
     later(()=>{
       pileSweep();
       G.heapN+=G.trickPlays.reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];
-      G.trick=null;G.passes=0;G.last=[null,null,null,null];G.trib=[];G.turn=leader;startTurn();
+      G.trick=null;G.passes=0;G.last=[null,null,null,null];G.turn=leader;startTurn();
     },TRICK_HOLD_MS);
     return;
   }
@@ -1205,7 +1231,7 @@ function onReturn(){
     act({k:'tribute',p:toAbs(0),id:cards[0].id});
     return;
   }
-  if(G.phase!=='return'||G.returns[0].from!==0)return;
+  if(!owesReturn(0))return;
   const cards=selectedCards();
   if(cards.length!==1){setMsg('选一张 10 或以下的牌还贡',true);return}
   const c=cards[0];
@@ -1241,14 +1267,13 @@ function applyEvt(e){
       if(G.phase!=='cut'||G.busy)return false;
       doCut();return true;
     case'return':{
-      if(G.phase!=='return'||!G.returns.length||G.returns[0].from!==p)return false;
-      const card=G.hands[p].find(c=>c.id===e.id);if(!card)return true;
-      const x=G.returns.shift();
+      if(G.phase!=='return')return false;
+      if(!owesReturn(p)||!G.hands[p].some(c=>c.id===e.id))return true;
+      G.retPick[p]=e.id;
       G.fresh=G.fresh.filter(id=>id!==e.id);
       if(p===0){sel=new Set();NET.pending=false}
-      G.clock=null;
-      G.gives.push({from:p,to:x.to,id:e.id,label:'还贡'});
-      runGives();return true;
+      retWait();
+      return true;
     }
     case'tribute':{
       if(G.phase!=='tribPick')return false;
@@ -1569,7 +1594,7 @@ function render(){
 function renderControls(){
   const my=G.phase==='play'&&G.turn===0;
   const pay=G.phase==='tribPick'&&G.tribGivers.includes(0)&&G.tribPick[0]==null;
-  const ret=G.phase==='return'||pay;
+  const ret=owesReturn(0)||pay;
   $('#playBtn').hidden=ret;$('#passBtn').hidden=ret;$('#hintBtn').hidden=ret;
   $('#returnBtn').hidden=!ret;
   $('#returnBtn').textContent=pay?'进贡':'还贡';
@@ -1595,22 +1620,30 @@ function renderMsg(){
   const m=$('#msg');m.classList.remove('err');
   let t='';
   if(G.phase==='return'){
-    const x=G.returns[0];
-    t=`<div>还一张 10 或以下的牌给${NAMES[x.to]}</div>`+tribHtml();
+    const mine=G.returns.find(x=>x.from===0);
+    t=tribHtml();
+    if(owesReturn(0))t+=`<div>还一张 10 或以下的牌给${NAMES[mine.to]}</div>`;
+    const wait=G.returns.filter(x=>x.from!==0&&G.retPick[x.from]==null);
+    if(wait.length)t+=`<div>等待${wait.map(x=>NAMES[x.from]).join('、')}还贡</div>`;
   }else if(G.phase==='tribPick'){
     const opts=[...new Map(tribOptions(0).map(c=>[cardText(c),c])).values()];
     if(G.tribGivers.includes(0)&&G.tribPick[0]==null)t=`<div class="trib">进贡最大的牌：${opts.map(cardTag).join(' ')}${opts.length>1?'，选一张':''}</div>`;
     const wait=G.tribGivers.filter(g=>g!==0&&G.tribPick[g]==null);
     if(wait.length)t+=`<div>等待${wait.map(g=>NAMES[g]).join('、')}进贡</div>`;
-  }else if(G.phase==='tribute'||G.phase==='prep'||G.phase==='play'){
+  }else if(G.phase==='tribute'){
     t=tribHtml()+(G.notice?`<div>${G.notice}</div>`:'');
+  }else if(G.phase==='prep'||G.phase==='play'){
+    t=G.notice?`<div>${G.notice}</div>`:'';
   }
   m.innerHTML=t;
+  const ti=$('#tribInfo'),showTi=['play','roundEnd','over'].includes(G.phase);
+  ti.innerHTML=showTi?tribHtml('tl'):'';
 }
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
-function tribHtml(){
-  return(G.trib||[]).map(t=>`<div class="trib">${NAMES[t.g]}进贡 ${cardTag(t.tc)} 给${NAMES[t.r]}${t.rc?`，${NAMES[t.r]}还 ${cardTag(t.rc)}`:''}</div>`).join('');
+function tribHtml(cls='trib'){
+  const tr=G.trib||[],back=tr.length&&tr.every(t=>t.rc);
+  return tr.map(t=>`<div class="${cls}">${NAMES[t.g]}进贡 ${cardTag(t.tc)} 给${NAMES[t.r]}${back?`，${NAMES[t.r]}还 ${cardTag(t.rc)}`:''}</div>`).join('');
 }
 function setMsg(t,err){
   const m=$('#msg');
@@ -1929,7 +1962,8 @@ function giveAnim(from,to,card,label){
     const mx=m.left+m.width/2,my=m.top+m.height/2;
     const w=document.createElement('div');
     w.className='gift';
-    w.innerHTML=`<span class="gl">${NAMES[from]} ${label}</span>${cardHTML(card,G.L)}`;
+    // a returned card travels face down; what came back is named once every return is in
+    w.innerHTML=`<span class="gl">${NAMES[from]} ${label}</span>${label==='还贡'?'<div class="gback"></div>':cardHTML(card,G.L)}`;
     w.style.transform=`translate(${a.x}px,${a.y}px) scale(.55)`;
     w.style.opacity='0';
     document.body.appendChild(w);
@@ -2354,7 +2388,7 @@ function showRules(){
     <li>${RULES.trib?'从第二局起进贡：末游把最大的牌给头游，头游还一张 10 或以下的牌；双下则两人都进贡。进贡方合计有两张大王可以抗贡。':'本场不进贡：每局由上一局的头游先出。'}</li>
     <li>每一方打 A 有三次机会，三次都没打过${RULES.aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。</li>
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
-    <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排，按住一张牌拖动可以把它插到别处；先选中几张再拖，可以整组一起挪。平铺模式也一样。轮到你出牌时，按住滑过几张牌是连选这些牌；其他时候按住拖动才是挪牌。“理牌”按大小重新排好。</li>
+    <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排，按住一张牌拖动可以把它插到别处；先选中几张再拖，可以整组一起挪。平铺模式也一样。轮到你出牌时，按住滑过几张牌是连选这些牌；其他时候按住拖动才是挪牌。“复原”恢复成按大小排好的样子。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
     <li>发完牌先有 60 秒理牌时间，然后进贡、还贡，各限时 20 秒；最大的牌有几种花色时，自己选进贡哪一张。每次出牌限时 20 秒，最后 5 秒倒计时会闪烁，超时由电脑代你出牌。</li>
   </ul>
@@ -2804,6 +2838,7 @@ function hostOnClose(conn,how='drop'){
   act({k:'humans',list,names:NET.names,left:info.name,how});
   const c=G.clock;
   if(c&&(c.who===seat||c.seat===seat)){G.clock=null;timeUp(c)}
+  if(owesReturn(seat))act({k:'return',p:seat,id:aiReturnCard(G.hands[seat],G.L).id});
   if(G.phase==='tribPick'&&G.tribGivers.includes(seat)&&G.tribPick[seat]==null)act({k:'tribute',p:seat,id:tributeCard(G.hands[seat],G.L).id});
   if(G.phase==='prep'&&[...NET.humans].every(h=>G.ready.includes(h)))act({k:'begin'});
 }
@@ -2893,7 +2928,7 @@ function goSolo(){
   const c=G.clock;G.clock=null;
   if(G.phase==='shuffle'&&!G.busy)startShuffle();
   else if(G.phase==='cut'&&!G.busy)startCut();
-  else if(G.phase==='return')processReturns();
+  else if(G.phase==='return')retWait();
   else if(G.phase==='tribPick')tribWait();
   else if(G.phase==='prep'){if(G.ready.includes(0))beginPlay();else{G.clock=c&&c.who==='prep'?c:{who:'prep',left:PREP_MS,total:PREP_MS};render()}}
   else if(G.phase==='play'&&G.turn>=0)startTurn();
