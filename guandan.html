@@ -251,6 +251,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .panel p,.panel li{font-size:17px;line-height:1.6;color:var(--ink);margin:0}
 .panel ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
 .panel .muted{color:var(--muted)}
+.panel .wait{font-size:18px;color:var(--gold);line-height:1.6}
 /* bottom-right, clear of the table centre and of your own plate at bottom-left */
 .overlay.dock{background:transparent;align-items:flex-end;justify-content:flex-end;pointer-events:none}
 .overlay.dock .panel{pointer-events:auto;width:min(440px,calc(50vw - 72px));gap:10px;padding:16px 20px;box-shadow:0 -8px 32px rgba(0,0,0,.5)}
@@ -738,7 +739,7 @@ function resetGame(){
   // levels start at 2 for both sides; lvlTeam counts from the host's side, so a seat across a gap of one sees it flipped
   G={levels:[2,2],lvlTeam:NET.off%2,L:2,round:0,hands:[[],[],[],[]],trick:null,passes:0,last:[null,null,null,null],
      out:[],prevOut:null,turn:-1,phase:'start',notice:'',fresh:[],returns:[],leader:0,result:null,tok:(G&&G.tok||0)+1,
-     trickPlays:[],heapN:0,ready:[],aFails:[0,0]};
+     trickPlays:[],heapN:0,ready:[],aFails:[0,0],nextReady:[]};
 }
 function newGame(){
   resetGame();render();
@@ -763,7 +764,7 @@ function startRound(e){
   // (the very first round picks the cutter at random)
   G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
   G.shuffler=(G.cutter+3)%4;
-  G.dealIdx=G.cutter;G.ready=[];
+  G.dealIdx=G.cutter;G.ready=[];G.nextReady=[];NET.pending=false;
   sel=new Set();
   hideOverlay();
   removeDeck();
@@ -1203,12 +1204,24 @@ function applyEvt(e){
     case'begin':
       if(G.phase!=='prep')return false;
       beginPlay();return true;
+    case'next':{
+      if(G.phase!=='roundEnd'&&G.phase!=='over')return false;
+      const nr=G.nextReady||(G.nextReady=[]);
+      if(!nr.includes(p))nr.push(p);
+      if(!$('#overlay').hidden&&$('#panel').dataset.kind==='result')showResult();
+      // after this event has gone out to everyone, so the new round follows it
+      setTimeout(startNextIfReady,0);
+      return true;
+    }
     case'humans':
       setHumans(e.list.map(toLocal),e.names);
       if(e.left)playerLeft(e.left,e.how);
+      setTimeout(startNextIfReady,0);
       return true;
     case'play':case'pass':{
       if(G.phase!=='play'||G.turn!==p)return false;
+      // your own move came back: you are no longer waiting on it (it may have ended the round, with no next turn to clear this)
+      if(p===0)NET.pending=false;
       if(e.k==='pass'){doPlay(p,null);return true}
       const cards=e.ids.map(id=>G.hands[p].find(c=>c.id===id));
       if(cards.some(c=>!c))return true;
@@ -2214,7 +2227,7 @@ function celebrate(p,place){
 
 /* ---------- overlays ---------- */
 // dock: the round result sits low and see-through around the edges, so the last cards on the table stay in view
-function showPanel(html,dock){$('#panel').innerHTML=html;$('#overlay').classList.toggle('dock',!!dock);$('#overlay').hidden=false}
+function showPanel(html,dock){$('#panel').innerHTML=html;$('#panel').dataset.kind='';$('#overlay').classList.toggle('dock',!!dock);$('#overlay').hidden=false}
 function hideOverlay(){$('#overlay').hidden=true}
 function showResult(){
   const r=G.result;
@@ -2239,9 +2252,21 @@ function showResult(){
     else if(r.aTry)body+=`<p>${side(r.aTeam)}打 A 第 ${r.aTry} 次没过，还剩 ${3-r.aTry} 次机会。</p>`;
   }
   showPanel(`<h2>${head}</h2>${body}
-    <div class="btns">${G.phase==='over'?'<button class="btn primary" id="againBtn">再来一场</button>':'<button class="btn primary" id="nextBtn">下一局</button>'}</div>`,true);
-  const nb=$('#nextBtn');if(nb){nb.onclick=()=>askHost('next');nb.focus()}
-  const ab=$('#againBtn');if(ab){ab.onclick=()=>askHost('again');ab.focus()}
+    ${waitHtml()}
+    <div class="btns">${nextBtnHtml()}</div>`,true);
+  $('#panel').dataset.kind='result';
+  const nb=$('#nextBtn');if(nb){nb.onclick=askNext;if(!nb.disabled)nb.focus()}
+}
+// with friends at the table: who has pressed the button and who everyone is waiting for
+const nextDone=p=>(G.nextReady||[]).includes(p);
+function waitHtml(){
+  if(NET.humans.size<2)return'';
+  const done=[...NET.humans].filter(nextDone),wait=[...NET.humans].filter(h=>!nextDone(h));
+  return`<p class="wait">${done.length?`已按：${done.map(h=>NAMES[h]).join('、')}<br>`:''}${wait.length?`等待 ${wait.map(h=>NAMES[h]).join('、')} 按“${G.phase==='over'?'再来一场':'下一局'}”`:''}</p>`;
+}
+function nextBtnHtml(){
+  const label=G.phase==='over'?'再来一场':'下一局';
+  return nextDone(0)?`<button class="btn primary" id="nextBtn" disabled>等待其他人…</button>`:`<button class="btn primary" id="nextBtn">${label}</button>`;
 }
 function dblText(r){
   const o=r.order;
@@ -2444,11 +2469,12 @@ $('#clearBtn').onclick=()=>{sel=new Set();renderHand()};
 $('#rulesBtn').onclick=showRules;
 $('#readyBtn').onclick=()=>act({k:'ready',p:toAbs(0)});
 $('#deckBtn').onclick=()=>act({k:G.phase==='cut'?'cut':'shuffle'});
-// next round / another game: the host starts it; a friend's click asks the host to
-function askHost(what){
-  if(NET.mode==='guest'){if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'act',e:{k:what}});return}
-  if(what==='next'&&G.phase==='roundEnd')act(roundEvt(false));
-  if(what==='again'&&G.phase==='over')newGame();
+// next round / another match: each player at the table presses the button, and once all have, the host deals
+function askNext(){act({k:'next',p:toAbs(0)})}
+function startNextIfReady(){
+  if(!isHost()||!G||![...NET.humans].every(h=>(G.nextReady||[]).includes(h)))return;
+  if(G.phase==='roundEnd')act(roundEvt(false));
+  else if(G.phase==='over')newGame();
 }
 $('#sfxBtn').onclick=()=>{Sound.toggle('sfx');syncAudioBtns()};
 $('#musicBtn').onclick=()=>{Sound.toggle('music');syncAudioBtns()};
@@ -2661,7 +2687,7 @@ function hostOnData(conn,d){
 function hostGuestAct(seat,e){
   if(!isHumanSeat(seat))return;
   switch(e.k){
-    case'next':case'again':askHost(e.k);return;
+    case'next':if(e.p!==seat)return;break;
     case'shuffle':if(G.shuffler!==seat)return;break;
     case'cut':if(G.cutter!==seat)return;break;
     case'pass':case'return':case'ready':if(e.p!==seat)return;break;
