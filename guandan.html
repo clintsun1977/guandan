@@ -137,6 +137,21 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .place[data-place="1"],.place[data-place="2"]{background:var(--felt-deep);color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
 .place[data-place="3"]{background:var(--warn);color:var(--felt-deep)}
 .place:empty{display:none}
+/* first out: the label drops onto the plate from above and keeps a glow */
+.place[data-place="0"]:not(:empty){animation:landIn .9s cubic-bezier(.2,.9,.3,1.2);box-shadow:0 0 22px var(--gold),0 4px 14px rgba(0,0,0,.35)}
+@keyframes landIn{0%{opacity:0;scale:3;translate:0 -80px}55%{opacity:1;scale:.92;translate:0 0}75%{scale:1.08}100%{scale:1}}
+/* the sorting minute: a big label and countdown in the middle of the table */
+.prepbig{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;display:flex;align-items:center;gap:16px;pointer-events:none;
+  font-family:var(--font-display);font-weight:900;color:var(--gold);padding:8px 30px;border-radius:18px;background:var(--felt-deep);box-shadow:0 0 0 2px var(--gold),0 8px 30px rgba(0,0,0,.4)}
+.prepbig b{font-size:clamp(40px,7vh,64px);letter-spacing:.2em}
+.prepbig span{font-size:clamp(52px,10vh,88px);font-variant-numeric:tabular-nums;min-width:1.3em;text-align:center;line-height:1}
+.prepbig small{font-size:26px}
+.prepbig.hurry span{color:var(--warn);animation:blink .5s steps(1) infinite}
+/* the tribute: one line per pair, large, each card shown as a little white card face */
+.msg .trib{font-size:clamp(19px,2.4vw,25px);font-weight:700;line-height:1.6;white-space:nowrap}
+.msg:has(.trib){max-width:none}
+.ct{display:inline-block;background:var(--card);color:#222;border-radius:6px;padding:0 8px;margin:0 3px;line-height:1.3}
+.ct.red{color:var(--red)}
 .seat.turn .who,.mebar.turn .meinfo{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
 /* the turn clock is a little alarm clock: a round face with the seconds in it, two bells on top and two feet */
 .clock{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:2.3em;height:2.3em;margin:.35em .1em .2em;
@@ -310,6 +325,11 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 @keyframes fadeIn{from{opacity:0}}
 .fx-canvas{position:fixed;inset:0;z-index:89;pointer-events:none}
 .shake{animation:shake .5s ease-in-out .3s}
+.fx-stamp.kang{font-size:46px;color:var(--gold);border-color:var(--gold);animation-duration:3.2s}
+/* the match is won: a large gold banner across the table */
+.fx-banner{font-family:var(--font-display);font-weight:900;font-size:clamp(40px,7vw,80px);letter-spacing:.16em;padding:10px 30px 10px 42px;color:var(--on-gold);
+  background:linear-gradient(180deg,#f3d27a,var(--gold));border-radius:16px;box-shadow:0 0 0 3px var(--felt-deep),0 0 0 6px var(--gold),0 0 60px var(--gold);animation:bannerIn 3.9s cubic-bezier(.2,.9,.3,1.2) forwards}
+@keyframes bannerIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-8deg)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.12) rotate(2deg)}20%{transform:translate(-50%,-50%) scale(1) rotate(0)}88%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.04)}}
 @keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .gloom{filter:grayscale(1) brightness(.7);transition:filter .6s}
 /* on a computer the header gives its row back to the table: the name and the two sides' levels sit in the
@@ -347,12 +367,13 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
       <div class="emblem" title="本局打的级"><span class="r" id="curLv">2</span></div>
     </div>
     <div id="pile" aria-hidden="true"><div class="probe"></div></div>
+    <div class="prepbig" id="prepBig" hidden><b>理牌</b><span id="prepBigNum">60</span><small>秒</small></div>
     <section class="seat" id="seat1">
       <div class="whorow"><span class="cnt"></span><div class="who"><span class="clock"></span><span class="pass-chip"></span><span class="place"></span><span class="name">下家</span><span class="back"></span></div></div>
     </section>
     <section class="seat" id="seat0">
       <span class="place" id="myPlace"></span>
-      <div class="prep" id="prep" hidden><span class="pn" id="prepNum">60</span><span class="pt" id="prepText">秒后开始出牌</span><button class="btn" id="readyBtn">准备好了</button></div>
+      <div class="prep" id="prep" hidden><span class="pt" id="prepText">你先出</span><button class="btn" id="readyBtn">准备好了</button></div>
       <button class="btn primary" id="deckBtn" hidden>洗牌</button>
       <div class="msg" id="msg"></div>
     </section>
@@ -717,7 +738,7 @@ function startRound(e){
   G.deck=e.deck.map(id=>byId.get(id));
   G.hands=[[],[],[],[]];
   G.trick=null;G.passes=0;G.last=[null,null,null,null];G.out=[];G.fresh=[];G.result=null;
-  G.turn=-1;G.notice='';G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.myOrder=[];G.blocks=[];pileRebuild();G.dealCount=0;
+  G.turn=-1;G.notice='';G.trib=[];G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.myOrder=[];G.blocks=[];pileRebuild();G.dealCount=0;
   // as at a real table: the last round's first-out cuts and the player before them shuffles
   // (the very first round picks the cutter at random)
   G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
@@ -821,18 +842,23 @@ function finishDeal(){
   }else doTribute();
 }
 function doTribute(){
+  G.trib=[];
   const o=G.prevOut,L=G.L;
   const dbl=o[1]%2===o[0]%2;
   const givers=dbl?[o[2],o[3]]:[o[3]];
   const bigJ=givers.reduce((s,g)=>s+G.hands[g].filter(c=>c.r===17).length,0);
   if(bigJ>=2){
     G.notice=`${givers.map(g=>NAMES[g]).join('、')}手握两张大王，抗贡。`;
-    startPrep(o[0]);return;
+    G.phase='tribute';render();
+    const tok=G.tok,jokers=givers.flatMap(g=>G.hands[g].filter(c=>c.r===17).map(c=>({g,c})));
+    kangAnim(jokers).then(()=>{if(G.tok===tok)startPrep(o[0])});
+    return;
   }
   let tribs=givers.map(g=>({g,card:tributeCard(G.hands[g],L)}));
   if(dbl)tribs.sort((a,b)=>val(b.card,L)-val(a.card,L));
   const recv=dbl?[o[0],o[1]]:[o[0]];
   G.gives=tribs.map((t,i)=>({from:t.g,to:recv[i],id:t.card.id,label:'进贡'}));
+  G.trib=[];
   G.leader=tribs[0].g;
   G.returns=tribs.map((t,i)=>({from:recv[i],to:t.g}));
   G.notice='';
@@ -850,7 +876,8 @@ async function runGives(){
       await giveAnim(x.from,x.to,card,x.label);
       if(G.tok!==tok)return;
       giveCard(x.from,x.to,card);
-      G.notice+=`${x.label==='进贡'?`${NAMES[x.from]}进贡 ${cardText(card)} 给${NAMES[x.to]}`:`${NAMES[x.from]}还 ${cardText(card)}`}。`;
+      if(x.label==='进贡')G.trib.push({g:x.from,r:x.to,tc:card});
+      else{const t=G.trib.find(t=>t.r===x.from&&t.g===x.to);if(t)t.rc=card}
     }
     G.gives.shift();
     render();
@@ -953,17 +980,22 @@ function renderClocks(){
     el.classList.toggle('hurry',on&&c.left<=HURRY_MS);
   }
   const prep=!!c&&c.who==='prep';
-  $('#prep').hidden=!prep;
+  $('#prep').hidden=!prep;$('#prepBig').hidden=!prep;
   if(prep){
-    $('#prepNum').textContent=Math.max(0,Math.ceil(c.left/1000));
-    $('#prepNum').classList.toggle('hurry',c.left<=HURRY_MS);
-    $('#prepText').textContent=`秒后${G.turn===0?'由你':NAMES[G.turn]}先出`;
+    $('#prepBigNum').textContent=Math.max(0,Math.ceil(c.left/1000));
+    $('#prepBig').classList.toggle('hurry',c.left<=HURRY_MS);
+    $('#prepText').textContent=`${G.turn===0?'你':NAMES[G.turn]}先出`;
     $('#readyBtn').hidden=(G.ready||[]).includes(0);
   }
 }
+// hints are judged the way the computer players judge their own moves: when following, the play that leaves
+// the best-shaped hand comes first (a pair of 5s before breaking up three 4s), wild cards and bombs only when needed
 function sortHints(plays){
   if(!G.trick)return rankLeads(0,plays).map(x=>x.pl);
-  return plays.sort((a,b)=>(isBomb(a)-isBomb(b))||(isBomb(a)?power(a)-power(b):a.value-b.value)||a.wu-b.wu);
+  const base=handCost(G.hands[0],G.L);
+  return scorePlays(0,plays)
+    .map(x=>({pl:x.pl,score:x.bomb?1000+power(x.pl)*.01+x.rc*.001:(x.rc-base)+x.pl.wu*.6+x.pl.value*.02}))
+    .sort((a,b)=>a.score-b.score).map(x=>x.pl);
 }
 
 function doPlay(p,play){
@@ -981,6 +1013,8 @@ function doPlay(p,play){
         if(el){const r=el.getBoundingClientRect();origins[c.id]={x:r.left+r.width/2,y:r.top+r.height/2}}
       }
     }
+    const goesOut=G.hands[p].every(c=>play.cards.includes(c));
+    if(goesOut){G.out.push(p);G.reveal=G.out.length;showPlace(p===0?$('#myPlace'):$('#seat'+p+' .place'),G.out.length-1)}
     pileThrow(p,play,origins,true);
     G.trickPlays.push({p,play:{type:play.type,value:play.value,n:play.n,cards:play.cards}});
     const ids=new Set(play.cards.map(c=>c.id));
@@ -989,8 +1023,7 @@ function doPlay(p,play){
     G.passes=0;
     G.last[p]={play};
     if(p===0){sel=new Set();G.fresh=[]}
-    if(!G.hands[p].length){
-      G.out.push(p);
+    if(goesOut){
       celebrate(p,G.out.length-1);
       if(roundOver()){finishRound();return}
     }
@@ -1017,7 +1050,7 @@ function advance(){
     later(()=>{
       pileSweep();
       G.heapN+=G.trickPlays.reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];
-      G.trick=null;G.passes=0;G.last=[null,null,null,null];G.turn=leader;startTurn();
+      G.trick=null;G.passes=0;G.last=[null,null,null,null];G.trib=[];G.turn=leader;startTurn();
     },TRICK_HOLD_MS);
     return;
   }
@@ -1040,7 +1073,7 @@ function finishRound(){
   G.prevOut=G.out.slice();
   G.lvlTeam=team;
   G.phase=win?'over':'roundEnd';
-  G.turn=-1;G.reveal=0;
+  G.turn=-1;G.reveal=k0;
   render();
   // the end of a round plays out like a real table: the last trick stays face up for a moment,
   // then gets turned over onto the pile, then the places are called out one by one, then the result
@@ -1048,13 +1081,12 @@ function finishRound(){
     pileSweep();Sound.play('shuffle');
     G.heapN+=G.trickPlays.reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];G.last=[null,null,null,null];
   },END_SHOW_MS);
-  for(let k=0;k<4;k++)later(()=>{
-    G.reveal=k+1;render();
-    // places handed out only now (always including last place) get their moment here
-    // the label itself names the place, so the moment adds only sound and motion, never a second copy of the words
-    if(k>=k0)celebrate(G.out[k],k,true);else Sound.play('ding');
-  },END_SHOW_MS+700+k*500);
-  later(()=>{Sound.play(team===0?'win':'lose');showResult()},END_SHOW_MS+700+4*500+1400);
+  // places already earned during play are on the plates; the rest (always including last place) are called out now
+  for(let k=k0;k<4;k++)later(()=>{G.reveal=k+1;render();celebrate(G.out[k],k)},END_SHOW_MS+700+(k-k0)*500);
+  later(()=>{
+    if(win){victory(team);later(showResult,4000)}
+    else{Sound.play(team===0?'win':'lose');showResult()}
+  },END_SHOW_MS+700+(4-k0)*500+1400);
 }
 const END_SHOW_MS=2600; // how long the final trick stays face up
 
@@ -1233,10 +1265,19 @@ const GAP=10;   // space between two plays of the same player
 // players at the sides. A line that runs out of room wraps into a second line closer to the middle.
 function zoneFor(p,g){
   const side=(g.right-g.left)*.27,mx0=g.left+side,mx1=g.right-side;
-  if(p===3)return{x0:g.left+PASS_X,x1:mx0,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y};
-  if(p===1)return{x0:mx1,x1:g.right-PASS_X,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y};
-  if(p===2)return{x0:mx0,x1:mx1,y0:g.top+PASS_Y,y1:g.cy};
-  return{x0:mx0,x1:mx1,y0:g.cy,y1:g.bottom-PASS_Y};
+  const z=p===3?{x0:g.left+PASS_X,x1:mx0,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y}
+    :p===1?{x0:mx1,x1:g.right-PASS_X,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y}
+    :p===2?{x0:mx0,x1:mx1,y0:g.top+PASS_Y,y1:g.cy}
+    :{x0:mx0,x1:mx1,y0:g.cy,y1:g.bottom-PASS_Y};
+  // a place label already on the plate (someone just went out) keeps its own room, clear of their last cards
+  const lab=p!==0&&G.out.includes(p)?$('#seat'+p+' .place'):null;
+  if(lab&&lab.offsetWidth){
+    const w=$('#seat'+p+' .who').getBoundingClientRect();
+    if(p===2)z.y0=Math.max(z.y0,w.bottom-g.L.top+10+lab.offsetHeight+PASS_Y);
+    if(p===3)z.x0=Math.max(z.x0,w.right-g.L.left+12+lab.offsetWidth+PASS_X);
+    if(p===1)z.x1=Math.min(z.x1,w.left-g.L.left-12-lab.offsetWidth-PASS_X);
+  }
+  return z;
 }
 const pileT=(x,y,rot,flip,sc=1)=>`perspective(800px) translate(${x}px,${y}px) rotate(${rot}deg) rotateY(${flip}deg) scale(${sc})`;
 function relPoint(pt,g){return{x:pt.x-g.L.left,y:pt.y-g.L.top}}
@@ -1442,11 +1483,16 @@ function renderMsg(){
   let t='';
   if(G.phase==='return'){
     const x=G.returns[0];
-    t=`还一张 10 或以下的牌给${NAMES[x.to]}`+(G.notice?`<small>${G.notice}</small>`:'');
+    t=`<div>还一张 10 或以下的牌给${NAMES[x.to]}</div>`+tribHtml();
   }else if(G.phase==='tribute'||G.phase==='prep'||G.phase==='play'){
-    t=G.notice||'';
+    t=tribHtml()+(G.notice?`<div>${G.notice}</div>`:'');
   }
   m.innerHTML=t;
+}
+// one line per pair: who paid whom with which card, and what came back
+const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
+function tribHtml(){
+  return(G.trib||[]).map(t=>`<div class="trib">${NAMES[t.g]}进贡 ${cardTag(t.tc)} 给${NAMES[t.r]}${t.rc?`，${NAMES[t.r]}还 ${cardTag(t.rc)}`:''}</div>`).join('');
 }
 function setMsg(t,err){
   const m=$('#msg');
@@ -1778,6 +1824,29 @@ function giveAnim(from,to,card,label){
     setTimeout(()=>{w.remove();done()},2100);
   });
 }
+// resisting the tribute: the big jokers are laid face up in the middle under a stamp, then go back to their owners
+function kangAnim(list){
+  return new Promise(done=>{
+    Sound.play('gong');
+    const m=$('.emblem').getBoundingClientRect(),mx=m.left+m.width/2,my=m.top+m.height/2;
+    fxEl('fx-stamp kang','抗贡',mx,my-120);
+    if(reduceMotion()){setTimeout(done,2000);return}
+    const els=list.map(({g,c},i)=>{
+      const a=seatPoint(g),w=document.createElement('div');
+      w.className='gift';
+      w.innerHTML=`<span class="gl">${NAMES[g]}</span>${cardHTML(c,G.L)}`;
+      w.style.transform=`translate(${a.x}px,${a.y}px) scale(.55)`;w.style.opacity='0';
+      document.body.appendChild(w);
+      w.getBoundingClientRect();
+      w.style.transform=`translate(${mx+(i-(list.length-1)/2)*110}px,${my+20}px) scale(1.15)`;w.style.opacity='1';
+      return{w,a};
+    });
+    setTimeout(()=>Sound.play('cardSlap'),550);
+    setTimeout(()=>{for(const e of els)e.w.style.transform=`translate(${e.a.x}px,${e.a.y}px) scale(.55)`},2700);
+    setTimeout(()=>{for(const e of els)e.w.style.opacity='0'},3100);
+    setTimeout(()=>{els.forEach(e=>e.w.remove());done()},3300);
+  });
+}
 function dealView(p,c){
   if(p===0){
     $('#hand').insertAdjacentHTML('beforeend',cardHTML(c,G.L));
@@ -1904,6 +1973,23 @@ const Sound=(()=>{
       for(const f of [523,659,784,1047])tone(f,now+.34,1.3,{type:'triangle',gain:.06,attack:.02});
       for(let i=0;i<6;i++)burst(now+.34+i*.07,.06,{freq:5200,type:'highpass',gain:.05});
     },
+    // the match is won: a rising call that lands on a long bright chord over crashing cymbals
+    victory(){
+      const N=[[392,0,.18],[523,.18,.18],[659,.36,.18],[784,.54,.36],[659,.9,.18],[784,1.08,1.6]];
+      for(const [f,d,len] of N){pluck(f,now+d,len+.3,.13,sfxBus);tone(f/2,now+d,len+.2,{type:'triangle',gain:.05})}
+      for(const f of [523,659,784,1047])tone(f,now+1.08,2.4,{type:'triangle',gain:.055,attack:.03});
+      for(const d of [0,.54,1.08])burst(now+d,.9,{freq:6000,type:'highpass',gain:.12});
+    },
+    // a firework bursting far off: a dull thud and a scatter of crackles
+    pop(){
+      burst(now,.4,{freq:420,type:'lowpass',gain:.32});
+      for(let i=0;i<6;i++)burst(now+.12+Math.random()*.45,.03,{freq:5200,type:'highpass',gain:.05});
+    },
+    // resisting the tribute: a struck gong
+    gong(){
+      for(const [f,g,d] of [[110,.3,2.6],[222,.12,1.9],[302,.08,1.5],[466,.05,1.1],[690,.03,.8]])tone(f,now,d,{gain:g,attack:.004});
+      burst(now,.25,{freq:500,q:.6,gain:.3});
+    },
     // second / third out: a small two-note bell
     ding(){tone(1175,now,.6,{gain:.07});tone(1568,now+.1,.8,{gain:.05})},
     // last place: the sad trombone, wah wah wah wahhh
@@ -2016,6 +2102,41 @@ function confetti(x,y){
     return p.life>0&&p.y<innerHeight+20;
   },400);
 }
+// rockets rise from the bottom of the screen and burst over the given spots
+function fireworks(spots){
+  const css=getComputedStyle(document.documentElement);
+  const cols=['--gold','--latest','--red','--card','--warn'].map(v=>css.getPropertyValue(v).trim());
+  let all=null,next=0,n=0;
+  particles((ps,age)=>{
+    all=ps;
+    if(age>3000||age<next)return;
+    next=age+240+Math.random()*220;
+    const s=spots[n++%spots.length];
+    const x=Math.min(innerWidth-40,Math.max(40,s.x+(Math.random()-.5)*innerWidth*.4));
+    const ty=Math.max(50,Math.min(s.y,innerHeight*.6)-80-Math.random()*innerHeight*.25);
+    ps.push({rocket:true,x,y:innerHeight+10,ty,vy:-(innerHeight+10-ty)/34,c:cols[n%cols.length]});
+  },(cx,p)=>{
+    if(p.rocket){
+      p.y+=p.vy;
+      cx.fillStyle=p.c;cx.fillRect(p.x-1.5,p.y,3,12);
+      if(p.y>p.ty)return true;
+      Sound.play('pop');
+      for(let i=0;i<80;i++){const a=Math.random()*Math.PI*2,v=1+Math.random()*5;all.push({x:p.x,y:p.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,c:p.c,life:1})}
+      return false;
+    }
+    p.vy+=.05;p.vx*=.98;p.vy*=.98;p.x+=p.vx;p.y+=p.vy;p.life-=.011;
+    cx.globalAlpha=Math.max(0,p.life);cx.fillStyle=p.c;
+    cx.beginPath();cx.arc(p.x,p.y,2.4,0,Math.PI*2);cx.fill();cx.globalAlpha=1;
+    return p.life>0;
+  },3000);
+}
+// the match is won: fireworks over the winning pair, a banner across the table and a victory tune
+function victory(team){
+  Sound.play('victory');
+  const m=$('#table').getBoundingClientRect();
+  fxEl('fx-banner',`${team===0?'我方':'对方'}赢得全场`,m.left+m.width/2,m.top+m.height*.42);
+  fireworks([team,team+2].map(seatPoint));
+}
 // a small grey cloud's worth of rain over the last-place seat
 function rain(x,y){
   particles((ps,age)=>{
@@ -2036,21 +2157,17 @@ function placePoint(p){
   if(p===3){const a=R('#seat3 .whorow');return{x:a.right+48,y:a.top+a.height/2}}
   const a=R('#seat1 .whorow');return{x:a.left-48,y:a.top+a.height/2};
 }
-// quiet: the place label is already on screen, so no floating words, only sound and effects
-function celebrate(p,place,quiet){
+// the place label itself lands on the player's plate (see .place), so this adds only sound and effects
+function celebrate(p,place){
   const pt=seatPoint(p),seat=p===0?$('.meinfo'):$('#seat'+p+' .who');
   if(place===0){
     Sound.play('fanfare');
     const q=placePoint(p);
-    fxEl('fx-tag first','头游',q.x,q.y);
     confetti(q.x,q.y);
   }else if(place<3){
     Sound.play('ding');
-    const q=placePoint(p);
-    if(!quiet)fxEl('fx-tag mid',PLACE[place],q.x,q.y);
   }else{
     Sound.play('sad');
-    if(!quiet)fxEl('fx-stamp','末游',pt.x,pt.y);
     rain(pt.x,pt.y);
     if(seat&&!reduceMotion()){
       seat.classList.add('shake','gloom');
