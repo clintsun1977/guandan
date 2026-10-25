@@ -1893,6 +1893,7 @@ const BTN_GAP=18;
 // the action column: the play buttons, and in their place the shuffle / cut and "done sorting" buttons, all centred
 // the same distance in from the right edge, where a right thumb on a tablet reaches without stretching
 let colW=90;
+const ACTION_LIFT=18;
 const actionInset=w=>Math.min(150,Math.max(colW/2+16,w*.12));
 function handGeo(n,keys){
   const el=$('#hand'),probe=el.firstElementChild;
@@ -2024,7 +2025,8 @@ function placeButtons(g){
   if(!sideBtns()){b.style.left=b.style.top='';return}
   const el=$('#hand'),bw=b.offsetWidth||colW,bh=b.offsetHeight;
   b.style.left=el.clientWidth-actionInset(el.clientWidth)-bw/2+'px';
-  b.style.top=Math.max(0,(g.height-bh)/2)+'px';
+  // a little above the middle of the hand, clear of the hand tools in the corner below
+  b.style.top=Math.max(0,(g.height-bh)/2-ACTION_LIFT)+'px';
   // a short hand (flat, few cards) still leaves room for the whole column
   if(bh>g.height)el.style.height=bh+'px';
   placeActionBtns();
@@ -2037,7 +2039,7 @@ function placeActionBtns(){
     const e=$(id);e.classList.toggle('atcol',on);
     if(!on){e.style.left=e.style.top='';continue}
     e.style.left=h.right-actionInset(h.width)+'px';
-    e.style.top=h.bottom-Math.max(h.height/2,110)+'px';
+    e.style.top=h.bottom-Math.max(h.height/2,110)-ACTION_LIFT+'px';
   }
 }
 
@@ -3068,7 +3070,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1725';
+const VERSION='1025-1727';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
