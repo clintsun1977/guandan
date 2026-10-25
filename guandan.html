@@ -830,7 +830,7 @@ function startRound(e){
   G.deck=e.deck.map(id=>byId.get(id));
   G.hands=[[],[],[],[]];
   G.trick=null;G.passes=0;G.last=[null,null,null,null];G.out=[];G.fresh=[];G.result=null;
-  G.turn=-1;G.notice='';G.trib=[];G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.myOrder=[];G.blocks=[];pileRebuild();G.dealCount=0;
+  G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.myOrder=[];G.blocks=[];pileRebuild();G.dealCount=0;
   // as at a real table: the last round's first-out cuts and the player before them shuffles
   // (the very first round picks the cutter at random)
   G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
@@ -947,7 +947,9 @@ function doTribute(){
   const givers=dbl?[o[2],o[3]]:[o[3]];
   const bigJ=givers.reduce((s,g)=>s+G.hands[g].filter(c=>c.r===17).length,0);
   if(bigJ>=2){
-    G.notice=`${givers.map(g=>NAMES[g]).join('、')}手握两张大王，抗贡。`;
+    // who holds the big jokers, kept so the screen can spell out the resistance and what follows from it
+    G.kang={has:givers.map(g=>({g,n:G.hands[g].filter(c=>c.r===17).length})).filter(x=>x.n),leader:o[0]};
+    G.notice='';
     G.phase='tribute';render();
     const tok=G.tok,jokers=givers.flatMap(g=>G.hands[g].filter(c=>c.r===17).map(c=>({g,c})));
     kangAnim(jokers).then(()=>{if(G.tok===tok)startPrep(o[0])});
@@ -1727,16 +1729,25 @@ function renderMsg(){
     const wait=G.tribGivers.filter(g=>g!==0&&G.tribPick[g]==null);
     if(wait.length)t+=`<div>等待${wait.map(g=>NAMES[g]).join('、')}进贡</div>`;
   }else if(G.phase==='tribute'||G.phase==='prep'){
-    t=tribHtml()+(G.notice?`<div>${G.notice}</div>`:'');
+    t=tribHtml()+kangHtml()+(G.notice?`<div>${G.notice}</div>`:'');
   }else if(G.phase==='play'){
     t=G.notice?`<div>${G.notice}</div>`:'';
   }
   m.innerHTML=t;
   const ti=$('#tribInfo'),showTi=['play','roundEnd','over'].includes(G.phase);
-  ti.innerHTML=showTi?tribHtml('tl'):'';
+  ti.innerHTML=showTi?tribHtml('tl')+kangHtml(true):'';
 }
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
+// 抗贡 spelled out: who holds the two big jokers, and that there is then no tribute and no return, the first-out leading
+// (short: the one-line version kept in the corner while the round is played)
+function kangHtml(short){
+  const k=G.kang;if(!k)return'';
+  const who=k.has.length===1?`${NAMES[k.has[0].g]}手里有两张大王`:`${k.has.map(x=>NAMES[x.g]).join('和')}各有一张大王，合起来两张`;
+  if(short)return`<div class="tl">抗贡：${who}，本局不进贡</div>`;
+  const lead=k.leader===0?'由你（头游）先出':`由头游${NAMES[k.leader]}先出`;
+  return`<div class="trib">抗贡！${who}。</div><div class="trib">按规则，要进贡的一方合起来有两张大王就可以抗贡：本局不进贡、不还贡，${lead}。</div>`;
+}
 function tribHtml(cls='trib'){
   const tr=G.trib||[],back=tr.length&&tr.every(t=>t.rc);
   return tr.map(t=>`<div class="${cls}">${NAMES[t.g]}进贡 ${cardTag(t.tc)} 给${NAMES[t.r]}${back?`，${NAMES[t.r]}还 ${cardTag(t.rc)}`:''}</div>`).join('');
@@ -2553,7 +2564,7 @@ function showRules(){
     <li>牌型：单张、对子、三张、三带二、顺子（5 张）、连对（3 对）、钢板（2 个连续三张）。顺子里 A 可作 1，不能带王。</li>
     <li>炸弹从小到大：4 张 &lt; 5 张 &lt; 同花顺 &lt; 6 张 &lt; 7 张 … &lt; 四个王（天王炸）。炸弹可以压任何非炸弹牌型。</li>
     <li>头游一方升级：队友二游升 3 级，三游升 2 级，末游升 1 级。打到 A 并且队友不是末游，赢下整场。</li>
-    <li>${RULES.trib?'从第二局起进贡：末游把最大的牌给头游，头游还一张 10 或以下的牌；双下则两人都进贡。进贡方合计有两张大王可以抗贡。':'本场不进贡：每局由上一局的头游先出。'}</li>
+    <li>${RULES.trib?'从第二局起进贡：末游把最大的牌给头游，头游还一张 10 或以下的牌；双下则两人都进贡。要进贡的一方合起来有两张大王（一人两张，或双下时两人各一张）就可以抗贡：这一局不进贡、不还贡，由头游先出。':'本场不进贡：每局由上一局的头游先出。'}</li>
     <li>每一方打 A 有三次机会，三次都没打过${RULES.aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。</li>
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
     <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排，按住一张牌拖动可以把它插到别处；先选中几张再拖，可以整组一起挪。平铺模式也一样。轮到你出牌时，按住滑过几张牌是连选这些牌；其他时候按住拖动才是挪牌。“复原”恢复成按大小排好的样子。</li>
