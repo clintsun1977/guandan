@@ -266,7 +266,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .lobby{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;overflow:auto;
   background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-deep) 100%);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px}
-.lobby-box{width:min(440px,100%);display:flex;flex-direction:column;align-items:stretch;gap:14px;text-align:center}
+.lobby-box{width:min(440px,100%);display:flex;flex-direction:column;align-items:stretch;gap:11px;text-align:center}
 .lobby-title{margin:0 0 6px;font-family:var(--font-display);font-weight:900;font-size:52px;letter-spacing:.24em;padding-left:.24em;color:var(--ink)}
 .lobby-label{font-size:18px;color:var(--muted);text-align:left}
 .lobby-nick{font:inherit;font-size:24px;padding:12px 16px;border-radius:12px;border:1.5px solid var(--line-strong);background:var(--felt-deep);color:var(--ink);text-align:center}
@@ -282,7 +282,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .lobby-status{min-height:1.4em;font-size:17px;color:var(--muted)}
 .seat-btn.taken{border-style:solid;border-color:var(--latest);cursor:default}
 .seat-btn.taken span{color:var(--ink)}
-.lobby-table{display:grid;grid-template-columns:1fr 1.3fr 1fr;grid-template-rows:auto minmax(80px,16vh) auto;gap:10px;
+.lobby-table{display:grid;grid-template-columns:1fr 1.3fr 1fr;grid-template-rows:auto minmax(56px,10vh) auto;gap:10px;
   grid-template-areas:". n ." "w c e" ". s .";margin:6px 0}
 .lobby-felt{border-radius:14px;background:var(--felt);border:2px solid var(--line-strong);box-shadow:inset 0 0 30px rgba(0,0,0,.35)}
 .seat-btn{font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 6px;border-radius:14px;cursor:pointer;
@@ -295,6 +295,19 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .seat-btn.bot{border-style:solid;border-color:var(--line)}
 .seat-btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .lobby-go{font-size:24px;padding:14px 20px;border-radius:14px}
+/* the table rules: chosen by whoever plays alone or opens the room, shown greyed to friends who join */
+.lobby-rules{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--shade)}
+.rule-row{display:grid;grid-template-columns:3em 1fr 1fr;gap:8px;align-items:center}
+.rule-k{font-size:18px;color:var(--muted);text-align:left}
+.rule-btn{font:inherit;font-size:17px;padding:8px 4px;border-radius:10px;cursor:pointer;background:transparent;color:var(--ink);border:1.5px solid var(--line-strong)}
+.rule-btn.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700}
+.rule-btn:disabled{cursor:default}
+.rule-btn:disabled:not(.on){opacity:.4}
+.rule-note{font-size:15px;color:var(--muted)}
+.rule-note:empty{display:none}
+/* tries left at A, next to a side's level */
+.lvx{font-size:14px;color:var(--warn);margin-left:3px;font-weight:700}
+.lvx:empty{display:none}
 .lobby-go:disabled{opacity:.35}
 
 @media (max-width:560px){
@@ -352,8 +365,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 <div id="app">
   <header class="bar">
     <span class="brand">掼蛋</span>
-    <span class="score"><span class="ours" id="team0" title="">我方<b id="lv0">2</b></span><span id="team1" title="">对方<b id="lv1">2</b></span></span>
-    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="rulesBtn">规则</button><button class="link" id="newBtn">新局</button></span>
+    <span class="score"><span class="ours" id="team0" title="">我方<b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title="">对方<b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
+    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="rulesBtn">规则</button><button class="link" id="newBtn">新局</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -408,6 +421,11 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
       <button class="mode-btn on" data-mode="solo">单人</button>
       <button class="mode-btn" data-mode="host">开房间</button>
       <button class="mode-btn" data-mode="join">加入房间</button>
+    </div>
+    <div class="lobby-rules" id="rulesBox">
+      <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">正常进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
+      <div class="rule-row"><span class="rule-k">打 A</span><button class="rule-btn" data-rule="aFail" data-val="draw">三次不过算平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">三次不过从 2 打</button></div>
+      <div class="rule-note" id="rulesNote"></div>
     </div>
     <div class="lobby-join" id="joinRow" hidden>
       <input class="lobby-nick" id="roomCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="房间号">
@@ -709,6 +727,8 @@ let sel=new Set();
 // events name seats in the host's numbering, and NET.off turns those into your own.
 const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),lobby:{S:null,E:null,N:null,W:null}};
 const isHost=()=>NET.mode!=='guest';
+// table rules, chosen in the lobby (online, by the host): tribute on or off, and what happens after three failed tries at A
+const RULES={trib:true,aFail:'draw'};
 const isHumanSeat=p=>NET.humans.has(p);
 const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
 let hints=[],hintIdx=0;
@@ -718,7 +738,7 @@ function resetGame(){
   // levels start at 2 for both sides; lvlTeam counts from the host's side, so a seat across a gap of one sees it flipped
   G={levels:[2,2],lvlTeam:NET.off%2,L:2,round:0,hands:[[],[],[],[]],trick:null,passes:0,last:[null,null,null,null],
      out:[],prevOut:null,turn:-1,phase:'start',notice:'',fresh:[],returns:[],leader:0,result:null,tok:(G&&G.tok||0)+1,
-     trickPlays:[],heapN:0,ready:[]};
+     trickPlays:[],heapN:0,ready:[],aFails:[0,0]};
 }
 function newGame(){
   resetGame();render();
@@ -839,6 +859,9 @@ function finishDeal(){
     G.turn=G.firstLeader;
     G.notice='';
     startPrep(G.turn);
+  }else if(!RULES.trib){
+    G.notice='';
+    startPrep(G.prevOut[0]);
   }else doTribute();
 }
 function doTribute(){
@@ -1067,12 +1090,21 @@ function finishRound(){
   const up=pos===1?3:pos===2?2:1;
   const before=G.levels[team];
   let win=false;
+  const aTeam=G.lvlTeam,atA=G.L===14;
   if(G.lvlTeam===team&&before===14&&pos<=2)win=true;
   else G.levels[team]=Math.min(14,before+up);
-  G.result={order:G.out.slice(),team,up,before,after:G.levels[team],win,playedLevel:G.L};
+  const after=G.levels[team];
+  // each side gets three tries at A: after the third miss the match is drawn, or that side starts again from 2
+  let aTry=0,draw=false,reset=false;
+  if(atA&&!win){
+    const f=G.aFails||(G.aFails=[0,0]);
+    aTry=++f[aTeam];
+    if(aTry>=3){if(RULES.aFail==='draw')draw=true;else{G.levels[aTeam]=2;f[aTeam]=0;reset=true}}
+  }
+  G.result={order:G.out.slice(),team,up,before,after,win,draw,reset,aTry,aTeam,playedLevel:G.L};
   G.prevOut=G.out.slice();
   G.lvlTeam=team;
-  G.phase=win?'over':'roundEnd';
+  G.phase=win||draw?'over':'roundEnd';
   G.turn=-1;G.reveal=k0;
   render();
   // the end of a round plays out like a real table: the last trick stays face up for a moment,
@@ -1085,6 +1117,7 @@ function finishRound(){
   for(let k=k0;k<4;k++)later(()=>{G.reveal=k+1;render();celebrate(G.out[k],k)},END_SHOW_MS+700+(k-k0)*500);
   later(()=>{
     if(win){victory(team);later(showResult,4000)}
+    else if(draw){Sound.play('ding');showResult()}
     else{Sound.play(team===0?'win':'lose');showResult()}
   },END_SHOW_MS+700+(4-k0)*500+1400);
 }
@@ -1171,7 +1204,9 @@ function applyEvt(e){
       if(G.phase!=='prep')return false;
       beginPlay();return true;
     case'humans':
-      setHumans(e.list.map(toLocal),e.names);return true;
+      setHumans(e.list.map(toLocal),e.names);
+      if(e.left)playerLeft(e.left,e.how);
+      return true;
     case'play':case'pass':{
       if(G.phase!=='play'||G.turn!==p)return false;
       if(e.k==='pass'){doPlay(p,null);return true}
@@ -1431,6 +1466,7 @@ function showPlace(el,place){
 function render(){
   $('#lv0').textContent=rankName(G.levels[0]);
   $('#lv1').textContent=rankName(G.levels[1]);
+  for(const t of [0,1]){const n=(G.aFails||[0,0])[t];$('#lvx'+t).textContent=G.levels[t]===14&&n?`余${3-n}次`:''}
   for(const t of [0,1]){
     const el=$('#team'+t);
     el.classList.toggle('playing',G.lvlTeam===t);
@@ -2184,22 +2220,32 @@ function showResult(){
   const r=G.result;
   const ours=r.team===0;
   const upText=['','单下，升 1 级','对手二人分列二、三游，升 2 级','双下对手，升 3 级'][r.up];
+  const side=t=>t===0?'我方':'对方',next=rankName(G.levels[G.lvlTeam]);
   let head,body;
-  if(r.win){
+  if(r.draw){
+    head='三次打 A 未过，本场平局';
+    body=`<p>${side(r.aTeam)}打 A 三次都没有打过。</p><p class="muted">共打了 ${G.round} 局。</p>`;
+  }else if(r.win){
     head=ours?'我方打过 A，赢下整场':'对方打过 A，本场告负';
     body=`<p class="muted">共打了 ${G.round} 局。</p>`;
+  }else if(r.reset&&r.aTeam===r.team){
+    head=`${side(r.team)}三次没打过 A`;
+    body=`<p>按规则从 2 重新打。下一局打 <b>${next}</b>，${dblText(r)}</p>`;
   }else{
     head=ours?`我方升级：${rankName(r.before)} → ${rankName(r.after)}`:`对方升级：${rankName(r.before)} → ${rankName(r.after)}`;
-    body=`<p>${upText}。下一局打 <b>${rankName(r.after)}</b>，${dblText(r)}</p>`;
-    if(r.before===14&&r.after===14)body=`<p>${ours?'我方':'对方'}在 A 级，但队友是末游，没能打过 A。下一局继续打 A，${dblText(r)}</p>`;
+    body=`<p>${upText}。下一局打 <b>${next}</b>，${dblText(r)}</p>`;
+    if(r.before===14&&r.after===14)body=`<p>${side(r.team)}在 A 级，但队友是末游，没能打过 A。下一局继续打 A，${dblText(r)}</p>`;
+    if(r.reset)body+=`<p>${side(r.aTeam)}三次没打过 A，从 2 重新打。</p>`;
+    else if(r.aTry)body+=`<p>${side(r.aTeam)}打 A 第 ${r.aTry} 次没过，还剩 ${3-r.aTry} 次机会。</p>`;
   }
   showPanel(`<h2>${head}</h2>${body}
-    <div class="btns">${r.win?'<button class="btn primary" id="againBtn">再来一场</button>':'<button class="btn primary" id="nextBtn">下一局</button>'}</div>`,true);
+    <div class="btns">${G.phase==='over'?'<button class="btn primary" id="againBtn">再来一场</button>':'<button class="btn primary" id="nextBtn">下一局</button>'}</div>`,true);
   const nb=$('#nextBtn');if(nb){nb.onclick=()=>askHost('next');nb.focus()}
   const ab=$('#againBtn');if(ab){ab.onclick=()=>askHost('again');ab.focus()}
 }
 function dblText(r){
   const o=r.order;
+  if(!RULES.trib)return`本场不进贡，由${NAMES[o[0]]}先出。`;
   return o[1]%2===o[0]%2?`${NAMES[o[2]]}和${NAMES[o[3]]}双下，两人都要进贡。`:`末游${NAMES[o[3]]}要向头游进贡。`;
 }
 function showRules(){
@@ -2211,7 +2257,8 @@ function showRules(){
     <li>牌型：单张、对子、三张、三带二、顺子（5 张）、连对（3 对）、钢板（2 个连续三张）。顺子里 A 可作 1，不能带王。</li>
     <li>炸弹从小到大：4 张 &lt; 5 张 &lt; 同花顺 &lt; 6 张 &lt; 7 张 … &lt; 四个王（天王炸）。炸弹可以压任何非炸弹牌型。</li>
     <li>头游一方升级：队友二游升 3 级，三游升 2 级，末游升 1 级。打到 A 并且队友不是末游，赢下整场。</li>
-    <li>从第二局起进贡：末游把最大的牌给头游，头游还一张 10 或以下的牌；双下则两人都进贡。进贡方合计有两张大王可以抗贡。</li>
+    <li>${RULES.trib?'从第二局起进贡：末游把最大的牌给头游，头游还一张 10 或以下的牌；双下则两人都进贡。进贡方合计有两张大王可以抗贡。':'本场不进贡：每局由上一局的头游先出。'}</li>
+    <li>每一方打 A 有三次机会，三次都没打过${RULES.aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。</li>
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
     <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排，按住一张牌拖动可以把它插到别处；先选中几张再拖，可以整组一起挪。平铺模式也一样。轮到你出牌时，按住滑过几张牌是连选这些牌；其他时候按住拖动才是挪牌。“理牌”按大小重新排好。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
@@ -2221,6 +2268,30 @@ function showRules(){
   <div class="btns"><button class="btn primary" id="closeBtn">知道了</button></div>`);
   $('#closeBtn').onclick=()=>{hideOverlay();if(G.phase==='roundEnd'||G.phase==='over')showResult()};
   $('#closeBtn').focus();
+}
+// leaving the table, after a confirmation; the others are told and can carry on with the computer in that seat
+function askQuit(){
+  const why=NET.mode==='host'?'你是房主，退出后其他玩家可以选择和电脑继续打。':NET.mode==='guest'?'你的座位会交给电脑接着打。':'这一场的级数和牌都不会保存。';
+  showPanel(`<h2>退出游戏？</h2><p class="muted">${why}</p>
+  <div class="btns"><button class="btn" id="stayBtn">继续打</button><button class="btn primary" id="quitYes">退出</button></div>`);
+  $('#stayBtn').onclick=()=>{hideOverlay();if(G.phase==='roundEnd'||G.phase==='over')showResult()};
+  $('#quitYes').onclick=quitGame;
+  $('#stayBtn').focus();
+}
+function quitGame(){
+  try{
+    if(NET.mode==='host')broadcast({t:'bye'});
+    if(NET.mode==='guest'&&NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'bye'});
+  }catch(_){}
+  // a moment for the goodbye to go out, then back to the lobby
+  setTimeout(()=>location.reload(),NET.mode==='solo'?0:400);
+}
+// someone else left: the computer has their seat, and everyone still here can play on or leave too
+function playerLeft(name,how){
+  showPanel(`<h2>${name} ${how==='drop'?'掉线了':'退出了游戏'}</h2><p class="muted">${name}的座位由电脑接着打。</p>
+  <div class="btns"><button class="btn primary" id="goOnBtn">继续打</button><button class="btn" id="leaveBtn">退出游戏</button></div>`,true);
+  $('#goOnBtn').onclick=()=>{hideOverlay();if(G.phase==='roundEnd'||G.phase==='over')showResult()};
+  $('#leaveBtn').onclick=askQuit;
 }
 function askNew(){
   showPanel(`<h2>重新开始一场？</h2><p class="muted">当前的级数和这一局的牌都会清空。</p>
@@ -2386,6 +2457,7 @@ syncAudioBtns();
 document.addEventListener('pointerdown',()=>Sound.unlock(),{capture:true});
 document.addEventListener('keydown',()=>Sound.unlock(),{capture:true});
 $('#newBtn').onclick=askNew;
+$('#quitBtn').onclick=askQuit;
 $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();renderHand()}});
 document.addEventListener('keydown',e=>{
   if(!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input'))return;
@@ -2428,7 +2500,8 @@ const DIRS=['S','E','N','W'];
 const absOf=(d,hostDir)=>(DIRS.indexOf(d)-DIRS.indexOf(hostDir)+4)%4;
 const seatBtns=[...document.querySelectorAll('.seat-btn')];
 const lobbyStatus=t=>{$('#lobbyStatus').textContent=t||''};
-const nickNow=()=>$('#nick').value.trim().slice(0,8);
+// names end up in the page's markup, so characters that could form tags are dropped
+const nickNow=()=>$('#nick').value.replace(/[<>&"']/g,'').trim().slice(0,8);
 function showStart(){
   resetGame();render();
   $('#nick').value=myNick;
@@ -2436,8 +2509,31 @@ function showStart(){
   $('#lobby').hidden=false;
   if(!myNick)$('#nick').focus();
 }
+// your own choice of rules (a room you join shows the host's instead)
+function loadRules(){
+  Object.assign(RULES,{trib:true,aFail:'draw'});
+  try{Object.assign(RULES,JSON.parse(localStorage.getItem('guandan-rules')||'{}'))}catch(_){}
+}
+const ruleBtns=[...document.querySelectorAll('.rule-btn')];
+function renderRules(){
+  const mine=lobbyMode!=='join';
+  for(const b of ruleBtns){
+    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):RULES.aFail));
+    b.disabled=!mine;
+  }
+  $('#rulesNote').textContent=mine?'':'规则由房主选定';
+}
+ruleBtns.forEach(b=>b.addEventListener('click',()=>{
+  if(lobbyMode==='join')return;
+  if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else RULES.aFail=b.dataset.val;
+  try{localStorage.setItem('guandan-rules',JSON.stringify(RULES))}catch(_){}
+  Sound.unlock();Sound.play('select');
+  renderRules();
+  if(lobbyMode==='host')broadcastLobby();
+}));
 function setMode(m){
   leaveNet();
+  loadRules();
   lobbyMode=m;myDir='';
   NET.lobby={S:null,E:null,N:null,W:null};
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
@@ -2458,6 +2554,7 @@ function renderLobby(){
     b.disabled=taken||(lobbyMode==='join'&&!(NET.hostConn&&NET.hostConn.open))||(lobbyMode==='host'&&!NET.peerOpen);
     b.querySelector('span').textContent=me?(nick||'你'):taken?who:solo&&myDir?'电脑':'空位';
   }
+  renderRules();
   const go=$('#sitBtn');
   go.hidden=lobbyMode==='join';
   go.textContent=lobbyMode==='host'?'开始':'坐下开始';
@@ -2539,21 +2636,22 @@ function openRoom(){
     conn.on('open',()=>{
       if(NET.started){conn.send({t:'full'});setTimeout(()=>conn.close(),500);return}
       NET.conns.set(conn.peer,{conn,dir:'',name:'',seen:Date.now()});
-      conn.send({t:'lobby',seats:NET.lobby,you:''});
+      conn.send({t:'lobby',seats:NET.lobby,you:'',rules:RULES});
     });
     conn.on('data',d=>hostOnData(conn,d));
     conn.on('close',()=>hostOnClose(conn));
   });
 }
 function broadcast(msg){for(const v of NET.conns.values())if(v.conn.open)v.conn.send(msg)}
-function broadcastLobby(){for(const v of NET.conns.values())if(v.conn.open)v.conn.send({t:'lobby',seats:NET.lobby,you:v.dir})}
+function broadcastLobby(){for(const v of NET.conns.values())if(v.conn.open)v.conn.send({t:'lobby',seats:NET.lobby,you:v.dir,rules:RULES})}
 function hostOnData(conn,d){
   const info=NET.conns.get(conn.peer);if(!info||!d)return;
   info.seen=Date.now();
+  if(d.t==='bye'){hostOnClose(conn,'quit');try{conn.close()}catch(_){}return}
   if(d.t==='sit'&&!NET.started){
     if(!DIRS.includes(d.dir)||(NET.lobby[d.dir]&&info.dir!==d.dir))return;
     if(info.dir)NET.lobby[info.dir]=null;
-    info.dir=d.dir;info.name=String(d.name||'').slice(0,8)||'玩家';
+    info.dir=d.dir;info.name=String(d.name||'').replace(/[<>&"']/g,'').slice(0,8)||'玩家';
     NET.lobby[d.dir]=info.name;
     broadcastLobby();renderLobby();
   }
@@ -2579,7 +2677,7 @@ function hostGuestAct(seat,e){
   }
   act(e);
 }
-function hostOnClose(conn){
+function hostOnClose(conn,how='drop'){
   const info=NET.conns.get(conn.peer);if(!info)return;
   NET.conns.delete(conn.peer);
   if(!NET.started){if(info.dir)NET.lobby[info.dir]=null;broadcastLobby();renderLobby();return}
@@ -2587,7 +2685,7 @@ function hostOnClose(conn){
   // a friend who drops out mid-game: the computer takes over their seat from here on
   const seat=absOf(info.dir,NET.hostDir);
   const list=[...NET.humans].filter(h=>h!==seat);
-  act({k:'humans',list,names:NET.names});
+  act({k:'humans',list,names:NET.names,left:info.name,how});
   const c=G.clock;
   if(c&&(c.who===seat||c.seat===seat)){G.clock=null;timeUp(c)}
   if(G.phase==='prep'&&[...NET.humans].every(h=>G.ready.includes(h)))act({k:'begin'});
@@ -2598,7 +2696,7 @@ function startOnline(){
   const names={};
   for(const d of DIRS)if(NET.lobby[d])names[absOf(d,myDir)]=NET.lobby[d];
   NET.names=names;
-  broadcast({t:'start',hostDir:myDir,names});
+  broadcast({t:'start',hostDir:myDir,names,rules:RULES});
   enterOnline('host',myDir,names);
   newGame();
 }
@@ -2635,8 +2733,10 @@ function guestOnData(d){
   if(!d)return;
   NET.hostSeen=Date.now();
   if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
+  if(d.t==='bye'){hostGone();return}
   if(d.t==='lobby'){
     NET.lobby=d.seats;myDir=d.you||'';
+    if(d.rules)Object.assign(RULES,d.rules);
     lobbyStatus(myDir?'已坐下，等房主开始':'选一个空座位');
     renderLobby();
   }else if(d.t==='full'){
@@ -2645,6 +2745,7 @@ function guestOnData(d){
     if(!myDir)return;
     myNick=nickNow();
     try{localStorage.setItem('guandan-nick',myNick)}catch(_){}
+    if(d.rules)Object.assign(RULES,d.rules);
     enterOnline('guest',d.hostDir,d.names);
     resetGame();render();
   }else if(d.t==='evt'){
@@ -2655,13 +2756,31 @@ function hostGone(){
   if(NET.gone)return;
   if(NET.mode==='guest'){
     NET.gone=true;
-    G.tok++;G.clock=null;
-    showPanel(`<h2>房主已离开</h2><div class="btns"><button class="btn primary" id="backBtn">回到大厅</button></div>`);
+    showPanel(`<h2>房主退出了游戏</h2><p class="muted">可以和电脑继续打完这一场，也可以退出。</p>
+      <div class="btns"><button class="btn primary" id="soloOnBtn">和电脑继续打</button><button class="btn" id="backBtn">退出游戏</button></div>`);
+    $('#soloOnBtn').onclick=goSolo;
     $('#backBtn').onclick=()=>location.reload();
   }else if(lobbyMode==='join'){
     if(NET.refused)return;
     NET.hostConn=null;myDir='';lobbyStatus('和房间断开了，请重新加入');renderLobby();
   }
+}
+// the host left: this table carries on alone from wherever the game stood, the computer taking every other seat
+function goSolo(){
+  try{NET.peer&&NET.peer.destroy()}catch(_){}
+  NET.peer=null;NET.hostConn=null;NET.inbox=[];NET.pending=false;
+  NET.mode='solo';NET.off=0;
+  setHumans([0]);
+  $('#newBtn').hidden=false;
+  hideOverlay();
+  const c=G.clock;G.clock=null;
+  if(G.phase==='shuffle'&&!G.busy)startShuffle();
+  else if(G.phase==='cut'&&!G.busy)startCut();
+  else if(G.phase==='return')processReturns();
+  else if(G.phase==='prep'){if(G.ready.includes(0))beginPlay();else{G.clock=c&&c.who==='prep'?c:{who:'prep',left:PREP_MS,total:PREP_MS};render()}}
+  else if(G.phase==='play'&&G.turn>=0)startTurn();
+  else if(G.phase==='roundEnd'||G.phase==='over')showResult();
+  render();
 }
 // a closed tab or a lost phone signal is not always reported by the connection itself, so both ends say hello
 // every two seconds, and 20 seconds of silence counts as leaving
