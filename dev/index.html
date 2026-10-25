@@ -2027,8 +2027,9 @@ function placeButtons(g){
   b.style.left=el.clientWidth-actionInset(el.clientWidth)-bw/2+'px';
   // a little above the middle of the hand, clear of the hand tools in the corner below
   b.style.top=Math.max(0,(g.height-bh)/2-ACTION_LIFT)+'px';
-  // a short hand (flat, few cards) still leaves room for the whole column
-  if(bh>g.height)el.style.height=bh+'px';
+  // a short hand (flat, few cards, or a tablet held upright) still leaves room for the whole column and,
+  // below it, the hand tools in the corner
+  if(bh+36>g.height)el.style.height=bh+36+'px';
   placeActionBtns();
 }
 // the shuffle / cut and "done sorting" buttons stand where the play buttons' column is, at the same height whether
@@ -3070,7 +3071,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1727';
+const VERSION='1025-1729';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
