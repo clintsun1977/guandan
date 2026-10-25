@@ -213,7 +213,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .prep .btn{padding:9px 24px;font-size:19px}
 #readyBtn{animation:readyFlash 1s ease-in-out infinite}
 /* on a computer or tablet these two stand in the action column (placed by placeActionBtns) */
-#seat0 #deckBtn.atcol,#seat0 #readyBtn.atcol{position:fixed;right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:20;padding:14px 26px;font-size:21px;white-space:nowrap}
+#seat0 #deckBtn.atcol,#seat0 #readyBtn.atcol,#nextBtn.atcol{position:fixed;right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:20;padding:14px 26px;font-size:21px;white-space:nowrap}
 @keyframes readyFlash{50%{filter:brightness(1.3);box-shadow:0 0 0 6px rgba(221,176,80,.35),0 0 26px var(--gold)}}
 @keyframes pulse{50%{opacity:.25}}
 
@@ -320,7 +320,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .panel .muted{color:var(--muted)}
 .panel .wait{font-size:18px;color:var(--gold);line-height:1.6}
 /* bottom-right, clear of the table centre and of your own plate at bottom-left */
-.overlay.dock{background:transparent;align-items:flex-end;justify-content:flex-end;pointer-events:none}
+/* docked panels sit at the bottom centre, over the (empty) hand, leaving the action spot on the right free */
+.overlay.dock{background:transparent;align-items:flex-end;justify-content:center;pointer-events:none}
 .overlay.dock .panel{pointer-events:auto;width:min(440px,calc(50vw - 72px));gap:10px;padding:16px 20px;box-shadow:0 -8px 32px rgba(0,0,0,.5)}
 .overlay.dock .panel h2{font-size:23px}
 .places{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
@@ -1893,7 +1894,9 @@ const BTN_GAP=18;
 // the action column: the play buttons, and in their place the shuffle / cut and "done sorting" buttons, all centred
 // the same distance in from the right edge, where a right thumb on a tablet reaches without stretching
 let colW=90;
-const ACTION_LIFT=18;
+// the action spot sits this far up from the bottom of the hand area: high enough that the play buttons below the
+// hint button still clear the hand tools in the corner
+const SPOT_UP=162;
 const actionInset=w=>Math.min(150,Math.max(colW/2+16,w*.12));
 function handGeo(n,keys){
   const el=$('#hand'),probe=el.firstElementChild;
@@ -2025,26 +2028,24 @@ function placeButtons(g){
   if(!sideBtns()){b.style.left=b.style.top='';return}
   const el=$('#hand'),bw=b.offsetWidth||colW,bh=b.offsetHeight;
   b.style.left=el.clientWidth-actionInset(el.clientWidth)-bw/2+'px';
-  // a short hand (flat, few cards, or a tablet held upright) still leaves room for the whole column and,
-  // below it, the hand tools in the corner
-  if(bh+36>g.height)el.style.height=bh+36+'px';
   placeActionBtns();
 }
-// the shuffle / cut and "done sorting" buttons stand where the play buttons' column is, at the same height whether
-// or not the hand has been dealt yet (measured up from the bottom of the hand area); phones keep their own places
+// one action spot for the buttons pressed again and again: shuffle / cut, "done sorting", tribute / return, the hint
+// button while playing, and next round. It is measured up from the bottom of the hand area, so it stays put whether
+// or not the hand has been dealt; phones keep their own places
 function placeActionBtns(){
   const on=sideBtns(),h=$('#hand').getBoundingClientRect();
-  // the play buttons sit a little above the middle of the hand, clear of the hand tools in the corner below;
-  // when the column holds the tribute / return button, that button stands exactly on the action spot
   if(on){
-    const b=$('#btns'),rb=$('#returnBtn'),H=h.height,spot=H-Math.max(H/2,110)-ACTION_LIFT;
-    b.style.top=(!rb.hidden?spot-rb.offsetHeight/2:Math.max(0,(H-b.offsetHeight)/2-ACTION_LIFT))+'px';
+    // the column is placed so its tribute / return button, or else its hint button, stands on the spot
+    const b=$('#btns'),rb=$('#returnBtn'),anchor=rb.hidden?$('#hintBtn'):rb;
+    b.style.top=h.height-SPOT_UP-anchor.offsetTop-anchor.offsetHeight/2+'px';
   }
-  for(const id of ['#deckBtn','#readyBtn']){
-    const e=$(id);e.classList.toggle('atcol',on);
+  for(const id of ['#deckBtn','#readyBtn','#nextBtn']){
+    const e=$(id);if(!e)continue;
+    e.classList.toggle('atcol',on);
     if(!on){e.style.left=e.style.top='';continue}
     e.style.left=h.right-actionInset(h.width)+'px';
-    e.style.top=h.bottom-Math.max(h.height/2,110)-ACTION_LIFT+'px';
+    e.style.top=h.bottom-SPOT_UP+'px';
   }
 }
 
@@ -2651,7 +2652,7 @@ function showResult(){
     ${waitHtml()}
     <div class="btns">${nextBtnHtml()}</div>`,true);
   $('#panel').dataset.kind='result';
-  const nb=$('#nextBtn');if(nb){nb.onclick=askNext;if(!nb.disabled)nb.focus()}
+  const nb=$('#nextBtn');if(nb){nb.onclick=askNext;placeActionBtns();if(!nb.disabled)nb.focus()}
 }
 // with friends at the table: who has pressed the button and who everyone is waiting for
 const nextDone=p=>(G.nextReady||[]).includes(p);
@@ -3075,7 +3076,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1752';
+const VERSION='1025-1801';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
