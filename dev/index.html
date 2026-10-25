@@ -146,7 +146,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 @keyframes landIn{0%{opacity:0;scale:3;translate:0 -80px}55%{opacity:1;scale:.92;translate:0 0}75%{scale:1.08}100%{scale:1}}
 /* the sorting minute: a big label and countdown in the middle of the table */
 .prepbig{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;display:flex;align-items:center;gap:16px;pointer-events:none;
-  font-family:var(--font-display);font-weight:900;color:var(--gold);padding:8px 30px;border-radius:18px;background:rgba(10,30,22,.78);box-shadow:0 0 0 2px var(--gold),0 8px 30px rgba(0,0,0,.4)}
+  font-family:var(--font-display);font-weight:900;color:var(--gold);padding:8px 30px;border-radius:18px;background:var(--felt-deep);box-shadow:0 0 0 2px var(--gold),0 8px 30px rgba(0,0,0,.4)}
 .prepbig b{font-size:clamp(40px,7vh,64px);letter-spacing:.2em}
 .prepbig span{font-size:clamp(52px,10vh,88px);font-variant-numeric:tabular-nums;min-width:1.3em;text-align:center;line-height:1}
 .prepbig small{font-size:26px}
@@ -847,6 +847,7 @@ function finishDeal(){
   }else doTribute();
 }
 function doTribute(){
+  G.trib=[];
   const o=G.prevOut,L=G.L;
   const dbl=o[1]%2===o[0]%2;
   const givers=dbl?[o[2],o[3]]:[o[3]];
@@ -1017,6 +1018,8 @@ function doPlay(p,play){
         if(el){const r=el.getBoundingClientRect();origins[c.id]={x:r.left+r.width/2,y:r.top+r.height/2}}
       }
     }
+    const goesOut=G.hands[p].every(c=>play.cards.includes(c));
+    if(goesOut){G.out.push(p);G.reveal=G.out.length;showPlace(p===0?$('#myPlace'):$('#seat'+p+' .place'),G.out.length-1)}
     pileThrow(p,play,origins,true);
     G.trickPlays.push({p,play:{type:play.type,value:play.value,n:play.n,cards:play.cards}});
     const ids=new Set(play.cards.map(c=>c.id));
@@ -1025,8 +1028,7 @@ function doPlay(p,play){
     G.passes=0;
     G.last[p]={play};
     if(p===0){sel=new Set();G.fresh=[]}
-    if(!G.hands[p].length){
-      G.out.push(p);G.reveal=G.out.length;
+    if(goesOut){
       celebrate(p,G.out.length-1);
       if(roundOver()){finishRound();return}
     }
@@ -1268,10 +1270,19 @@ const GAP=10;   // space between two plays of the same player
 // players at the sides. A line that runs out of room wraps into a second line closer to the middle.
 function zoneFor(p,g){
   const side=(g.right-g.left)*.27,mx0=g.left+side,mx1=g.right-side;
-  if(p===3)return{x0:g.left+PASS_X,x1:mx0,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y};
-  if(p===1)return{x0:mx1,x1:g.right-PASS_X,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y};
-  if(p===2)return{x0:mx0,x1:mx1,y0:g.top+PASS_Y,y1:g.cy};
-  return{x0:mx0,x1:mx1,y0:g.cy,y1:g.bottom-PASS_Y};
+  const z=p===3?{x0:g.left+PASS_X,x1:mx0,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y}
+    :p===1?{x0:mx1,x1:g.right-PASS_X,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y}
+    :p===2?{x0:mx0,x1:mx1,y0:g.top+PASS_Y,y1:g.cy}
+    :{x0:mx0,x1:mx1,y0:g.cy,y1:g.bottom-PASS_Y};
+  // a place label already on the plate (someone just went out) keeps its own room, clear of their last cards
+  const lab=p!==0&&G.out.includes(p)?$('#seat'+p+' .place'):null;
+  if(lab&&lab.offsetWidth){
+    const w=$('#seat'+p+' .who').getBoundingClientRect();
+    if(p===2)z.y0=Math.max(z.y0,w.bottom-g.L.top+10+lab.offsetHeight+PASS_Y);
+    if(p===3)z.x0=Math.max(z.x0,w.right-g.L.left+12+lab.offsetWidth+PASS_X);
+    if(p===1)z.x1=Math.min(z.x1,w.left-g.L.left-12-lab.offsetWidth-PASS_X);
+  }
+  return z;
 }
 const pileT=(x,y,rot,flip,sc=1)=>`perspective(800px) translate(${x}px,${y}px) rotate(${rot}deg) rotateY(${flip}deg) scale(${sc})`;
 function relPoint(pt,g){return{x:pt.x-g.L.left,y:pt.y-g.L.top}}
@@ -1486,7 +1497,7 @@ function renderMsg(){
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
 function tribHtml(){
-  return(G.trib||[]).map(t=>`<div class="trib">${NAMES[t.g]} 进贡 ${cardTag(t.tc)} 给${NAMES[t.r]}${t.rc?`，${NAMES[t.r]} 还 ${cardTag(t.rc)}`:''}</div>`).join('');
+  return(G.trib||[]).map(t=>`<div class="trib">${NAMES[t.g]}进贡 ${cardTag(t.tc)} 给${NAMES[t.r]}${t.rc?`，${NAMES[t.r]}还 ${cardTag(t.rc)}`:''}</div>`).join('');
 }
 function setMsg(t,err){
   const m=$('#msg');
