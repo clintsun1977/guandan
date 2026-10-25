@@ -54,7 +54,10 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .score .ours b{color:var(--gold)}
 /* the side whose level this round is played at gets a frame */
 .score>span{padding:3px 10px;border:1.5px solid transparent;border-radius:8px}
-.score>span.playing{border-color:var(--gold);color:var(--ink);background:var(--shade)}
+/* the side being played reads "对方打7" on a lit gold chip, so the level in play can be checked at any moment */
+.score>span.playing{border-color:#f3d27a;color:var(--on-gold);background:var(--gold);font-size:19px;font-weight:700;box-shadow:0 0 14px rgba(221,176,80,.6)}
+.score>span.playing b{color:var(--on-gold);font-size:25px;margin-left:2px}
+.score>span.playing .lvx{color:#8a1c1c}
 .bar .acts{display:flex;gap:6px}
 /* who paid whom and what came back, kept in the corner while the round is played */
 .tribinfo{display:flex;flex-direction:column;gap:3px;font-size:16px;color:var(--ink);line-height:1.5}
@@ -392,7 +395,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 <div id="app">
   <header class="bar">
     <span class="brand">掼蛋</span>
-    <span class="score"><span class="ours" id="team0" title="">我方<b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title="">对方<b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
+    <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
     <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="rulesBtn">规则</button><button class="link" id="newBtn">新局</button><button class="link" id="quitBtn">退出</button></span>
   </header>
@@ -1593,6 +1596,7 @@ function render(){
     const el=$('#team'+t);
     el.classList.toggle('playing',G.lvlTeam===t);
     el.title=G.lvlTeam===t?'本局打这一方的级':'';
+    $('#tn'+t).textContent=(t===0?'我方':'对方')+(G.lvlTeam===t?'打':'');
   }
   $('#curLv').textContent=rankName(G.L);
   for(let p=0;p<4;p++){
@@ -2796,7 +2800,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1009';
+const VERSION='1025-1016';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
