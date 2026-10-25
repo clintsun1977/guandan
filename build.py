@@ -6,10 +6,16 @@ adds that skeleton and reset around the same content.
 
 Run:  python build.py
 """
+from datetime import datetime
 from pathlib import Path
 
 here = Path(__file__).parent
 src = (here / "guandan.html").read_text(encoding="utf-8")
+
+# stamp the build time as the page version, shown in the lobby and compared between players in a room
+version = datetime.now().strftime("%m%d-%H%M")
+assert "const VERSION='dev';" in src
+src = src.replace("const VERSION='dev';", f"const VERSION='{version}';")
 
 split = src.index('<div id="app">')
 head, body = src[:split].rstrip(), src[split:].strip()
@@ -26,4 +32,4 @@ page = f"""<!doctype html>
 </html>
 """
 (here / "index.html").write_text(page, encoding="utf-8")
-print("wrote index.html", len(page), "chars")
+print("wrote index.html", len(page), "chars, version", version)

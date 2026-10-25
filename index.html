@@ -313,6 +313,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .seat-btn.mine b,.seat-btn.mine span{color:var(--on-gold)}
 .seat-btn.bot{border-style:solid;border-color:var(--line)}
 .seat-btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.lobby-ver{font-size:13px;color:var(--muted);opacity:.7}
 .lobby-go{font-size:23px;padding:10px 20px;border-radius:14px}
 /* the table rules: chosen by whoever plays alone or opens the room, shown greyed to friends who join */
 .lobby-rules{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--shade)}
@@ -462,6 +463,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
       <button class="seat-btn" data-seat="S" style="grid-area:s"><b>南</b><span>空位</span></button>
     </div>
     <button class="btn primary lobby-go" id="sitBtn" disabled>坐下开始</button>
+    <div class="lobby-ver" id="verTag"></div>
   </div>
 </div>
 
@@ -2768,6 +2770,11 @@ if(myNick)$('#myName').textContent=myNick;
 
 /* ---------- connections (PeerJS: browsers talk to each other directly, matched by the room number) ---------- */
 const ROOM_PREFIX='guandan-room-';
+// the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
+// the page for a while, and players on different versions can fall out of step, so a room compares them.
+const VERSION='1024-2309';
+$('#verTag').textContent='版本 '+VERSION;
+const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
 const peerReady=()=>{if(window.Peer&&!window.claude)return true;lobbyStatus('联机需要在 clintsun1977.github.io/guandan 打开');return false};
 function leaveNet(){
@@ -2797,14 +2804,14 @@ function openRoom(){
     conn.on('open',()=>{
       if(NET.started){conn.send({t:'full'});setTimeout(()=>conn.close(),500);return}
       NET.conns.set(conn.peer,{conn,dir:'',name:'',seen:Date.now()});
-      conn.send({t:'lobby',seats:NET.lobby,you:'',rules:RULES});
+      conn.send({t:'lobby',seats:NET.lobby,you:'',rules:RULES,ver:VERSION});
     });
     conn.on('data',d=>hostOnData(conn,d));
     conn.on('close',()=>hostOnClose(conn));
   });
 }
 function broadcast(msg){for(const v of NET.conns.values())if(v.conn.open)v.conn.send(msg)}
-function broadcastLobby(){for(const v of NET.conns.values())if(v.conn.open)v.conn.send({t:'lobby',seats:NET.lobby,you:v.dir,rules:RULES})}
+function broadcastLobby(){for(const v of NET.conns.values())if(v.conn.open)v.conn.send({t:'lobby',seats:NET.lobby,you:v.dir,rules:RULES,ver:VERSION})}
 function hostOnData(conn,d){
   const info=NET.conns.get(conn.peer);if(!info||!d)return;
   info.seen=Date.now();
@@ -2815,6 +2822,7 @@ function hostOnData(conn,d){
     info.dir=d.dir;info.name=String(d.name||'').replace(/[<>&"']/g,'').slice(0,8)||'玩家';
     NET.lobby[d.dir]=info.name;
     broadcastLobby();renderLobby();
+    if(d.ver&&d.ver!==VERSION)lobbyStatus(`${info.name}的页面版本不同（${d.ver}），请他刷新页面`);
   }
   if(d.t==='act'&&NET.started&&info.dir)hostGuestAct(absOf(info.dir,NET.hostDir),d.e||{});
 }
@@ -2892,7 +2900,7 @@ function joinRoom(code){
     lobbyStatus(err.type==='peer-unavailable'?'没有这个房间，请核对房间号':'连接失败，请检查网络后重试');
   });
 }
-function sendSit(d){if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'sit',dir:d,name:nickNow()})}
+function sendSit(d){if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'sit',dir:d,name:nickNow(),ver:VERSION})}
 function guestOnData(d){
   if(!d)return;
   NET.hostSeen=Date.now();
@@ -2901,7 +2909,7 @@ function guestOnData(d){
   if(d.t==='lobby'){
     NET.lobby=d.seats;myDir=d.you||'';
     if(d.rules)Object.assign(RULES,d.rules);
-    lobbyStatus(myDir?'已坐下，等房主开始':'选一个空座位');
+    lobbyStatus(d.ver&&d.ver!==VERSION?OLD_PAGE:myDir?'已坐下，等房主开始':'选一个空座位');
     renderLobby();
   }else if(d.t==='full'){
     NET.refused=true;lobbyStatus('这个房间已经开始打了');
