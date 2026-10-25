@@ -734,27 +734,21 @@ function handCost(hand,L){
 }
 
 /* ---------- AI ---------- */
-function scorePlays(p,plays){
-  const hand=G.hands[p],L=G.L;
-  return plays.map(pl=>{
-    const rest=hand.filter(c=>!pl.cards.includes(c));
-    return {pl,rc:handCost(rest,L),bomb:isBomb(pl)};
-  });
-}
-function rankLeads(p,plays){
-  const mate=(p+2)%4;
+// the computer picks its cards in the same order as the hints (see hintOrder); it only decides whether to play
+const restCost=(hand,pl,L)=>handCost(hand.filter(c=>!pl.cards.includes(c)),L);
+// leading: the first hint, except when someone is about to go out
+function aiLead(p,order){
+  const mateLeft=G.hands[(p+2)%4].length;
   const oppMin=Math.min(...[(p+1)%4,(p+3)%4].map(i=>G.hands[i].length||99));
-  const mateLeft=G.hands[mate].length;
-  const s=scorePlays(p,plays);
-  for(const x of s){
-    const pl=x.pl;
-    x.score=x.rc+(x.bomb?2.2:0)+pl.wu*.3+pl.value*.01-pl.n*.02;
-    if(oppMin===1&&pl.type==='single')x.score+=3-pl.value*.12;
-    if(oppMin===2&&pl.type==='pair')x.score+=2-pl.value*.08;
-    if(mateLeft===1&&pl.type==='single'&&!x.bomb)x.score-=4-pl.value*.2;
-    if(mateLeft===2&&pl.type==='pair'&&!x.bomb)x.score-=2.5-pl.value*.1;
+  const of=t=>order.filter(pl=>pl.type===t);
+  // partner down to one or two cards: hand them the smallest single or pair
+  for(const [n,t] of [[1,'single'],[2,'pair']])if(mateLeft===n&&of(t).length)return of(t).reduce((m,pl)=>pl.value<m.value?pl:m);
+  // an opponent down to one or two cards: lead something else, or else the largest of that kind
+  for(const [n,t] of [[1,'single'],[2,'pair']])if(oppMin===n){
+    const other=order.find(pl=>pl.type!==t);
+    return other||of(t).reduce((m,pl)=>pl.value>m.value?pl:m);
   }
-  return s.sort((a,b)=>a.score-b.score);
+  return order[0];
 }
 function aiDecide(p){
   const hand=G.hands[p],L=G.L,cur=G.trick?G.trick.play:null;
@@ -762,7 +756,8 @@ function aiDecide(p){
   if(!plays.length)return null;
   const fin=plays.find(pl=>pl.cards.length===hand.length);
   if(fin)return fin;
-  if(!cur)return rankLeads(p,plays)[0].pl;
+  const order=hintOrder(hand,L,cur,plays);
+  if(!cur)return aiLead(p,order);
 
   const winner=G.trick.player;
   if(winner%2===p%2)return null; // let partner's cards ride
@@ -770,17 +765,16 @@ function aiDecide(p){
   const winLeft=G.hands[winner].length;
   const oppMin=Math.min(...[(p+1)%4,(p+3)%4].map(i=>G.hands[i].length||99));
   const urgent=winLeft<=6||oppMin<=4;
-  const s=scorePlays(p,plays);
-  const normal=s.filter(x=>!x.bomb).map(x=>({...x,score:(x.rc-base)+x.pl.wu*.6+x.pl.value*.02})).sort((a,b)=>a.score-b.score);
+  const normal=order.filter(pl=>!isBomb(pl));
   if(normal.length){
-    const b=normal[0],delta=b.rc-base;
+    const b={pl:normal[0]},delta=restCost(hand,b.pl,L)-base;
     let ok=delta<=.35||urgent||(delta<=1.2&&Math.random()<.3);
     if(ok&&b.pl.value>=16&&cur.value<13&&!urgent&&hand.length>8&&Math.random()<.6)ok=false;
     if(ok)return b.pl;
   }
-  const bombs=s.filter(x=>x.bomb).sort((a,b)=>power(a.pl)-power(b.pl)||a.rc-b.rc);
+  const bombs=order.filter(isBomb);
   if(bombs.length){
-    const b=bombs[0];
+    const b={pl:bombs[0],rc:restCost(hand,bombs[0],L)};
     const want=winLeft<=7||b.rc<=2||(isBomb(cur)&&winLeft<=12)||(cur.value>=14&&Math.random()<.25);
     if(want)return b.pl;
   }
@@ -1806,14 +1800,11 @@ function renderMsg(){
 }
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
-// 抗贡 spelled out: who holds the two big jokers, and that there is then no tribute and no return, the first-out leading
-// (short: the one-line version kept in the corner while the round is played)
+// 抗贡: just whose big jokers they are (short: the line kept in the corner while the round is played)
 function kangHtml(short){
   const k=G.kang;if(!k)return'';
-  const who=k.has.length===1?`${NAMES[k.has[0].g]}手里有两张大王`:`${k.has.map(x=>NAMES[x.g]).join('和')}各有一张大王，合起来两张`;
-  if(short)return`<div class="tl">抗贡：${who}，本局不进贡</div>`;
-  const lead=k.leader===0?'由你（头游）先出':`由头游${NAMES[k.leader]}先出`;
-  return`<div class="trib">抗贡！${who}。</div><div class="trib">按规则，要进贡的一方合起来有两张大王就可以抗贡：本局不进贡、不还贡，${lead}。</div>`;
+  const who=k.has.length===1?`${NAMES[k.has[0].g]}两张大王`:`${k.has.map(x=>NAMES[x.g]).join('、')}各一张大王`;
+  return`<div class="${short?'tl':'trib'}">抗贡：${who}</div>`;
 }
 function tribHtml(cls='trib'){
   const tr=G.trib||[],back=tr.length&&tr.every(t=>t.rc);
@@ -2519,11 +2510,13 @@ function rain(x,y){
   },3400);
 }
 // 接风: a gold gust flies from the seat that went out to the partner taking the lead, then "接风" pops up there
+// (above a side seat's plate, so it stays clear of the cards that seat is about to play)
 function jieFeng(from,to){
   Sound.play('whoosh');
   const a=seatPoint(from),b=seatPoint(to),plate=to===0?$('.meinfo'):$('#seat'+to+' .who');
   const land=()=>{
-    const q=actPoint(to);
+    const r=plate&&plate.getBoundingClientRect();
+    const q=(to===1||to===3)&&r?{x:r.left+r.width/2,y:r.top-28}:actPoint(to);
     fxEl('fx-tag first','接风',q.x,q.y);
     Sound.play('ding');
     if(plate){plate.classList.add('acting');setTimeout(()=>plate.classList.remove('acting'),2400)}
@@ -3028,7 +3021,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1412';
+const VERSION='1025-1432';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
