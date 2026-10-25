@@ -212,6 +212,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* the "done sorting" button calls for attention: gold, larger, pulsing */
 .prep .btn{padding:9px 24px;font-size:19px}
 #readyBtn{animation:readyFlash 1s ease-in-out infinite}
+/* on a computer or tablet these two stand in the action column (placed by placeActionBtns) */
+#seat0 #deckBtn.atcol,#seat0 #readyBtn.atcol{position:fixed;right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:20;padding:14px 26px;font-size:21px;white-space:nowrap}
 @keyframes readyFlash{50%{filter:brightness(1.3);box-shadow:0 0 0 6px rgba(221,176,80,.35),0 0 26px var(--gold)}}
 @keyframes pulse{50%{opacity:.25}}
 
@@ -1785,7 +1787,8 @@ function renderControls(){
   $('#returnBtn').hidden=!ret;
   $('#returnBtn').textContent=pay?'进贡':'还贡';
   // once your hand is empty (out, or the round is over) the play buttons have nothing left to do
-  $('#btns').hidden=!ret&&G.phase!=='deal'&&!G.hands[0].length;
+  // while you are sorting, the "done sorting" button takes the play buttons' place
+  $('#btns').hidden=(!ret&&G.phase!=='deal'&&!G.hands[0].length)||(sideBtns()&&G.phase==='prep'&&!ret&&!(G.ready||[]).includes(0));
   $('#playBtn').disabled=!my;
   $('#hintBtn').disabled=!my;
   $('#passBtn').disabled=!my||!G.trick;
@@ -1794,6 +1797,7 @@ function renderControls(){
   const deckTurn=(G.phase==='shuffle'&&G.shuffler===0)||(G.phase==='cut'&&G.cutter===0);
   $('#deckBtn').hidden=!deckTurn||!!G.busy;
   $('#deckBtn').textContent=G.phase==='cut'?'切牌':'洗牌';
+  placeActionBtns();
   const passDefault=passIsDefault();
   $('#playBtn').classList.toggle('primary',!passDefault);
   $('#passBtn').classList.toggle('primary',passDefault);
@@ -1886,10 +1890,16 @@ function renderHand(){
 // keys: each position's card value, so the fanned rows never split cards of the same rank
 const sideBtns=()=>matchMedia('(min-width:561px)').matches;
 const BTN_GAP=18;
+// the action column: the play buttons, and in their place the shuffle / cut and "done sorting" buttons, all centred
+// the same distance in from the right edge, where a right thumb on a tablet reaches without stretching
+let colW=90;
+const ACTION_LIFT=18;
+const actionInset=w=>Math.min(150,Math.max(colW/2+16,w*.12));
 function handGeo(n,keys){
   const el=$('#hand'),probe=el.firstElementChild;
-  // the cards stay centred under your name: the button column's width is kept free on both sides
-  const side=sideBtns()?$('#btns').offsetWidth+BTN_GAP:0,W=el.clientWidth-2*side;
+  // the cards stay centred under your name, with the action column's room kept free on both sides
+  if(sideBtns()&&$('#btns').offsetWidth)colW=$('#btns').offsetWidth;
+  const side=sideBtns()?actionInset(el.clientWidth)+colW/2+BTN_GAP:0,W=el.clientWidth-2*side;
   const cw=probe.offsetWidth,ch=probe.offsetHeight;
   const g=fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
   if(side)g.slots=g.slots.map(sl=>({...sl,x:sl.x+side}));
@@ -2013,12 +2023,25 @@ function layoutHand(){
 function placeButtons(g){
   const b=$('#btns');
   if(!sideBtns()){b.style.left=b.style.top='';return}
-  const el=$('#hand'),bw=b.offsetWidth,bh=b.offsetHeight;
-  const right=g.slots.length?Math.max(...g.slots.map(s=>s.x))+g.cw*(fanMode()?1.25:1):el.clientWidth/2;
-  b.style.left=Math.min(right+BTN_GAP,el.clientWidth-bw)+'px';
-  b.style.top=Math.max(0,(g.height-bh)/2)+'px';
-  // a short hand (flat, few cards) still leaves room for the whole column
-  if(bh>g.height)el.style.height=bh+'px';
+  const el=$('#hand'),bw=b.offsetWidth||colW,bh=b.offsetHeight;
+  b.style.left=el.clientWidth-actionInset(el.clientWidth)-bw/2+'px';
+  // a little above the middle of the hand, clear of the hand tools in the corner below
+  b.style.top=Math.max(0,(g.height-bh)/2-ACTION_LIFT)+'px';
+  // a short hand (flat, few cards, or a tablet held upright) still leaves room for the whole column and,
+  // below it, the hand tools in the corner
+  if(bh+36>g.height)el.style.height=bh+36+'px';
+  placeActionBtns();
+}
+// the shuffle / cut and "done sorting" buttons stand where the play buttons' column is, at the same height whether
+// or not the hand has been dealt yet (measured up from the bottom of the hand area); phones keep their own places
+function placeActionBtns(){
+  const on=sideBtns(),h=$('#hand').getBoundingClientRect();
+  for(const id of ['#deckBtn','#readyBtn']){
+    const e=$(id);e.classList.toggle('atcol',on);
+    if(!on){e.style.left=e.style.top='';continue}
+    e.style.left=h.right-actionInset(h.width)+'px';
+    e.style.top=h.bottom-Math.max(h.height/2,110)-ACTION_LIFT+'px';
+  }
 }
 
 /* ---------- shuffling and cutting ---------- */
@@ -3048,7 +3071,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1712';
+const VERSION='1025-1730';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
