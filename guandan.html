@@ -1806,16 +1806,16 @@ function renderControls(){
   $('#hintBtn').disabled=!my;
   $('#passBtn').disabled=!my||!G.trick;
   $('#clearBtn').disabled=!sel.size;
-  // the default (highlighted, Enter) button: play once cards are picked, otherwise pass
   const deckTurn=(G.phase==='shuffle'&&G.shuffler===0)||(G.phase==='cut'&&G.cutter===0);
   $('#deckBtn').hidden=!deckTurn||!!G.busy;
   $('#deckBtn').textContent=G.phase==='cut'?'切牌':'洗牌';
   placeActionBtns();
-  const passDefault=passIsDefault();
-  $('#playBtn').classList.toggle('primary',!passDefault);
-  $('#passBtn').classList.toggle('primary',passDefault);
+  // the lit (default, Enter) button: 提示 while nothing is picked, 出牌 once some cards are
+  const picked=sel.size>0;
+  $('#playBtn').classList.toggle('primary',(my||soon)&&picked);
+  $('#hintBtn').classList.toggle('primary',my&&!picked);
+  $('#passBtn').classList.remove('primary');
 }
-const passIsDefault=()=>G.phase==='play'&&G.turn===0&&!!G.trick&&!sel.size;
 // the table speaks for itself: only things you could not otherwise see get a line here
 // (what changed hands in the tribute, a lead passing to a partner, which card you still owe)
 function renderMsg(){
@@ -2948,7 +2948,7 @@ $('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start')act({k:'pause',on:!G.paused,
 $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();renderHand()}});
 document.addEventListener('keydown',e=>{
   if(!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input'))return;
-  if(e.key==='Enter'){e.preventDefault();G.phase==='return'||G.phase==='tribPick'||owesReturn(0)?onReturn():passIsDefault()?onPass():onPlay()}
+  if(e.key==='Enter'){e.preventDefault();G.phase==='return'||G.phase==='tribPick'||owesReturn(0)?onReturn():sel.size?onPlay():onHint()}
   else if(e.key===' '){e.preventDefault();onPass()}
   else if(e.key==='h'||e.key==='H')onHint();
 });
