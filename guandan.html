@@ -258,6 +258,10 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .handtools{display:flex;gap:6px;justify-content:flex-end;margin-top:2px}
 @media (min-width:561px){.handwrap .handtools{position:absolute;right:0;bottom:2px;margin:0;z-index:1}}
 #hand .card.fresh{box-shadow:0 0 0 2px var(--gold),0 2px 4px rgba(0,0,0,.4)}
+/* a card just handed to you (tribute or return) bobs and flashes for about four seconds, so you can see which it is */
+#hand .card.arrive{animation:arrive .5s ease-in-out 8 alternate}
+@keyframes arrive{from{translate:0 0;box-shadow:0 0 0 3px var(--gold),0 0 8px var(--gold)}
+  to{translate:0 -16%;box-shadow:0 0 0 4px #fff,0 0 26px var(--latest);filter:brightness(1.12)}}
 
 /* card face */
 .card{width:var(--cw);height:calc(var(--cw)*1.4);background:var(--card);border:1px solid var(--card-edge);border-radius:calc(var(--cw)*.1);
@@ -376,6 +380,10 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .who.acting,.meinfo.acting{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 0 20px var(--gold);animation:actGlow 1.1s ease-in-out infinite}
 @keyframes actGlow{50%{box-shadow:0 0 0 2px var(--gold),0 0 6px var(--gold)}}
 @keyframes fadeIn{from{opacity:0}}
+/* the 接风 gust: a gold streak with a bright head, flying head first */
+.gust{position:fixed;left:0;top:0;width:120px;height:16px;margin:-8px 0 0 -112px;border-radius:8px;z-index:91;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,226,140,.35) 45%,#fff3c4);box-shadow:0 0 22px rgba(255,214,110,.85);
+  transition:transform .85s cubic-bezier(.45,0,.2,1),opacity .3s}
 .fx-canvas{position:fixed;inset:0;z-index:89;pointer-events:none}
 .shake{animation:shake .5s ease-in-out .3s}
 .fx-stamp.kang{font-size:46px;color:var(--gold);border-color:var(--gold);animation-duration:3.2s}
@@ -978,7 +986,7 @@ async function runGives(){
       await giveAnim(x.from,x.to,card,x.label,start);
       if(G.tok!==tok)return;
       G.hands[x.to].push(card);sortHand(G.hands[x.to],G.L);
-      if(x.to===0)G.fresh.push(card.id);
+      if(x.to===0){G.fresh.push(card.id);arrivals.set(card.id,performance.now())}
       if(x.label==='进贡')G.trib.push({g:x.from,r:x.to,tc:card});
       else{const t=G.trib.find(t=>t.r===x.from&&t.g===x.to);if(t)t.rc=card}
     }
@@ -1185,11 +1193,12 @@ function advance(){
   const winner=G.trick.player;
   const others=[0,1,2,3].filter(i=>i!==winner&&active(i)).length;
   if(G.passes>=others){
-    let leader=winner;
+    let leader=winner,jf=null;
     if(!active(winner)){
       const mate=(winner+2)%4;
       leader=active(mate)?mate:nextActive(winner);
       G.notice=`${NAMES[leader]}接风，获得出牌权。`;
+      jf={from:winner,to:leader};
     }
     G.turn=-1;G.nextLeader=leader;
     render();
@@ -1197,6 +1206,7 @@ function advance(){
       pileSweep();
       G.heapN+=G.trickPlays.reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];
       G.trick=null;G.passes=0;G.last=[null,null,null,null];G.turn=leader;startTurn();
+      if(jf)jieFeng(jf.from,jf.to);
     },trickHold());
     return;
   }
@@ -1237,7 +1247,8 @@ function finishRound(){
     G.heapN+=G.trickPlays.reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];G.last=[null,null,null,null];
   },END_SHOW_MS);
   // places already earned during play are on the plates; the rest (always including last place) are called out now
-  for(let k=k0;k<4;k++)later(()=>{G.reveal=k+1;render();celebrate(G.out[k],k)},END_SHOW_MS+700+(k-k0)*500);
+  const dbl=G.out[0]%2===G.out[1]%2;
+  for(let k=k0;k<4;k++)later(()=>{G.reveal=k+1;render();celebrate(G.out[k],k,dbl)},END_SHOW_MS+700+(k-k0)*500);
   later(()=>{
     if(win){victory(team);later(showResult,4000)}
     else if(draw){Sound.play('ding');showResult()}
@@ -1733,11 +1744,16 @@ try{
   flatRows=+localStorage.getItem('guandan-flatrows')||1;
 }catch(_){}
 const fanMode=()=>handView==='fan';
+// cards that just arrived in your hand, with when they came: they flash until ARRIVE_MS has passed
+const arrivals=new Map(),ARRIVE_MS=4000;
 function renderHand(){
   if(mv&&mv.active){mv.dirty=true;return} // never rebuild the hand under a card being dragged
-  const el=$('#hand');
+  const el=$('#hand'),now=performance.now();
   const fresh=new Set(G.fresh);
-  el.innerHTML=orderedHand().map(c=>cardHTML(c,G.L,(sel.has(c.id)?'sel ':'')+(fresh.has(c.id)?'fresh':''))).join('');
+  for(const [id,t] of arrivals)if(now-t>ARRIVE_MS)arrivals.delete(id);
+  el.innerHTML=orderedHand().map(c=>cardHTML(c,G.L,(sel.has(c.id)?'sel ':'')+(fresh.has(c.id)?'fresh ':'')+(arrivals.has(c.id)?'arrive':''))).join('');
+  // a rebuilt hand picks the flashing up where it had got to, rather than starting it again
+  for(const [id,t] of arrivals){const c=el.querySelector(`.card[data-id="${id}"]`);if(c)c.style.animationDelay=-(now-t)+'ms'}
   layoutHand();
   renderControls();
 }
@@ -2182,6 +2198,8 @@ const Sound=(()=>{
     // a fast riffle: a run of crisp little card snaps
     riffle(){for(let i=0;i<14;i++)burst(now+i*.028+Math.random()*.008,.022,{freq:3800+Math.random()*1500,type:'highpass',gain:.09})},
     // air moving as the cards sweep: band-passed noise gliding up
+    // far-off thunder: a long low rumble with a sharper crack at the start
+    thunder(){burst(now,1.8,{freq:160,q:.4,type:'lowpass',gain:.55});burst(now+.02,.3,{freq:900,type:'lowpass',gain:.22})},
     whoosh(){const f=burst(now,.42,{freq:500,q:1.2,type:'bandpass',gain:.22});f.frequency.exponentialRampToValueAtTime(2600,now+.35)},
     error(){tone(150,now,.16,{type:'square',gain:.035})},
     win(){[587,659,740,880,988,1175].forEach((f,i)=>pluck(f,now+i*.09,1.1,.12,sfxBus))},
@@ -2357,16 +2375,64 @@ function victory(team){
   fireworks([team,team+2].map(seatPoint));
 }
 // a small grey cloud's worth of rain over the last-place seat
+// a dark cloud gathers over the seat, flickers once with a rumble of thunder and rains on it; drops splash where they land
 function rain(x,y){
+  if(reduceMotion())return;
+  const cy=Math.max(40,y-100),ground=y+34,W=150;
+  let all=null,started=false;
+  setTimeout(()=>Sound.play('thunder'),650);
   particles((ps,age)=>{
-    if(age>1800)return;
-    for(let i=0;i<3;i++)ps.push({x:x+(Math.random()-.5)*150,y:y-90+Math.random()*20,vy:5+Math.random()*3,len:8+Math.random()*8});
-  },(cx,p)=>{
-    p.y+=p.vy;
-    cx.strokeStyle='rgba(176,196,206,.7)';cx.lineWidth=1.5;
-    cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-1.5,p.y+p.len);cx.stroke();
-    return p.y<y+40;
-  },1800);
+    all=ps;
+    if(!started){started=true;ps.push({k:'cloud'})}
+    if(age>350&&age<2700)for(let i=0;i<3;i++)ps.push({k:'drop',x:x+(Math.random()-.5)*W*.85,y:cy+16,vy:7+Math.random()*3,len:12+Math.random()*8});
+  },(cx,p,age)=>{
+    if(p.k==='cloud'){
+      if(age>3400)return false;
+      const a=Math.min(1,age/350)*Math.min(1,Math.max(0,(3400-age)/500));
+      const flash=age>650&&age<760;
+      cx.save();cx.globalAlpha=a*.95;
+      for(const [dx,dy,r] of [[-70,14,18],[-52,8,26],[-24,-8,34],[10,-14,38],[44,-2,30],[66,10,22],[0,10,34]]){
+        const g=cx.createRadialGradient(x+dx,cy+dy-r*.4,r*.2,x+dx,cy+dy,r);
+        g.addColorStop(0,flash?'#eef3f8':'#8d98a3');g.addColorStop(1,flash?'#a3b0bd':'#46505a');
+        cx.fillStyle=g;cx.beginPath();cx.arc(x+dx,cy+dy,r,0,Math.PI*2);cx.fill();
+      }
+      cx.restore();
+      return true;
+    }
+    if(p.k==='drop'){
+      p.y+=p.vy;p.x-=.8;
+      cx.strokeStyle='rgba(180,210,240,.85)';cx.lineWidth=2;cx.lineCap='round';
+      cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x+1.2,p.y-p.len);cx.stroke();
+      if(p.y<ground)return true;
+      all.push({k:'splash',x:p.x,y:ground,r:2,life:1});
+      return false;
+    }
+    p.r+=1.1;p.life-=.07;
+    cx.strokeStyle=`rgba(180,210,240,${Math.max(0,p.life)*.8})`;cx.lineWidth=1.5;
+    cx.beginPath();cx.ellipse(p.x,p.y,p.r,p.r*.35,0,0,Math.PI*2);cx.stroke();
+    return p.life>0;
+  },3400);
+}
+// 接风: a gold gust flies from the seat that went out to the partner taking the lead, then "接风" pops up there
+function jieFeng(from,to){
+  Sound.play('whoosh');
+  const a=seatPoint(from),b=seatPoint(to),plate=to===0?$('.meinfo'):$('#seat'+to+' .who');
+  const land=()=>{
+    const q=actPoint(to);
+    fxEl('fx-tag first','接风',q.x,q.y);
+    Sound.play('ding');
+    if(plate){plate.classList.add('acting');setTimeout(()=>plate.classList.remove('acting'),2400)}
+  };
+  if(reduceMotion()){land();return}
+  const ang=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+  const g=document.createElement('div');
+  g.className='gust';
+  g.style.transform=`translate(${a.x}px,${a.y}px) rotate(${ang}deg)`;
+  document.body.appendChild(g);
+  g.getBoundingClientRect();
+  g.style.transform=`translate(${b.x}px,${b.y}px) rotate(${ang}deg)`;
+  setTimeout(()=>{g.style.opacity='0';land()},850);
+  setTimeout(()=>g.remove(),1200);
 }
 // the shuffling / cutting label stands beside the player's plate on the side away from the deck
 function actPoint(p){
@@ -2383,16 +2449,18 @@ function placePoint(p){
   const a=R('#seat1 .whorow');return{x:a.left-48,y:a.top+a.height/2};
 }
 // the place label itself lands on the player's plate (see .place), so this adds only sound and effects
-function celebrate(p,place){
-  const pt=seatPoint(p),seat=p===0?$('.meinfo'):$('#seat'+p+' .who');
+// dbl: the round ended in a double-down, so third place is rained on as well as last
+function celebrate(p,place,dbl){
+  const seat=p===0?$('.meinfo'):$('#seat'+p+' .who');
+  const sr=seat&&seat.getBoundingClientRect(),pt=sr?{x:sr.left+sr.width/2,y:sr.top+sr.height/2}:seatPoint(p);
   if(place===0){
     Sound.play('fanfare');
     const q=placePoint(p);
     confetti(q.x,q.y);
-  }else if(place<3){
+  }else if(place<3&&!(dbl&&place===2)){
     Sound.play('ding');
   }else{
-    Sound.play('sad');
+    if(place===3)Sound.play('sad');
     rain(pt.x,pt.y);
     if(seat&&!reduceMotion()){
       seat.classList.add('shake','gloom');
