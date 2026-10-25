@@ -269,41 +269,45 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* the lobby: a nickname, then a seat at a square table */
 .lobby{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;overflow:auto;
   background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-deep) 100%);
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px}
-.lobby-box{width:min(440px,100%);display:flex;flex-direction:column;align-items:stretch;gap:11px;text-align:center}
-.lobby-title{margin:0 0 6px;font-family:var(--font-display);font-weight:900;font-size:52px;letter-spacing:.24em;padding-left:.24em;color:var(--ink)}
-.lobby-label{font-size:18px;color:var(--muted);text-align:left}
-.lobby-nick{font:inherit;font-size:24px;padding:12px 16px;border-radius:12px;border:1.5px solid var(--line-strong);background:var(--felt-deep);color:var(--ink);text-align:center}
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px}
+/* everything fits on one screen, a laptop or a phone, without scrolling */
+.lobby-box{width:min(440px,100%);display:flex;flex-direction:column;align-items:stretch;gap:8px;text-align:center;margin:auto 0}
+.lobby-title{margin:0;line-height:1.1;font-family:var(--font-display);font-weight:900;font-size:38px;letter-spacing:.24em;padding-left:.24em;color:var(--ink)}
+.lobby-name{display:flex;align-items:center;gap:10px}
+.lobby-name .lobby-nick{flex:1;min-width:0}
+.lobby-label{font-size:18px;color:var(--muted);text-align:left;white-space:nowrap}
+.lobby-nick{font:inherit;font-size:22px;padding:7px 14px;border-radius:12px;border:1.5px solid var(--line-strong);background:var(--felt-deep);color:var(--ink);text-align:center}
 .lobby-nick:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(221,176,80,.25)}
 .lobby-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.mode-btn{font:inherit;font-size:19px;padding:10px 6px;border-radius:12px;cursor:pointer;background:var(--shade);color:var(--ink);border:1.5px solid var(--line-strong)}
+.mode-btn{font:inherit;font-size:19px;padding:7px 6px;border-radius:12px;cursor:pointer;background:var(--shade);color:var(--ink);border:1.5px solid var(--line-strong)}
 .mode-btn.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700}
 .lobby-join{display:flex;gap:8px}
 .lobby-join .lobby-nick{flex:1;min-width:0;letter-spacing:.3em}
-.lobby-join .btn{font-size:20px;padding:10px 22px}
+.lobby-join .btn{font-size:20px;padding:6px 22px}
 .lobby-room{display:flex;align-items:baseline;justify-content:center;gap:12px;font-size:18px;color:var(--muted)}
-.lobby-room b{font-family:var(--font-display);font-size:44px;letter-spacing:.18em;color:var(--gold)}
-.lobby-status{min-height:1.4em;font-size:17px;color:var(--muted)}
+.lobby-room b{font-family:var(--font-display);font-size:34px;line-height:1.1;letter-spacing:.18em;color:var(--gold)}
+.lobby-status{min-height:1.3em;font-size:17px;color:var(--muted);line-height:1.3}
 .seat-btn.taken{border-style:solid;border-color:var(--latest);cursor:default}
 .seat-btn.taken span{color:var(--ink)}
-.lobby-table{display:grid;grid-template-columns:1fr 1.3fr 1fr;grid-template-rows:auto minmax(56px,10vh) auto;gap:10px;
-  grid-template-areas:". n ." "w c e" ". s .";margin:6px 0}
+.lobby-table{display:grid;grid-template-columns:1fr 1.2fr 1fr;grid-template-rows:auto auto auto;gap:6px;
+  grid-template-areas:". n ." "w c e" ". s .";margin:0}
 .lobby-felt{border-radius:14px;background:var(--felt);border:2px solid var(--line-strong);box-shadow:inset 0 0 30px rgba(0,0,0,.35)}
-.seat-btn{font:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 6px;border-radius:14px;cursor:pointer;
-  background:var(--shade);color:var(--ink);border:2px dashed var(--line-strong);min-height:76px;align-self:center}
-.seat-btn b{font-family:var(--font-display);font-size:24px;color:var(--gold)}
+/* a seat: the direction and who sits there side by side on one short button */
+.seat-btn{font:inherit;display:flex;flex-direction:row;align-items:baseline;justify-content:center;gap:8px;padding:8px 6px;border-radius:12px;cursor:pointer;
+  background:var(--shade);color:var(--ink);border:2px dashed var(--line-strong);min-height:48px;align-self:center;white-space:nowrap}
+.seat-btn b{font-family:var(--font-display);font-size:22px;color:var(--gold)}
 .seat-btn span{font-size:17px;color:var(--muted)}
 .seat-btn:hover:not(:disabled){border-color:var(--gold)}
 .seat-btn.mine{border:2px solid var(--gold);background:var(--gold);box-shadow:0 0 18px var(--gold)}
 .seat-btn.mine b,.seat-btn.mine span{color:var(--on-gold)}
 .seat-btn.bot{border-style:solid;border-color:var(--line)}
 .seat-btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
-.lobby-go{font-size:24px;padding:14px 20px;border-radius:14px}
+.lobby-go{font-size:23px;padding:10px 20px;border-radius:14px}
 /* the table rules: chosen by whoever plays alone or opens the room, shown greyed to friends who join */
-.lobby-rules{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--shade)}
+.lobby-rules{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--shade)}
 .rule-row{display:grid;grid-template-columns:116px 1fr 1fr;gap:8px;align-items:center}
 .rule-k{font-size:18px;color:var(--muted);text-align:left;white-space:nowrap}
-.rule-btn{font:inherit;font-size:17px;padding:8px 4px;border-radius:10px;cursor:pointer;background:transparent;color:var(--ink);border:1.5px solid var(--line-strong)}
+.rule-btn{font:inherit;font-size:17px;padding:6px 4px;border-radius:10px;cursor:pointer;background:transparent;color:var(--ink);border:1.5px solid var(--line-strong)}
 .rule-btn.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700}
 .rule-btn:disabled{cursor:default}
 .rule-btn:disabled:not(.on){opacity:.4}
@@ -419,8 +423,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 <div class="lobby" id="lobby" hidden>
   <div class="lobby-box">
     <h1 class="lobby-title">掼蛋</h1>
-    <label class="lobby-label" for="nick">昵称</label>
-    <input class="lobby-nick" id="nick" maxlength="8" autocomplete="off" placeholder="输入你的昵称">
+    <div class="lobby-name"><label class="lobby-label" for="nick">昵称</label><input class="lobby-nick" id="nick" maxlength="8" autocomplete="off" placeholder="输入你的昵称"></div>
     <div class="lobby-modes">
       <button class="mode-btn on" data-mode="solo">单人</button>
       <button class="mode-btn" data-mode="host">开房间</button>
