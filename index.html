@@ -429,7 +429,10 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   .tribinfo{grid-area:trib}
   .brand{grid-area:brand;line-height:1}
   .score{grid-area:score;flex-direction:column;align-items:flex-start;gap:4px}
-  .bar .acts{grid-area:acts}
+  /* the sound, music, card-back, rules, pause and leave buttons sit together in the top-right corner as a small
+     block of two columns, well clear of the player across the table */
+  .bar .acts{position:absolute;top:0;right:0;display:grid;grid-template-columns:repeat(2,auto);gap:6px}
+  .bar .acts .link{text-align:center}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
@@ -442,7 +445,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link tog" id="backBtn" aria-pressed="true" title="牌背用大雁照片，关掉换回原来的花纹"><span class="long">大雁</span>牌背</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="newBtn">新局</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link tog" id="backBtn" aria-pressed="true" title="牌背用大雁照片，关掉换回原来的花纹"><span><span class="long">大雁</span>牌背</span></button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -2621,13 +2624,6 @@ function playerLeft(name,how){
   $('#goOnBtn').onclick=()=>{hideOverlay();if(G.phase==='roundEnd'||G.phase==='over')showResult()};
   $('#leaveBtn').onclick=askQuit;
 }
-function askNew(){
-  showPanel(`<h2>重新开始一场？</h2><p class="muted">当前的级数和这一局的牌都会清空。</p>
-  <div class="btns"><button class="btn" id="noBtn">继续这局</button><button class="btn primary" id="yesBtn">重新开始</button></div>`);
-  $('#noBtn').onclick=()=>{hideOverlay();if(G.phase==='roundEnd'||G.phase==='over')showResult()};
-  $('#yesBtn').onclick=newGame;
-  $('#yesBtn').focus();
-}
 
 /* ---------- input ---------- */
 const handEl=$('#hand');
@@ -2814,7 +2810,6 @@ syncAudioBtns();
 // browsers only allow audio after the first tap or key press
 document.addEventListener('pointerdown',()=>Sound.unlock(),{capture:true});
 document.addEventListener('keydown',()=>Sound.unlock(),{capture:true});
-$('#newBtn').onclick=askNew;
 $('#quitBtn').onclick=askQuit;
 $('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start')act({k:'pause',on:!G.paused,p:toAbs(0)})};
 $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();renderHand()}});
@@ -2969,7 +2964,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1212';
+const VERSION='1025-1219';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -3074,8 +3069,6 @@ function enterOnline(mode,hostDir,names){
   setHumans(Object.keys(names).map(a=>toLocal(+a)),names);
   $('#myName').textContent=myNick;
   $('#lobby').hidden=true;
-  // only the host can start a fresh game for everyone
-  $('#newBtn').hidden=mode==='guest';
 }
 // a friend: connects to the room number and follows the host
 function joinRoom(code){
@@ -3140,7 +3133,6 @@ function goSolo(){
   NET.peer=null;NET.hostConn=null;NET.inbox=[];NET.pending=false;
   NET.mode='solo';NET.off=0;
   setHumans([0]);
-  $('#newBtn').hidden=false;
   hideOverlay();
   const c=G.clock;G.clock=null;
   if(G.phase==='shuffle'&&!G.busy)startShuffle();
