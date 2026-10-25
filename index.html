@@ -30,6 +30,9 @@
   --latest-glow:rgba(54,201,255,.55);
   --on-gold:#1d2421;
   --warn:#f08a7a;
+  /* the two sides: north and south in red, east and west in blue (text / border tone, and a deeper fill) */
+  --red-team:#f06464;--red-team-fill:#c8343d;
+  --blue-team:#5ea4ff;--blue-team-fill:#2d6cd0;
   --back-a:#7b2b30;
   --back-b:#933a3f;
   --shade:rgba(0,0,0,.2);
@@ -50,14 +53,15 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:16px;color:var(--muted)}
 .brand{font-family:var(--font-display);font-weight:900;font-size:26px;color:var(--ink);letter-spacing:.08em}
 .score{display:flex;gap:14px;font-variant-numeric:tabular-nums}
-.score b{font-family:var(--font-display);color:var(--ink);font-size:21px;margin-left:4px}
-.score .ours b{color:var(--gold)}
+.t-red{--team:var(--red-team);--team-fill:var(--red-team-fill)}
+.t-blue{--team:var(--blue-team);--team-fill:var(--blue-team-fill)}
+.score b{font-family:var(--font-display);color:var(--team,var(--ink));font-size:21px;margin-left:4px}
 /* the side whose level this round is played at gets a frame */
-.score>span{padding:3px 10px;border:1.5px solid transparent;border-radius:8px}
+.score>span{padding:3px 10px;border:1.5px solid transparent;border-radius:8px;color:var(--team,var(--muted))}
 /* the side being played reads "对方打7" on a lit gold chip, so the level in play can be checked at any moment */
-.score>span.playing{border-color:#f3d27a;color:var(--on-gold);background:var(--gold);font-size:19px;font-weight:700;box-shadow:0 0 14px rgba(221,176,80,.6)}
-.score>span.playing b{color:var(--on-gold);font-size:25px;margin-left:2px}
-.score>span.playing .lvx{color:#8a1c1c}
+.score>span.playing{border-color:var(--team);color:#fff;background:var(--team-fill);font-size:19px;font-weight:700;box-shadow:0 0 16px var(--team)}
+.score>span.playing b{color:#fff;font-size:25px;margin-left:2px}
+.score>span.playing .lvx{color:#ffe08a}
 .bar .acts{display:flex;gap:6px}
 /* who paid whom and what came back, kept in the corner while the round is played */
 .tribinfo{display:flex;flex-direction:column;gap:3px;font-size:16px;color:var(--ink);line-height:1.5}
@@ -123,7 +127,10 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 
 .who{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 6px;border-radius:10px;background:var(--shade);border:1px solid var(--line);font-size:17px;white-space:nowrap;transition:border-color .2s,box-shadow .2s}
 .who .back{width:20px;height:28px;border-radius:3px;border:2px solid var(--card);background:repeating-linear-gradient(45deg,var(--back-a) 0 3px,var(--back-b) 3px 6px);flex:none}
-.who .name{color:var(--ink)}
+.who .name{color:var(--team,var(--ink));font-weight:700}
+.seat .who{border-color:color-mix(in srgb,var(--team,#fff) 45%,transparent)}
+#myName{color:var(--team,var(--ink));font-weight:700}
+.mebar .meinfo{border-color:color-mix(in srgb,var(--team,#fff) 45%,transparent)}
 /* the count sits beside the name plate, never inside it */
 .whorow{display:flex;align-items:center;gap:12px}
 /* card counts stay hidden until a player is down to 10 or fewer, then they shout */
@@ -156,12 +163,14 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* the sorting minute: "理牌" on one side of the level disc and the countdown on the other, never over the disc
    (placed by placePrepBig; on a narrow screen both sit above the disc) */
 .prepbig{position:absolute;inset:0;z-index:2;pointer-events:none}
-.prepbig>*{position:absolute;display:flex;align-items:baseline;gap:6px;white-space:nowrap;transform:translateY(-50%);
+.prepbig>*{position:absolute}
+.prepbig>b{display:flex;align-items:baseline;gap:6px;white-space:nowrap;
   font-family:var(--font-display);font-weight:900;color:var(--gold);padding:8px 22px;border-radius:16px;background:var(--felt-deep);box-shadow:0 0 0 2px var(--gold),0 8px 30px rgba(0,0,0,.4)}
 .prepbig b{font-size:clamp(34px,6vh,56px);letter-spacing:.2em;padding-right:14px}
-.prepbig #prepBigNum{font-size:clamp(42px,8vh,72px);font-variant-numeric:tabular-nums;min-width:1.3em;text-align:center;line-height:1}
+/* the countdown is the same little alarm clock as the turn clocks, drawn large */
+.prepbig .bigclock{font-size:clamp(30px,5.4vh,46px);margin:0;box-shadow:inset 0 0 0 .1em var(--card-edge),0 6px 24px rgba(0,0,0,.45)}
 .prepbig small{font-size:24px}
-.prepbig.hurry #prepBigNum{color:var(--warn);animation:blink .5s steps(1) infinite}
+
 /* the tribute: one line per pair, large, each card shown as a little white card face */
 .msg .trib{font-size:clamp(19px,2.4vw,25px);font-weight:700;line-height:1.6;white-space:nowrap}
 .msg:has(.trib){max-width:none}
@@ -308,7 +317,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .lobby-room{display:flex;align-items:baseline;justify-content:center;gap:12px;font-size:18px;color:var(--muted)}
 .lobby-room b{font-family:var(--font-display);font-size:34px;line-height:1.1;letter-spacing:.18em;color:var(--gold)}
 .lobby-status{min-height:1.3em;font-size:17px;color:var(--muted);line-height:1.3}
-.seat-btn.taken{border-style:solid;border-color:var(--latest);cursor:default}
+.seat-btn.taken{border-style:solid;border-color:var(--team);cursor:default}
 .seat-btn.taken span{color:var(--ink)}
 .lobby-table{display:grid;grid-template-columns:1fr 1.2fr 1fr;grid-template-rows:auto auto auto;gap:6px;
   grid-template-areas:". n ." "w c e" ". s .";margin:0}
@@ -316,11 +325,12 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* a seat: the direction and who sits there side by side on one short button */
 .seat-btn{font:inherit;display:flex;flex-direction:row;align-items:baseline;justify-content:center;gap:8px;padding:8px 6px;border-radius:12px;cursor:pointer;
   background:var(--shade);color:var(--ink);border:2px dashed var(--line-strong);min-height:48px;align-self:center;white-space:nowrap}
-.seat-btn b{font-family:var(--font-display);font-size:22px;color:var(--gold)}
+.seat-btn b{font-family:var(--font-display);font-size:22px;color:var(--team)}
 .seat-btn span{font-size:17px;color:var(--muted)}
-.seat-btn:hover:not(:disabled){border-color:var(--gold)}
-.seat-btn.mine{border:2px solid var(--gold);background:var(--gold);box-shadow:0 0 18px var(--gold)}
-.seat-btn.mine b,.seat-btn.mine span{color:var(--on-gold)}
+.seat-btn{border-color:color-mix(in srgb,var(--team) 55%,transparent)}
+.seat-btn:hover:not(:disabled){border-color:var(--team)}
+.seat-btn.mine{border:2px solid var(--team);background:var(--team-fill);box-shadow:0 0 18px var(--team)}
+.seat-btn.mine b,.seat-btn.mine span{color:#fff}
 .seat-btn.bot{border-style:solid;border-color:var(--line)}
 .seat-btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .lobby-ver{font-size:13px;color:var(--muted);opacity:.7}
@@ -413,7 +423,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
       <div class="emblem" title="本局打的级"><span class="r" id="curLv">2</span></div>
     </div>
     <div id="pile" aria-hidden="true"><div class="probe"></div></div>
-    <div class="prepbig" id="prepBig" hidden><b id="prepL">理牌</b><span id="prepR"><span id="prepBigNum">60</span><small>秒</small></span></div>
+    <div class="prepbig" id="prepBig" hidden><b id="prepL">理牌</b><span class="clock bigclock" id="prepR"><b id="prepBigNum">60</b></span></div>
     <section class="seat" id="seat1">
       <div class="whorow"><span class="cnt"></span><div class="who"><span class="clock"></span><span class="pass-chip"></span><span class="place"></span><span class="name">下家</span><span class="back"></span></div></div>
     </section>
@@ -466,11 +476,11 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
     <div class="lobby-room" id="roomInfo" hidden><span>房间号</span><b id="roomCodeShow">----</b></div>
     <div class="lobby-status" id="lobbyStatus"></div>
     <div class="lobby-table" id="lobbyTable">
-      <button class="seat-btn" data-seat="N" style="grid-area:n"><b>北</b><span>空位</span></button>
-      <button class="seat-btn" data-seat="W" style="grid-area:w"><b>西</b><span>空位</span></button>
+      <button class="seat-btn t-red" data-seat="N" style="grid-area:n"><b>北</b><span>空位</span></button>
+      <button class="seat-btn t-blue" data-seat="W" style="grid-area:w"><b>西</b><span>空位</span></button>
       <div class="lobby-felt" style="grid-area:c"></div>
-      <button class="seat-btn" data-seat="E" style="grid-area:e"><b>东</b><span>空位</span></button>
-      <button class="seat-btn" data-seat="S" style="grid-area:s"><b>南</b><span>空位</span></button>
+      <button class="seat-btn t-blue" data-seat="E" style="grid-area:e"><b>东</b><span>空位</span></button>
+      <button class="seat-btn t-red" data-seat="S" style="grid-area:s"><b>南</b><span>空位</span></button>
     </div>
     <button class="btn primary lobby-go" id="sitBtn" disabled>坐下开始</button>
     <div class="lobby-ver" id="verTag"></div>
@@ -1104,7 +1114,7 @@ function placePrepBig(){
     lx=e.left+e.width/2-w/2;rx=lx+lw+12;y=e.top-T.top-gap/2-h/2;
   }
   l.style.left=lx-T.left+'px';r.style.left=rx-T.left+'px';
-  l.style.top=r.style.top=y+'px';
+  l.style.top=y-l.offsetHeight/2+'px';r.style.top=y-r.offsetHeight/2+'px';
 }
 function renderClocks(){
   const c=G.clock;
@@ -1119,7 +1129,7 @@ function renderClocks(){
   $('#prep').hidden=!prep;$('#prepBig').hidden=!prep;
   if(prep){
     $('#prepBigNum').textContent=Math.max(0,Math.ceil(c.left/1000));
-    $('#prepBig').classList.toggle('hurry',c.left<=HURRY_MS);
+    $('#prepR').classList.toggle('hurry',c.left<=HURRY_MS);
     placePrepBig();
     $('#prepText').textContent=(G.returns&&G.returns.length?'理牌后还贡，':'')+`${G.turn===0?'你':NAMES[G.turn]}先出`;
     $('#readyBtn').hidden=(G.ready||[]).includes(0);
@@ -1606,13 +1616,17 @@ function showPlace(el,place){
   const on=place>=0&&place<(G.reveal||0);
   el.textContent=on?PLACE[place]:'';el.dataset.place=place;
 }
+// a seat's side colour, from the direction you sit at: north and south red, east and west blue
+const isRedSeat=p=>(DIRS.indexOf(myDir||'S')+p)%2===0;
 function render(){
+  for(let p=0;p<4;p++){const el=p===0?$('#mebar'):$('#seat'+p);el.classList.toggle('t-red',isRedSeat(p));el.classList.toggle('t-blue',!isRedSeat(p))}
   $('#lv0').textContent=rankName(G.levels[0]);
   $('#lv1').textContent=rankName(G.levels[1]);
   for(const t of [0,1]){const n=(G.aFails||[0,0])[t];$('#lvx'+t).textContent=G.levels[t]===14&&n?`余${3-n}次`:''}
   for(const t of [0,1]){
     const el=$('#team'+t);
     el.classList.toggle('playing',G.lvlTeam===t);
+    el.classList.toggle('t-red',isRedSeat(t));el.classList.toggle('t-blue',!isRedSeat(t));
     el.title=G.lvlTeam===t?'本局打这一方的级':'';
     $('#tn'+t).textContent=(t===0?'我方':'对方')+(G.lvlTeam===t?'打':'');
   }
@@ -2818,7 +2832,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1025';
+const VERSION='1025-1057';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
