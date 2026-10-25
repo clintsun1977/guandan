@@ -2630,7 +2630,8 @@ function celebrate(p,place,dbl){
   }else if(place<3&&!(dbl&&place===2)){
     Sound.play('ding');
   }else{
-    if(place===3)Sound.play('sad');
+    // the sad trombone only when it hurts: the other side went out first and the last place is on your side
+    if(place===3&&p%2===0&&G.out[0]%2===1)Sound.play('sad');
     rain(pt.x,pt.y);
     if(seat&&!reduceMotion()){
       seat.classList.add('shake','gloom');
@@ -3099,7 +3100,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1934';
+const VERSION='1025-1944';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

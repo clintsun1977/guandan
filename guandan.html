@@ -2625,7 +2625,8 @@ function celebrate(p,place,dbl){
   }else if(place<3&&!(dbl&&place===2)){
     Sound.play('ding');
   }else{
-    if(place===3)Sound.play('sad');
+    // the sad trombone only when it hurts: the other side went out first and the last place is on your side
+    if(place===3&&p%2===0&&G.out[0]%2===1)Sound.play('sad');
     rain(pt.x,pt.y);
     if(seat&&!reduceMotion()){
       seat.classList.add('shake','gloom');
