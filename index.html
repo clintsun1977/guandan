@@ -298,6 +298,15 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .card.wild{background:linear-gradient(160deg,var(--wild-face) 0%,var(--wild-face-b) 100%);border:2px solid var(--gold);
   box-shadow:0 0 0 2px var(--wild-ink),0 0 12px 2px var(--gold),0 1px 3px rgba(0,0,0,.35)}
 .card.wild::after{content:"★";position:absolute;right:6%;top:4%;font-size:calc(var(--cw)*.24);line-height:1;color:var(--wild-ink)}
+/* the other cards of the level being played: a lilac face and frame, a "级" badge in the corner and a light that
+   sweeps across now and then, so the level stays in mind */
+.card.lvl{background:linear-gradient(160deg,#fff 0%,#efe3ff 100%);border:2px solid #8e5bd6;
+  box-shadow:0 0 0 1px #6b3fb3,0 0 10px 1px rgba(142,91,214,.7),0 1px 3px rgba(0,0,0,.35)}
+.card.lvl::after{content:"级";position:absolute;right:5%;top:4%;font-family:var(--font-ui);font-weight:800;font-size:calc(var(--cw)*.2);
+  line-height:1;color:#fff;background:#7d4cc9;border-radius:calc(var(--cw)*.05);padding:.12em .16em}
+.card.lvl::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.8) 50%,transparent 65%);animation:lvlShine 3.4s ease-in-out infinite}
+@keyframes lvlShine{0%,55%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
 
 /* overlay */
 .overlay{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:100;
@@ -1511,8 +1520,8 @@ function cardHTML(c,L,extra=''){
     const big=c.r===17;
     return `<div class="card joker ${big?'red':''} ${extra}" data-id="${c.id}"><span class="idx">${[...'JOKER'].map(ch=>`<span>${ch}</span>`).join('')}</span><span class="pip">${big?'★':'☆'}</span></div>`;
   }
-  const red=c.s==='H'||c.s==='D',wild=isWild(c,L);
-  return `<div class="card ${red?'red':''} ${wild?'wild':''} ${extra}" data-id="${c.id}"><span class="idx"><span class="rk ${c.r===10?'ten':''}">${rankName(c.r)}</span><span class="su">${SUIT_CH[c.s]}</span>${wild?'<span class="tag crown" title="百搭">'+CROWN+'</span>':''}</span><span class="pip">${SUIT_CH[c.s]}</span></div>`;
+  const red=c.s==='H'||c.s==='D',wild=isWild(c,L),lvl=!wild&&c.r===L;
+  return `<div class="card ${red?'red':''} ${wild?'wild':''} ${lvl?'lvl':''} ${extra}" data-id="${c.id}"><span class="idx"><span class="rk ${c.r===10?'ten':''}">${rankName(c.r)}</span><span class="su">${SUIT_CH[c.s]}</span>${wild?'<span class="tag crown" title="百搭">'+CROWN+'</span>':''}</span><span class="pip">${SUIT_CH[c.s]}</span></div>`;
 }
 // cards in the order a combination reads; a wild card sits exactly where it stands in for a missing card
 function displayOrder(play,L){
@@ -3042,7 +3051,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1532';
+const VERSION='1025-1535';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
