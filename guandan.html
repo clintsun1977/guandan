@@ -149,13 +149,15 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* first out: the label drops onto the plate from above and keeps a glow */
 .place[data-place="0"]:not(:empty){animation:landIn .9s cubic-bezier(.2,.9,.3,1.2);box-shadow:0 0 22px var(--gold),0 4px 14px rgba(0,0,0,.35)}
 @keyframes landIn{0%{opacity:0;scale:3;translate:0 -80px}55%{opacity:1;scale:.92;translate:0 0}75%{scale:1.08}100%{scale:1}}
-/* the sorting minute: a big label and countdown in the middle of the table */
-.prepbig{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;display:flex;align-items:center;gap:16px;pointer-events:none;
-  font-family:var(--font-display);font-weight:900;color:var(--gold);padding:18px 30px;border-radius:18px;background:var(--felt-deep);box-shadow:0 0 0 2px var(--gold),0 8px 30px rgba(0,0,0,.4)}
-.prepbig b{font-size:clamp(40px,7vh,64px);letter-spacing:.2em}
-.prepbig span{font-size:clamp(52px,10vh,88px);font-variant-numeric:tabular-nums;min-width:1.3em;text-align:center;line-height:1}
-.prepbig small{font-size:26px}
-.prepbig.hurry span{color:var(--warn);animation:blink .5s steps(1) infinite}
+/* the sorting minute: "理牌" on one side of the level disc and the countdown on the other, never over the disc
+   (placed by placePrepBig; on a narrow screen both sit above the disc) */
+.prepbig{position:absolute;inset:0;z-index:2;pointer-events:none}
+.prepbig>*{position:absolute;display:flex;align-items:baseline;gap:6px;white-space:nowrap;transform:translateY(-50%);
+  font-family:var(--font-display);font-weight:900;color:var(--gold);padding:8px 22px;border-radius:16px;background:var(--felt-deep);box-shadow:0 0 0 2px var(--gold),0 8px 30px rgba(0,0,0,.4)}
+.prepbig b{font-size:clamp(34px,6vh,56px);letter-spacing:.2em;padding-right:14px}
+.prepbig #prepBigNum{font-size:clamp(42px,8vh,72px);font-variant-numeric:tabular-nums;min-width:1.3em;text-align:center;line-height:1}
+.prepbig small{font-size:24px}
+.prepbig.hurry #prepBigNum{color:var(--warn);animation:blink .5s steps(1) infinite}
 /* the tribute: one line per pair, large, each card shown as a little white card face */
 .msg .trib{font-size:clamp(19px,2.4vw,25px);font-weight:700;line-height:1.6;white-space:nowrap}
 .msg:has(.trib){max-width:none}
@@ -406,7 +408,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
       <div class="emblem" title="本局打的级"><span class="r" id="curLv">2</span></div>
     </div>
     <div id="pile" aria-hidden="true"><div class="probe"></div></div>
-    <div class="prepbig" id="prepBig" hidden><b>理牌</b><span id="prepBigNum">60</span><small>秒</small></div>
+    <div class="prepbig" id="prepBig" hidden><b id="prepL">理牌</b><span id="prepR"><span id="prepBigNum">60</span><small>秒</small></span></div>
     <section class="seat" id="seat1">
       <div class="whorow"><span class="cnt"></span><div class="who"><span class="clock"></span><span class="pass-chip"></span><span class="place"></span><span class="name">下家</span><span class="back"></span></div></div>
     </section>
@@ -1084,6 +1086,21 @@ function timeUp(c){
     act(playEvt(who,pl));
   }
 }
+// the sorting countdown flanks the level disc: 理牌 on its left, the seconds on its right, both clear of the
+// side players' plates; where the sides are too narrow (a phone) the two sit together above the disc
+function placePrepBig(){
+  const T=$('#table').getBoundingClientRect(),e=$('.emblem').getBoundingClientRect(),gap=20;
+  const l=$('#prepL'),r=$('#prepR'),lw=l.offsetWidth,rw=r.offsetWidth;
+  const s3=$('#seat3 .whorow').getBoundingClientRect(),s1=$('#seat1 .whorow').getBoundingClientRect();
+  const cy=e.top+e.height/2-T.top;
+  let lx=e.left-gap-lw,rx=e.right+gap,y=cy;
+  if(lx<s3.right+10||rx+rw>s1.left-10){
+    const h=Math.max(l.offsetHeight,r.offsetHeight),w=lw+rw+12;
+    lx=e.left+e.width/2-w/2;rx=lx+lw+12;y=e.top-T.top-gap/2-h/2;
+  }
+  l.style.left=lx-T.left+'px';r.style.left=rx-T.left+'px';
+  l.style.top=r.style.top=y+'px';
+}
 function renderClocks(){
   const c=G.clock;
   for(let p=0;p<4;p++){
@@ -1098,6 +1115,7 @@ function renderClocks(){
   if(prep){
     $('#prepBigNum').textContent=Math.max(0,Math.ceil(c.left/1000));
     $('#prepBig').classList.toggle('hurry',c.left<=HURRY_MS);
+    placePrepBig();
     $('#prepText').textContent=(G.returns&&G.returns.length?'理牌后还贡，':'')+`${G.turn===0?'你':NAMES[G.turn]}先出`;
     $('#readyBtn').hidden=(G.ready||[]).includes(0);
   }
