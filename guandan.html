@@ -84,7 +84,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .stack .sb,.flick{position:absolute;inset:0;border-radius:calc(var(--cw)*.1);border:2px solid var(--card);
   background:var(--back);box-shadow:0 1px 2px rgba(0,0,0,.4)}
 .flick{left:0;top:0;width:var(--cw);height:calc(var(--cw)*1.4);margin:calc(var(--cw)*-.7) 0 0 calc(var(--cw)*-.5);inset:auto;z-index:7100;transition:transform .16s linear,opacity .16s}
-#seat0 #deckBtn{position:fixed;z-index:20;transform:translateY(-50%);pointer-events:auto;padding:10px 30px;font-size:19px;animation:btnCall 1.2s ease-in-out infinite}
+/* your shuffle / cut button: large, in the bottom-right corner where the hand would be, just above the hand tools */
+#seat0 #deckBtn{position:fixed;z-index:20;right:max(24px,env(safe-area-inset-right,0px));bottom:64px;pointer-events:auto;padding:14px 40px;font-size:22px;animation:btnCall 1.2s ease-in-out infinite}
 /* the shuffle / cut button calls for a click with a soft pulse, so it never reads as a mere label */
 @keyframes btnCall{50%{box-shadow:0 0 0 6px rgba(221,176,80,.25),0 0 22px var(--gold)}}
 /* dealing */
@@ -1788,7 +1789,6 @@ function renderControls(){
   const deckTurn=(G.phase==='shuffle'&&G.shuffler===0)||(G.phase==='cut'&&G.cutter===0);
   $('#deckBtn').hidden=!deckTurn||!!G.busy;
   $('#deckBtn').textContent=G.phase==='cut'?'切牌':'洗牌';
-  if(deckTurn&&!G.busy)placeDeckBtn();
   const passDefault=passIsDefault();
   $('#playBtn').classList.toggle('primary',!passDefault);
   $('#passBtn').classList.toggle('primary',passDefault);
@@ -2023,12 +2023,6 @@ function makeStack(n){
   return d;
 }
 const stackAt=(el,g,dx,dy,rot=0)=>{el.style.transform=`translate(${g.cx+dx}px,${g.hy+dy}px) rotate(${rot}deg)`};
-// your shuffle / cut button stands just to the right of the deck in front of you, not over the cards
-function placeDeckBtn(){
-  const b=$('#deckBtn'),g=pileGeo(),s=actorSpot(0);
-  const x=g.L.left+s.x+g.cw*.8+20,y=g.L.top+s.y;
-  b.style.left=Math.min(x,innerWidth-b.offsetWidth-8)+'px';b.style.top=y+'px';
-}
 function showDeck(){
   removeDeck();
   const g=pileGeo(),d=makeStack(8);d.id='deck';
@@ -2539,8 +2533,10 @@ function jieFeng(from,to){
   Sound.play('whoosh');
   const a=seatPoint(from),b=seatPoint(to),plate=to===0?$('.meinfo'):$('#seat'+to+' .who');
   const land=()=>{
+    // the label rises as it fades, so it starts where there is room above it: below the plate of the player
+    // across the table (at the top of the screen), above everyone else's
     const r=plate&&plate.getBoundingClientRect();
-    const q=(to===1||to===3)&&r?{x:r.left+r.width/2,y:r.top-28}:actPoint(to);
+    const q=!r?actPoint(to):to===2?{x:r.left+r.width/2,y:r.bottom+44}:{x:r.left+r.width/2,y:r.top-30};
     fxEl('fx-tag first','接风',q.x,q.y);
     Sound.play('ding');
     if(plate){plate.classList.add('acting');setTimeout(()=>plate.classList.remove('acting'),2400)}
