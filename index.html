@@ -2561,11 +2561,13 @@ function jieFeng(from,to){
   setTimeout(()=>{g.style.opacity='0';land()},850);
   setTimeout(()=>g.remove(),1200);
 }
-// the shuffling / cutting label stands beside the player's plate on the side away from the deck
+// the shuffling / cutting label stands on the side of the player's plate away from the deck: right of the
+// player across the table, above the players at the sides (on a narrow screen there is no room beside them)
 function actPoint(p){
-  const R=q=>$(q).getBoundingClientRect();
-  if(p===2){const a=R('#seat2 .who');return{x:a.right+56,y:a.top+a.height/2}}
-  return placePoint(p);
+  const a=$(p===0?'.meinfo':'#seat'+p+' .who').getBoundingClientRect();
+  if(p===2)return{x:a.right+56,y:a.top+a.height/2};
+  if(p===0)return placePoint(0);
+  return{x:a.left+a.width/2,y:a.top-30};
 }
 // where a player's place label sits: on the table side of their plate (yours at the foot of the table)
 function placePoint(p){
@@ -3050,7 +3052,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1543';
+const VERSION='1025-1618';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
