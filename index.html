@@ -629,8 +629,8 @@ function analyze(cards,L){
     const ss=seqStarts(nat,w,5,1);
     if(ss.length){
       const top=Math.max(...ss);
-      add('straight',top);
-      if(new Set(nat.map(c=>c.s)).size<=1)add('sflush',top);
+      // a run all in one suit (a wild card filling any gap) is a straight flush, a bomb; it cannot be played as a plain straight
+      if(new Set(nat.map(c=>c.s)).size<=1)add('sflush',top);else add('straight',top);
     }
   }
   if(n===6){
@@ -915,7 +915,7 @@ function startRound(e){
   // (the very first round picks the cutter at random)
   G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
   G.shuffler=(G.cutter+3)%4;
-  G.dealIdx=G.cutter;G.ready=[];G.nextReady=[];NET.pending=false;
+  G.dealIdx=G.cutter;G.ready=[];G.nextReady=[];NET.pending=false;G.queuedPlay=false;
   sel=new Set();
   hideOverlay();
   removeDeck();
@@ -1174,6 +1174,8 @@ function startTurn(){
     Sound.play('turn');
     G.clock={who:0,left:PLAY_MS,total:PLAY_MS};
     render();
+    // 出牌 was pressed while the last trick was still on show
+    if(G.queuedPlay){G.queuedPlay=false;if(sel.size)onPlay()}
     return;
   }
   // a friend's turn: their clock runs here too, and their move arrives as an event
@@ -1374,8 +1376,16 @@ const END_SHOW_MS=2600; // how long the final trick stays face up
 
 /* ---------- human actions ---------- */
 function selectedCards(){return G.hands[0].filter(c=>sel.has(c.id))}
+// waiting for the host to confirm your last move; never for more than four seconds
+const waitingHost=()=>NET.pending&&Date.now()-(NET.pendingAt||0)<4000;
 function onPlay(){
-  if(G.phase!=='play'||G.turn!==0)return;
+  // you lead next but the finished trick is still on show: the play goes out the moment your turn starts
+  if(G.phase==='play'&&G.turn===-1&&G.nextLeader===0){
+    if(!selectedCards().length){setMsg('先选几张牌',true);return}
+    G.queuedPlay=true;setMsg('这一轮的牌收起后马上出');return;
+  }
+  if(G.phase!=='play')return;
+  if(G.turn!==0){setMsg('还没轮到你出牌',true);return}
   const cards=selectedCards();
   if(!cards.length){setMsg('先选几张牌',true);return}
   const cur=G.trick?G.trick.play:null;
@@ -1383,11 +1393,11 @@ function onPlay(){
   if(!reads.length){setMsg('这几张牌不成牌型',true);return}
   const ok=reads.filter(r=>beats(r,cur)).sort((a,b)=>strength(b)-strength(a));
   if(!ok.length){setMsg(`管不上${cur?TYPE_NAME[cur.type]:''}`,true);return}
-  if(NET.pending)return;
+  if(waitingHost())return;
   act(playEvt(0,{...ok[0],cards}));
 }
 function onPass(){
-  if(G.phase!=='play'||G.turn!==0||!G.trick||NET.pending)return;
+  if(G.phase!=='play'||G.turn!==0||!G.trick||waitingHost())return;
   sel=new Set();
   act(playEvt(0,null));
 }
@@ -1399,7 +1409,7 @@ function onHint(){
   renderHand();
 }
 function onReturn(){
-  if(NET.pending)return;
+  if(waitingHost())return;
   if(G.phase==='tribPick'){
     if(!G.tribGivers.includes(0)||G.tribPick[0]!=null)return;
     const cards=selectedCards(),ok=tribOptions(0);
@@ -1423,7 +1433,7 @@ function playEvt(p,pl){
 // waits for it to come back, so every table applies the same moves in the same order
 function act(e){
   if(NET.mode==='guest'){
-    if(NET.hostConn&&NET.hostConn.open){NET.pending=['play','pass','return','tribute'].includes(e.k);NET.hostConn.send({t:'act',e})}
+    if(NET.hostConn&&NET.hostConn.open){NET.pending=['play','pass','return','tribute'].includes(e.k);NET.pendingAt=Date.now();NET.hostConn.send({t:'act',e})}
     return;
   }
   if(applyEvt(e)&&NET.mode==='host')broadcast({t:'evt',e});
@@ -1782,6 +1792,8 @@ function render(){
 }
 function renderControls(){
   const my=G.phase==='play'&&G.turn===0;
+  // leading next while the finished trick is still on show: 出牌 can already be pressed
+  const soon=G.phase==='play'&&G.turn===-1&&G.nextLeader===0&&G.hands[0].length>0;
   const pay=G.phase==='tribPick'&&G.tribGivers.includes(0)&&G.tribPick[0]==null;
   const ret=owesReturn(0)||pay;
   $('#playBtn').hidden=ret;$('#passBtn').hidden=ret;$('#hintBtn').hidden=ret;
@@ -1790,7 +1802,7 @@ function renderControls(){
   // once your hand is empty (out, or the round is over) the play buttons have nothing left to do
   // while you are sorting, the "done sorting" button takes the play buttons' place
   $('#btns').hidden=(!ret&&G.phase!=='deal'&&!G.hands[0].length)||(sideBtns()&&G.phase==='prep'&&!ret&&!(G.ready||[]).includes(0));
-  $('#playBtn').disabled=!my;
+  $('#playBtn').disabled=!my&&!soon;
   $('#hintBtn').disabled=!my;
   $('#passBtn').disabled=!my||!G.trick;
   $('#clearBtn').disabled=!sel.size;
@@ -3076,7 +3088,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1801';
+const VERSION='1025-1825';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -3128,28 +3140,34 @@ function hostOnData(conn,d){
     broadcastLobby();renderLobby();
     if(d.ver&&d.ver!==VERSION)lobbyStatus(`${info.name}的页面版本不同（${d.ver}），请他刷新页面`);
   }
-  if(d.t==='act'&&NET.started&&info.dir)hostGuestAct(absOf(info.dir,NET.hostDir),d.e||{});
+  if(d.t==='act'&&NET.started&&info.dir&&!hostGuestAct(absOf(info.dir,NET.hostDir),d.e||{})&&conn.open)conn.send({t:'nope',k:(d.e||{}).k});
 }
 // a friend's move: only for their own seat, and a play must be legal, exactly what their own buttons check
+// false when the move is refused (the friend's page is then told, so it does not keep waiting)
 function hostGuestAct(seat,e){
-  if(!isHumanSeat(seat))return;
+  if(!isHumanSeat(seat))return false;
   switch(e.k){
-    case'next':if(e.p!==seat)return;break;
-    case'shuffle':if(G.shuffler!==seat)return;break;
-    case'cut':if(G.cutter!==seat)return;break;
-    case'pass':case'return':case'ready':case'pause':if(e.p!==seat)return;break;
-    case'tribute':if(e.p!==seat||G.phase!=='tribPick'||!tribOptions(seat).some(c=>c.id===e.id))return;break;
+    case'next':if(e.p!==seat)return false;break;
+    case'shuffle':if(G.shuffler!==seat)return false;break;
+    case'cut':if(G.cutter!==seat)return false;break;
+    case'pass':case'return':case'ready':case'pause':if(e.p!==seat)return false;break;
+    case'tribute':if(e.p!==seat||G.phase!=='tribPick'||!tribOptions(seat).some(c=>c.id===e.id))return false;break;
     case'play':{
-      if(e.p!==seat||G.phase!=='play'||G.turn!==seat)return;
+      if(e.p!==seat||G.phase!=='play'||G.turn!==seat)return false;
       const cards=(e.ids||[]).map(id=>G.hands[seat].find(c=>c.id===id));
-      if(!cards.length||cards.some(c=>!c))return;
+      if(!cards.length||cards.some(c=>!c))return false;
       const cur=G.trick?G.trick.play:null;
-      if(!analyze(cards,G.L).some(r=>r.type===e.type&&r.value===e.value&&beats(r,cur)))return;
+      // the cards decide what the play is: if the friend's page named it differently (an older page, say),
+      // take the strongest reading that beats the table, exactly as the player's own button would
+      const ok=analyze(cards,G.L).filter(r=>beats(r,cur)).sort((a,b)=>strength(b)-strength(a));
+      if(!ok.length)return false;
+      if(!ok.some(r=>r.type===e.type&&r.value===e.value))e={...e,type:ok[0].type,value:ok[0].value,n:ok[0].n};
       break;
     }
-    default:return;
+    default:return false;
   }
   act(e);
+  return true;
 }
 function hostOnClose(conn,how='drop'){
   const info=NET.conns.get(conn.peer);if(!info)return;
@@ -3208,6 +3226,8 @@ function guestOnData(d){
   NET.hostSeen=Date.now();
   if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
   if(d.t==='bye'){hostGone();return}
+  // the host turned a move down: stop waiting for it and let the player try again
+  if(d.t==='nope'){NET.pending=false;if(['play','pass','return','tribute'].includes(d.k))setMsg('这一步没有成功，请再试一次',true);render();return}
   if(d.t==='lobby'){
     NET.lobby=d.seats;myDir=d.you||'';
     if(d.rules)Object.assign(RULES,d.rules);
