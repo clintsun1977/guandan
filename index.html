@@ -152,7 +152,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 @keyframes landIn{0%{opacity:0;scale:3;translate:0 -80px}55%{opacity:1;scale:.92;translate:0 0}75%{scale:1.08}100%{scale:1}}
 /* the sorting minute: a big label and countdown in the middle of the table */
 .prepbig{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;display:flex;align-items:center;gap:16px;pointer-events:none;
-  font-family:var(--font-display);font-weight:900;color:var(--gold);padding:8px 30px;border-radius:18px;background:var(--felt-deep);box-shadow:0 0 0 2px var(--gold),0 8px 30px rgba(0,0,0,.4)}
+  font-family:var(--font-display);font-weight:900;color:var(--gold);padding:18px 30px;border-radius:18px;background:var(--felt-deep);box-shadow:0 0 0 2px var(--gold),0 8px 30px rgba(0,0,0,.4)}
 .prepbig b{font-size:clamp(40px,7vh,64px);letter-spacing:.2em}
 .prepbig span{font-size:clamp(52px,10vh,88px);font-variant-numeric:tabular-nums;min-width:1.3em;text-align:center;line-height:1}
 .prepbig small{font-size:26px}
@@ -944,9 +944,18 @@ async function runGives(){
     const x=G.gives[0];
     const card=G.hands[x.from].find(c=>c.id===x.id);
     if(card){
-      await giveAnim(x.from,x.to,card,x.label);
+      let start=null;
+      if(x.from===0){
+        const el=handEl.querySelector(`.card[data-id="${card.id}"]`);
+        if(el){const r=el.getBoundingClientRect();start={x:r.left+r.width/2,y:r.top+r.height/2}}
+      }
+      G.hands[x.from]=G.hands[x.from].filter(c=>c!==card);
+      sel.delete(card.id);
+      render();
+      await giveAnim(x.from,x.to,card,x.label,start);
       if(G.tok!==tok)return;
-      giveCard(x.from,x.to,card);
+      G.hands[x.to].push(card);sortHand(G.hands[x.to],G.L);
+      if(x.to===0)G.fresh.push(card.id);
       if(x.label==='进贡')G.trib.push({g:x.from,r:x.to,tc:card});
       else{const t=G.trib.find(t=>t.r===x.from&&t.g===x.to);if(t)t.rc=card}
     }
@@ -970,7 +979,7 @@ function retWait(){
     G.clock=null;
     G.gives=G.returns.map(x=>({from:x.from,to:x.to,id:G.retPick[x.from],label:'还贡'}));
     G.returns=[];
-    later(runGives,400);
+    later(runGives,150);
     return;
   }
   G.phase='return';
@@ -993,11 +1002,6 @@ function beginPlay(){
 function startPlay(leader){
   G.phase='play';G.turn=leader;G.clock=null;
   startTurn();
-}
-function giveCard(from,to,c){
-  G.hands[from]=G.hands[from].filter(x=>x!==c);
-  G.hands[to].push(c);sortHand(G.hands[to],G.L);
-  if(to===0)G.fresh.push(c.id);
 }
 
 const active=i=>G.hands[i].length>0;
@@ -1694,9 +1698,12 @@ const sideBtns=()=>matchMedia('(min-width:561px)').matches;
 const BTN_GAP=18;
 function handGeo(n,keys){
   const el=$('#hand'),probe=el.firstElementChild;
-  const W=el.clientWidth-(sideBtns()?$('#btns').offsetWidth+BTN_GAP:0);
+  // the cards stay centred under your name: the button column's width is kept free on both sides
+  const side=sideBtns()?$('#btns').offsetWidth+BTN_GAP:0,W=el.clientWidth-2*side;
   const cw=probe.offsetWidth,ch=probe.offsetHeight;
-  return fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
+  const g=fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
+  if(side)g.slots=g.slots.map(sl=>({...sl,x:sl.x+side}));
+  return g;
 }
 // a card's corner index (rank over suit) takes about half its height
 const ROW_STEP=.58;
@@ -1959,11 +1966,11 @@ function seatPoint(p){
   return{x:r.left+r.width/2,y:p===0?r.top+r.height*.45:r.top+r.height/2};
 }
 // a face-up card travels giver -> table centre (pauses so everyone can read it) -> receiver
-function giveAnim(from,to,card,label){
+function giveAnim(from,to,card,label,start){
   return new Promise(done=>{
     Sound.play('deal');
     if(reduceMotion()){setTimeout(done,700);return}
-    const a=seatPoint(from),b=seatPoint(to),m=$('.emblem').getBoundingClientRect();
+    const a=start||seatPoint(from),b=seatPoint(to),m=$('.emblem').getBoundingClientRect();
     const mx=m.left+m.width/2,my=m.top+m.height/2;
     const w=document.createElement('div');
     w.className='gift';
