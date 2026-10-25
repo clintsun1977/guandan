@@ -64,11 +64,12 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .score>span.playing b{color:#fff;font-size:25px;margin-left:2px}
 .score>span.playing .lvx{color:#ffe08a}
 .bar .acts{display:flex;gap:6px}
+#pauseBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 /* who paid whom and what came back, kept in the corner while the round is played */
 .tribinfo{display:flex;flex-direction:column;gap:3px;font-size:16px;color:var(--ink);line-height:1.5}
 .tribinfo:empty{display:none}
 .tribinfo .ct{font-size:16px;padding:0 5px}
-.link{font:inherit;font-size:16px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer}
+.link{font:inherit;font-size:16px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer;white-space:nowrap}
 .link:hover{color:var(--ink);border-color:var(--line-strong)}
 .tog{display:inline-flex;align-items:center;gap:6px}
 .tog::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold)}
@@ -374,6 +375,16 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   .btn{padding:8px 14px}
   .score{gap:8px}
 }
+/* a narrow screen (a phone held upright): the header sits above the table, so keep its buttons on one line and
+   the top player's count badge no taller than their plate, with a little room between them */
+@media (max-width:699px){
+  .bar .acts{flex-wrap:wrap;justify-content:flex-end;gap:4px}
+  .bar .link{font-size:14px;padding:3px 8px}
+  .link .long{display:none}
+  .table{margin-top:8px}
+  .cnt{font-size:20px;padding:2px 6px 1px}
+  .cnt small{font-size:12px}
+}
 /* finishing moments: first place gets a gold badge and confetti, second and third a small badge,
    last place a stamp, a shudder, a grey-out and a little rain */
 .fx{position:fixed;left:0;top:0;z-index:90;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap}
@@ -426,7 +437,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link tog" id="backBtn" aria-pressed="true" title="牌背用大雁照片，关掉换回原来的花纹">大雁牌背</button><button class="link" id="rulesBtn">规则</button><button class="link" id="newBtn">新局</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link tog" id="backBtn" aria-pressed="true" title="牌背用大雁照片，关掉换回原来的花纹"><span class="long">大雁</span>牌背</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="newBtn">新局</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -811,6 +822,7 @@ function roundEvt(reset){
 }
 function startRound(e){
   if(e.reset)resetGame();
+  if(G.paused)setPaused(false);
   G.tok++;
   G.round++;
   G.L=G.levels[G.lvlTeam];
@@ -1083,7 +1095,7 @@ setInterval(()=>{
   const now=performance.now(),dt=Math.min(now-lastTick,1000);
   lastTick=now;
   const c=G&&G.clock;
-  if(!c||(NET.mode==='solo'&&!$('#overlay').hidden))return; // a solo game pauses while a panel is open
+  if(!c||G.paused||(NET.mode==='solo'&&!$('#overlay').hidden))return; // paused, or a solo game with a panel open
   const before=c.left;
   c.left-=dt;
   if(c.think==null&&c.left>0&&c.left<=HURRY_MS&&Math.ceil(before/1000)!==Math.ceil(c.left/1000))Sound.play('tick');
@@ -1371,6 +1383,8 @@ function applyEvt(e){
       setTimeout(startNextIfReady,0);
       return true;
     }
+    case'pause':
+      setPaused(!!e.on,p);return true;
     case'humans':
       setHumans(e.list.map(toLocal),e.names);
       if(e.left)playerLeft(e.left,e.how);
@@ -1641,6 +1655,7 @@ function showPlace(el,place){
 // a seat's side colour, from the direction you sit at: north and south red, east and west blue
 const isRedSeat=p=>(DIRS.indexOf(myDir||'S')+p)%2===0;
 function render(){
+  $('#pauseBtn').textContent=G.paused?'继续':'暂停';$('#pauseBtn').classList.toggle('on',!!G.paused);
   for(let p=0;p<4;p++){const el=p===0?$('#mebar'):$('#seat'+p);el.classList.toggle('t-red',isRedSeat(p));el.classList.toggle('t-blue',!isRedSeat(p))}
   $('#lv0').textContent=rankName(G.levels[0]);
   $('#lv1').textContent=rankName(G.levels[1]);
@@ -2551,6 +2566,22 @@ function showRules(){
   $('#closeBtn').focus();
 }
 // leaving the table, after a confirmation; the others are told and can carry on with the computer in that seat
+// pausing: the turn clocks, the computer players' thinking and the sorting minute all stop until someone resumes
+function setPaused(on,by){
+  G.paused=on;
+  $('#pauseBtn').textContent=on?'继续':'暂停';
+  $('#pauseBtn').classList.toggle('on',on);
+  if(on){
+    showPanel(`<h2>暂停中</h2><p class="muted">${by===0?'你':NAMES[by]}暂停了游戏，大家休息一下。</p>
+      <div class="btns"><button class="btn primary" id="resumeBtn">继续游戏</button></div>`);
+    $('#panel').dataset.kind='pause';
+    $('#resumeBtn').onclick=()=>act({k:'pause',on:false,p:toAbs(0)});
+    $('#resumeBtn').focus();
+  }else if(!$('#overlay').hidden&&$('#panel').dataset.kind==='pause'){
+    hideOverlay();
+    if(G.phase==='roundEnd'||G.phase==='over')showResult();
+  }
+}
 function askQuit(){
   const why=NET.mode==='host'?'你是房主，退出后其他玩家可以选择和电脑继续打。':NET.mode==='guest'?'你的座位会交给电脑接着打。':'这一场的级数和牌都不会保存。';
   showPanel(`<h2>退出游戏？</h2><p class="muted">${why}</p>
@@ -2769,6 +2800,7 @@ document.addEventListener('pointerdown',()=>Sound.unlock(),{capture:true});
 document.addEventListener('keydown',()=>Sound.unlock(),{capture:true});
 $('#newBtn').onclick=askNew;
 $('#quitBtn').onclick=askQuit;
+$('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start')act({k:'pause',on:!G.paused,p:toAbs(0)})};
 $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();renderHand()}});
 document.addEventListener('keydown',e=>{
   if(!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input'))return;
@@ -2982,7 +3014,7 @@ function hostGuestAct(seat,e){
     case'next':if(e.p!==seat)return;break;
     case'shuffle':if(G.shuffler!==seat)return;break;
     case'cut':if(G.cutter!==seat)return;break;
-    case'pass':case'return':case'ready':if(e.p!==seat)return;break;
+    case'pass':case'return':case'ready':case'pause':if(e.p!==seat)return;break;
     case'tribute':if(e.p!==seat||G.phase!=='tribPick'||!tribOptions(seat).some(c=>c.id===e.id))return;break;
     case'play':{
       if(e.p!==seat||G.phase!=='play'||G.turn!==seat)return;
