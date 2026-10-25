@@ -221,6 +221,9 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 #hand.fan{--cw:clamp(44px,min(6.4vw,10.5vh),74px)}
 #hand .card.sel{transform:rotate(var(--rot,0deg)) translateY(-20%)}
 #hand.fan .card{cursor:grab}
+/* while dragging: an outline where the cards will land, behind the hand, showing through the gap the others open */
+.land{position:absolute;z-index:0;pointer-events:none;border:3px dashed var(--gold);border-radius:8px;background:rgba(221,176,80,.18);
+  box-shadow:0 0 16px rgba(221,176,80,.55);transform-origin:50% 50%;transition:left .15s ease,top .15s ease,width .15s ease}
 #hand .card.drag{transition:none;transform:translateY(-6px) scale(1.06);box-shadow:0 12px 26px rgba(0,0,0,.5);cursor:grabbing}
 .mebar .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .handtools{display:flex;gap:6px}
@@ -863,7 +866,11 @@ function finishDeal(){
   }else if(!RULES.trib){
     G.notice='';
     startPrep(G.prevOut[0]);
-  }else doTribute();
+  }else{
+    // the tribute comes after the sorting minute; who leads is only known once it is paid
+    G.notice='';G.tribDue=true;
+    startPrep(-1);
+  }
 }
 function doTribute(){
   G.trib=[];
@@ -875,10 +882,33 @@ function doTribute(){
     G.notice=`${givers.map(g=>NAMES[g]).join('、')}手握两张大王，抗贡。`;
     G.phase='tribute';render();
     const tok=G.tok,jokers=givers.flatMap(g=>G.hands[g].filter(c=>c.r===17).map(c=>({g,c})));
-    kangAnim(jokers).then(()=>{if(G.tok===tok)startPrep(o[0])});
+    kangAnim(jokers).then(()=>{if(G.tok===tok)startPlay(o[0])});
     return;
   }
-  let tribs=givers.map(g=>({g,card:tributeCard(G.hands[g],L)}));
+  G.tribGivers=givers;G.tribPick={};G.clock=null;
+  if(givers.includes(0))sel=new Set();
+  tribWait();
+}
+// the largest cards a payer may give (never a wild card); with several of that rank in different suits, they choose
+function tribOptions(p){
+  const h=G.hands[p].filter(c=>!isWild(c,G.L)),m=Math.max(...h.map(c=>val(c,G.L)));
+  return h.filter(c=>val(c,G.L)===m);
+}
+// the computer picks at once; a player has 20 seconds, after which their largest card goes for them
+function tribWait(){
+  for(const g of G.tribGivers)if(G.tribPick[g]==null&&!isHumanSeat(g))G.tribPick[g]=tributeCard(G.hands[g],G.L).id;
+  const left=G.tribGivers.filter(g=>G.tribPick[g]==null);
+  if(!left.length){G.clock=null;payTribute();return}
+  G.phase='tribPick';
+  if(G.clock&&G.clock.who==='tribute')G.clock.seats=left;
+  else G.clock={who:'tribute',seats:left,left:TURN_MS,total:TURN_MS};
+  if(left.includes(0)&&!sel.size){const op=tribOptions(0);if(op.length===1)sel=new Set([op[0].id])}
+  if(left.includes(0))Sound.play('turn');
+  render();
+}
+function payTribute(){
+  const o=G.prevOut,L=G.L,dbl=o[1]%2===o[0]%2;
+  let tribs=G.tribGivers.map(g=>({g,card:G.hands[g].find(c=>c.id===G.tribPick[g])}));
   if(dbl)tribs.sort((a,b)=>val(b.card,L)-val(a.card,L));
   const recv=dbl?[o[0],o[1]]:[o[0]];
   G.gives=tribs.map((t,i)=>({from:t.g,to:recv[i],id:t.card.id,label:'进贡'}));
@@ -909,7 +939,7 @@ async function runGives(){
   processReturns();
 }
 function processReturns(){
-  if(!G.returns.length){startPrep(G.leader);return}
+  if(!G.returns.length){startPlay(G.leader);return}
   const x=G.returns[0];
   if(isHumanSeat(x.from)){G.phase='return';if(x.from===0)sel=new Set();G.clock={who:'return',seat:x.from,left:TURN_MS,total:TURN_MS};render();return}
   const c=aiReturnCard(G.hands[x.from],G.L);
@@ -924,7 +954,12 @@ function startPrep(leader){
 }
 function beginPlay(){
   if(G.phase!=='prep')return;
-  G.clock=null;G.phase='play';
+  G.clock=null;
+  if(G.tribDue){G.tribDue=false;doTribute();return}
+  startPlay(G.turn);
+}
+function startPlay(leader){
+  G.phase='play';G.turn=leader;G.clock=null;
   startTurn();
 }
 function giveCard(from,to,c){
@@ -982,6 +1017,14 @@ function timeUp(c){
   const who=c.who;
   if(who==='prep'){act({k:'begin'});return}
   if(who==='deck'){act({k:G.phase==='shuffle'?'shuffle':'cut'});return}
+  if(who==='tribute'){
+    for(const s of c.seats)if(G.phase==='tribPick'&&G.tribPick[s]==null){
+      const card=tributeCard(G.hands[s],G.L);
+      if(s===0){sel=new Set();setMsg(`时间到，已自动进贡 ${cardText(card)}`)}
+      act({k:'tribute',p:toAbs(s),id:card.id});
+    }
+    return;
+  }
   if(who==='return'){
     const s=c.seat,card=aiReturnCard(G.hands[s],G.L);
     if(s===0)setMsg(`时间到，已自动还贡 ${cardText(card)}`);
@@ -998,7 +1041,7 @@ function renderClocks(){
   const c=G.clock;
   for(let p=0;p<4;p++){
     const el=p===0?$('#myClock'):$('#seat'+p+' .clock');
-    const on=!!c&&(c.who===p||((c.who==='return'||c.who==='deck')&&c.seat===p));
+    const on=!!c&&(c.who===p||((c.who==='return'||c.who==='deck')&&c.seat===p)||(c.who==='tribute'&&c.seats.includes(p)));
     const n=on?String(Math.max(0,Math.ceil(c.left/1000))):'';
     if(el.dataset.n!==n){el.dataset.n=n;el.innerHTML=n?`<b>${n}</b>`:''}
     el.classList.toggle('hurry',on&&c.left<=HURRY_MS);
@@ -1008,7 +1051,7 @@ function renderClocks(){
   if(prep){
     $('#prepBigNum').textContent=Math.max(0,Math.ceil(c.left/1000));
     $('#prepBig').classList.toggle('hurry',c.left<=HURRY_MS);
-    $('#prepText').textContent=`${G.turn===0?'你':NAMES[G.turn]}先出`;
+    $('#prepText').textContent=G.turn<0?'理牌后进贡':`${G.turn===0?'你':NAMES[G.turn]}先出`;
     $('#readyBtn').hidden=(G.ready||[]).includes(0);
   }
 }
@@ -1151,7 +1194,15 @@ function onHint(){
   renderHand();
 }
 function onReturn(){
-  if(G.phase!=='return'||G.returns[0].from!==0||NET.pending)return;
+  if(NET.pending)return;
+  if(G.phase==='tribPick'){
+    if(!G.tribGivers.includes(0)||G.tribPick[0]!=null)return;
+    const cards=selectedCards(),ok=tribOptions(0);
+    if(cards.length!==1||!ok.includes(cards[0])){setMsg('要进贡手里最大的一张牌（百搭除外）',true);return}
+    act({k:'tribute',p:toAbs(0),id:cards[0].id});
+    return;
+  }
+  if(G.phase!=='return'||G.returns[0].from!==0)return;
   const cards=selectedCards();
   if(cards.length!==1){setMsg('选一张 10 或以下的牌还贡',true);return}
   const c=cards[0];
@@ -1167,7 +1218,7 @@ function playEvt(p,pl){
 // waits for it to come back, so every table applies the same moves in the same order
 function act(e){
   if(NET.mode==='guest'){
-    if(NET.hostConn&&NET.hostConn.open){NET.pending=['play','pass','return'].includes(e.k);NET.hostConn.send({t:'act',e})}
+    if(NET.hostConn&&NET.hostConn.open){NET.pending=['play','pass','return','tribute'].includes(e.k);NET.hostConn.send({t:'act',e})}
     return;
   }
   if(applyEvt(e)&&NET.mode==='host')broadcast({t:'evt',e});
@@ -1195,6 +1246,14 @@ function applyEvt(e){
       G.clock=null;
       G.gives.push({from:p,to:x.to,id:e.id,label:'还贡'});
       runGives();return true;
+    }
+    case'tribute':{
+      if(G.phase!=='tribPick')return false;
+      if(!G.tribGivers.includes(p)||G.tribPick[p]!=null||!G.hands[p].some(c=>c.id===e.id))return true;
+      G.tribPick[p]=e.id;
+      if(p===0){sel=new Set();NET.pending=false}
+      tribWait();
+      return true;
     }
     case'ready':
       if(G.phase!=='prep')return false;
@@ -1506,9 +1565,11 @@ function render(){
 }
 function renderControls(){
   const my=G.phase==='play'&&G.turn===0;
-  const ret=G.phase==='return';
+  const pay=G.phase==='tribPick'&&G.tribGivers.includes(0)&&G.tribPick[0]==null;
+  const ret=G.phase==='return'||pay;
   $('#playBtn').hidden=ret;$('#passBtn').hidden=ret;$('#hintBtn').hidden=ret;
   $('#returnBtn').hidden=!ret;
+  $('#returnBtn').textContent=pay?'进贡':'还贡';
   // once your hand is empty (out, or the round is over) the play buttons have nothing left to do
   $('#btns').hidden=!ret&&G.phase!=='deal'&&!G.hands[0].length;
   $('#playBtn').disabled=!my;
@@ -1533,6 +1594,11 @@ function renderMsg(){
   if(G.phase==='return'){
     const x=G.returns[0];
     t=`<div>还一张 10 或以下的牌给${NAMES[x.to]}</div>`+tribHtml();
+  }else if(G.phase==='tribPick'){
+    const opts=[...new Map(tribOptions(0).map(c=>[cardText(c),c])).values()];
+    if(G.tribGivers.includes(0)&&G.tribPick[0]==null)t=`<div class="trib">进贡最大的牌：${opts.map(cardTag).join(' ')}${opts.length>1?'，选一张':''}</div>`;
+    const wait=G.tribGivers.filter(g=>g!==0&&G.tribPick[g]==null);
+    if(wait.length)t+=`<div>等待${wait.map(g=>NAMES[g]).join('、')}进贡</div>`;
   }else if(G.phase==='tribute'||G.phase==='prep'||G.phase==='play'){
     t=tribHtml()+(G.notice?`<div>${G.notice}</div>`:'');
   }
@@ -1608,7 +1674,7 @@ function flatGeo(n,W,cw,ch,keys){
   counts.forEach((k,r)=>{
     for(let j=0;j<k;j++)slots.push({x:(W-(cw+off*(k-1)))/2+j*off,y:lift+r*rowGap,rot:0});
   });
-  return{slots,cw,ch,height:lift+ch+(counts.length-1)*rowGap+4};
+  return{slots,cw,ch,counts,height:lift+ch+(counts.length-1)*rowGap+4};
 }
 // cards held the way people hold 27 of them: two or three concentric fanned rows turning about one point below the hand.
 // The back (top) ring is the widest and holds the most cards; each ring in front is smaller and holds fewer,
@@ -1660,7 +1726,7 @@ function fanGeo(n,W,cw,ch,keys){
   });
   const top=Math.min(...raw.map(s=>s.cy));
   const slots=raw.map(s=>({x:s.cx-cw/2,y:s.cy-top+lift,rot:s.rot}));
-  return{slots,cw,ch,height:Math.max(...slots.map(s=>s.y))+ch+cw*.25};
+  return{slots,cw,ch,counts,height:Math.max(...slots.map(s=>s.y))+ch+cw*.25};
 }
 function cardKey(id){const c=G.hands[0].find(x=>x.id===id);return c?val(c,G.L):0}
 // row-split keys for a hand in this order: a card's rank, except that the cards of a group you dragged together
@@ -2287,7 +2353,7 @@ function showRules(){
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
     <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排，按住一张牌拖动可以把它插到别处；先选中几张再拖，可以整组一起挪。平铺模式也一样。轮到你出牌时，按住滑过几张牌是连选这些牌；其他时候按住拖动才是挪牌。“理牌”按大小重新排好。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
-    <li>发完牌有 60 秒理牌时间。每次出牌限时 20 秒，最后 5 秒倒计时会闪烁，超时由电脑代你出牌。</li>
+    <li>发完牌先有 60 秒理牌时间，然后进贡、还贡，各限时 20 秒；最大的牌有几种花色时，自己选进贡哪一张。每次出牌限时 20 秒，最后 5 秒倒计时会闪烁，超时由电脑代你出牌。</li>
   </ul>
   <p class="muted">点选牌，双击任意一张牌直接出牌，“提示”会依次给出能出的牌。</p>
   <div class="btns"><button class="btn primary" id="closeBtn">知道了</button></div>`);
@@ -2338,7 +2404,7 @@ function setSel(id,on,lazy){
   renderControls();
 }
 handEl.addEventListener('pointerdown',e=>{
-  if(G.phase!=='play'&&G.phase!=='return'&&G.phase!=='prep')return;
+  if(G.phase!=='play'&&G.phase!=='return'&&G.phase!=='prep'&&G.phase!=='tribPick')return;
   const el=e.target.closest('.card');if(!el)return;
   e.preventDefault();
   const id=+el.dataset.id,t=performance.now();
@@ -2347,7 +2413,7 @@ handEl.addEventListener('pointerdown',e=>{
     sel=new Set(lastDown.prev);sel.add(id);
     lastDown=null;
     renderHand();
-    if(G.phase==='return')onReturn();else if(G.phase==='play')onPlay();
+    if(G.phase==='return'||G.phase==='tribPick')onReturn();else if(G.phase==='play')onPlay();
     return;
   }
   lastDown={id,t,prev:[...sel]};
@@ -2393,6 +2459,7 @@ function moveCards(e){
     mv.others=ord.filter(i=>!mv.ids.includes(i));
     mv.order=ord;
     mv.g=handGeo(ord.length,handKeys(ord));
+    mv.rowOf=mv.g.counts.flatMap((k,r)=>Array(k).fill(r));
     const L=handEl.getBoundingClientRect(),el=cardEl(mv.id);
     mv.dx=mv.x0-L.left-parseFloat(el.style.left);
     mv.dy=mv.y0-L.top-parseFloat(el.style.top);
@@ -2409,11 +2476,29 @@ function moveCards(e){
   if(t===mv.t)return;
   mv.t=t;
   mv.order=[...mv.others.slice(0,t),...mv.ids,...mv.others.slice(t)];
-  mv.order.forEach((id,i)=>{if(!mv.ids.includes(id))placeCard(cardEl(id),g.slots[i],i)});
+  mv.order.forEach((id,i)=>{if(!mv.ids.includes(id))placeCard(cardEl(id),spreadSlot(i),i)});
+  showLanding();
   Sound.play('deal');
+}
+// the cards in the landing row step aside, the nearest ones most, so a clear gap opens where the dragged cards will go
+function spreadSlot(i){
+  const g=mv.g,t=mv.t,k=mv.ids.length,sl=g.slots[i],row=mv.rowOf[t];
+  if(mv.rowOf[i]!==row)return sl;
+  const d=i<t?t-i:i-(t+k-1),shift=g.cw*.45*Math.max(0,1-(d-1)/4);
+  return{...sl,x:sl.x+(i<t?-shift:shift)};
+}
+function showLanding(){
+  const g=mv.g,a=g.slots[mv.t],b=g.slots[Math.min(g.slots.length-1,mv.t+mv.ids.length-1)];
+  let m=$('#landMark');
+  if(!m){m=document.createElement('div');m.id='landMark';m.className='land';handEl.parentNode.insertBefore(m,handEl)}
+  const w=(mv.rowOf[mv.t]===mv.rowOf[mv.t+mv.ids.length-1]?b.x-a.x:0)+g.cw;
+  m.style.left=handEl.offsetLeft+a.x+'px';m.style.top=handEl.offsetTop+a.y+'px';
+  m.style.width=w+'px';m.style.height=g.ch+'px';
+  m.style.transform=`rotate(${a.rot}deg)`;
 }
 function dropCards(){
   const m=mv;mv=null;
+  const lm=$('#landMark');if(lm)lm.remove();
   if(!m.active){
     if(!m.cancel){setSel(m.id,!sel.has(m.id),true);Sound.play('select')}
     return;
@@ -2487,7 +2572,7 @@ $('#quitBtn').onclick=askQuit;
 $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();renderHand()}});
 document.addEventListener('keydown',e=>{
   if(!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input'))return;
-  if(e.key==='Enter'){e.preventDefault();G.phase==='return'?onReturn():passIsDefault()?onPass():onPlay()}
+  if(e.key==='Enter'){e.preventDefault();G.phase==='return'||G.phase==='tribPick'?onReturn():passIsDefault()?onPass():onPlay()}
   else if(e.key===' '){e.preventDefault();onPass()}
   else if(e.key==='h'||e.key==='H')onHint();
 });
@@ -2510,6 +2595,7 @@ function boot(data){
     if(G.phase==='shuffle'||G.phase==='cut'){G.busy=false;beginDeal();return}
     if(G.phase==='deal'){finishDeal();return}
     if(G.phase==='tribute'){runGives();return}
+    if(G.phase==='tribPick'){G.clock=null;tribWait();return}
     if(G.phase==='play'){
       startTurn();
     }else{if(G.phase==='roundEnd'||G.phase==='over')G.reveal=4;render();if(G.phase==='roundEnd'||G.phase==='over')showResult()}
@@ -2691,6 +2777,7 @@ function hostGuestAct(seat,e){
     case'shuffle':if(G.shuffler!==seat)return;break;
     case'cut':if(G.cutter!==seat)return;break;
     case'pass':case'return':case'ready':if(e.p!==seat)return;break;
+    case'tribute':if(e.p!==seat||G.phase!=='tribPick'||!tribOptions(seat).some(c=>c.id===e.id))return;break;
     case'play':{
       if(e.p!==seat||G.phase!=='play'||G.turn!==seat)return;
       const cards=(e.ids||[]).map(id=>G.hands[seat].find(c=>c.id===id));
@@ -2714,6 +2801,7 @@ function hostOnClose(conn,how='drop'){
   act({k:'humans',list,names:NET.names,left:info.name,how});
   const c=G.clock;
   if(c&&(c.who===seat||c.seat===seat)){G.clock=null;timeUp(c)}
+  if(G.phase==='tribPick'&&G.tribGivers.includes(seat)&&G.tribPick[seat]==null)act({k:'tribute',p:seat,id:tributeCard(G.hands[seat],G.L).id});
   if(G.phase==='prep'&&[...NET.humans].every(h=>G.ready.includes(h)))act({k:'begin'});
 }
 // the host starts: everyone learns where everyone sits, then the first deal goes out
@@ -2803,6 +2891,7 @@ function goSolo(){
   if(G.phase==='shuffle'&&!G.busy)startShuffle();
   else if(G.phase==='cut'&&!G.busy)startCut();
   else if(G.phase==='return')processReturns();
+  else if(G.phase==='tribPick')tribWait();
   else if(G.phase==='prep'){if(G.ready.includes(0))beginPlay();else{G.clock=c&&c.who==='prep'?c:{who:'prep',left:PREP_MS,total:PREP_MS};render()}}
   else if(G.phase==='play'&&G.turn>=0)startTurn();
   else if(G.phase==='roundEnd'||G.phase==='over')showResult();
