@@ -237,6 +237,11 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   #btns .btn{min-width:86px}
 }
 .meinfo{display:flex;align-items:center;gap:8px;font-size:17px;padding:5px 10px;border-radius:10px;background:var(--shade);border:1px solid var(--line)}
+/* name plates keep one height whatever they show: the turn clock is taller than a name, so it overhangs its plate
+   instead of stretching it, and the table never shifts when the turn moves on */
+.who{height:2.35em}
+.meinfo{height:1.95em}
+.who .clock,.meinfo .clock{margin-block:0}
 .btns{display:flex;gap:8px;flex-wrap:wrap}
 .btn{font:inherit;font-size:18px;padding:9px 22px;border-radius:999px;border:1px solid var(--line-strong);background:transparent;color:var(--ink);cursor:pointer;transition:background .15s}
 .btn:hover:not(:disabled){background:var(--shade)}
