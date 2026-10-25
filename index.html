@@ -2880,12 +2880,9 @@ function dropCards(){
   Sound.play('play');
 }
 $('#playBtn').onclick=onPlay;
-// if anything goes wrong while a move is handled, say so on the table instead of silently doing nothing,
-// and keep the last error (with the page version) so it can be reported
+// if anything goes wrong, quietly keep the last error (with the page version) on this device for checking later
 function showError(m){
   try{localStorage.setItem('guandan-lastError',`${new Date().toLocaleString()} 版本${VERSION} ${m}`)}catch(_){}
-  const el=$('#msg');el.textContent=`出了点问题（${m}），请截图告诉我们`;el.classList.add('err');
-  clearTimeout(msgTimer);msgTimer=setTimeout(()=>{msgTimer=0;renderMsg()},8000);
 }
 addEventListener('error',e=>showError(e.message||'未知错误'));
 addEventListener('unhandledrejection',e=>showError((e.reason&&e.reason.message)||'未知错误'));
@@ -3102,7 +3099,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1025-1931';
+const VERSION='1025-1934';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
