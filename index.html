@@ -1934,9 +1934,11 @@ function renderControls(){
   // while you are sorting, the "done sorting" button takes the play buttons' place
   $('#btns').hidden=(!ret&&G.phase!=='deal'&&!G.hands[0].length)||(sideBtns()&&G.phase==='prep'&&!ret&&!(G.ready||[]).includes(0));
   // every button that does something right now is lit, the others are dimmed and cannot be pressed:
-  // 出牌 once cards are picked on your turn (or while you are about to lead), 提示 on your turn, 过 when there is
-  // something on the table to pass on, 重选 while any cards are picked
-  const picked=sel.size>0,can={playBtn:(my||soon)&&picked,hintBtn:my,passBtn:my&&!!G.trick,clearBtn:picked};
+  // 出牌 once the picked cards make a play that may go out now (beats the table, or any combination when you are
+  // about to lead), 提示 on your turn, 过 when there is something on the table to pass on, 重选 while any cards are picked
+  const picked=sel.size>0,cur=my&&G.trick?G.trick.play:null;
+  const playable=(my||soon)&&picked&&analyze(selectedCards(),G.L).some(r=>beats(r,cur));
+  const can={playBtn:playable,hintBtn:my,passBtn:my&&!!G.trick,clearBtn:picked};
   for(const id in can){const b=$('#'+id);b.disabled=!can[id];b.classList.toggle('primary',can[id])}
   const deckTurn=(G.phase==='shuffle'&&G.shuffler===0)||(G.phase==='cut'&&G.cutter===0);
   $('#deckBtn').hidden=!deckTurn||!!G.busy;
@@ -3233,7 +3235,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1026-1724';
+const VERSION='1026-1729';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
