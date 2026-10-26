@@ -296,7 +296,19 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 #hand .card.drag{transition:none;transform:translateY(-6px) scale(1.06);box-shadow:0 12px 26px rgba(0,0,0,.5);cursor:grabbing}
 .mebar .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .handtools{display:flex;gap:6px;justify-content:flex-end;margin-top:2px}
-@media (min-width:561px){.handwrap .handtools{position:absolute;right:0;bottom:2px;margin:0;z-index:1}}
+@media (min-width:561px){.handwrap .handtools{position:absolute;left:0;right:0;bottom:2px;margin:0;z-index:1;pointer-events:none}.handtools .link{pointer-events:auto}}
+/* 固定 / 放回 stands at the left end, under the fixed zone */
+#fixBtn{margin-right:auto}
+.link:disabled{opacity:.35;cursor:default}
+/* the fixed zone: a dashed frame on the left of the hand around the groups set aside, each group's kind of play beside it */
+#fixZone{position:absolute;z-index:0;pointer-events:none;border:2px dashed rgba(221,176,80,.45);border-radius:12px;background:rgba(221,176,80,.06);transition:background .15s,border-color .15s}
+#fixZone.over{border-color:var(--gold);background:rgba(221,176,80,.2);box-shadow:0 0 16px rgba(221,176,80,.5)}
+#fixZone .fzl{position:absolute;left:8px;top:1px;font-size:12px;line-height:1.2;color:var(--gold);letter-spacing:.1em;white-space:nowrap}
+#fixTags{position:absolute;z-index:1;pointer-events:none}
+.fzt{position:absolute;font-size:12px;font-weight:700;line-height:1;padding:3px 6px;border-radius:999px;background:var(--felt-deep);color:var(--gold);border:1px solid var(--gold);white-space:nowrap}
+.fzt.boom{background:var(--gold);color:var(--on-gold)}
+.fzt.loose{color:var(--muted);border-color:var(--line-strong)}
+.fzt.hot{background:var(--gold);color:var(--on-gold);border-color:var(--gold);box-shadow:0 0 10px var(--gold)}
 #hand .card.fresh{box-shadow:0 0 0 2px var(--gold),0 2px 4px rgba(0,0,0,.4)}
 /* a picked card (by hand or by the hint button) stands up in the same bright frame as the newest play on the table */
 #hand .card.sel{box-shadow:0 0 0 2.5px var(--latest),0 0 16px 3px var(--latest-glow),0 6px 14px rgba(0,0,0,.35)}
@@ -520,7 +532,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
       <button class="btn round" id="clearBtn">重选</button>
     </div>
     <div id="hand"></div>
-    <div class="handtools"><button class="link tog" id="fanBtn" aria-pressed="true" title="像手里握着牌一样展开，可以拖动牌插到别处">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
+    <div class="handtools"><button class="link" id="fixBtn" title="把选中的牌放进左边的固定区，作为你拟定的一组牌">固定</button><button class="link tog" id="fanBtn" aria-pressed="true" title="像手里握着牌一样展开，可以拖动牌插到别处">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
   </div>
 </div>
 
@@ -929,7 +941,7 @@ function startRound(e){
   G.deck=e.deck.map(id=>byId.get(id));
   G.hands=[[],[],[],[]];
   G.trick=null;G.passes=0;G.last=[null,null,null,null];G.out=[];G.fresh=[];G.result=null;
-  G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.rest=[];G.myOrder=[];G.blocks=[];pileRebuild();G.dealCount=0;
+  G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.rest=[];G.myOrder=[];G.fixed=[];pileRebuild();G.dealCount=0;
   // as at a real table: the last round's first-out cuts and the player before them shuffles
   // (the very first round picks the cutter at random)
   G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
@@ -1284,27 +1296,33 @@ function renderClocks(){
   }
 }
 // hints go by the shape of your hand (see hintOrder): a pair of 5s before breaking up three 4s
-// and around the groups the player has sorted out by dragging cards together: a group that makes a play which beats
-// the table (or may lead) comes first, exactly as it was arranged, unless it is a bomb; hints that would break up a
-// group come last
+// and around the fixed zone: a fixed group that makes a play which beats the table (or may lead) comes first, exactly
+// as the player set it aside, unless it is a bomb, then plays made of whole fixed groups together (a fixed three and a
+// fixed pair as a full house); then plays from the active cards alone, then from fixed cards that break a group up,
+// each without bombs first; plays that mix fixed and active cards only when nothing else will do
 function sortHints(plays){
   const hand=G.hands[0],cur=G.trick?G.trick.play:null,list=hintOrder(hand,G.L,cur,plays);
   const have=new Set(hand.map(c=>c.id));
-  G.blocks=(G.blocks||[]).map(b=>b.filter(id=>have.has(id))).filter(b=>b.length>1);
-  if(!G.blocks.length)return list;
-  const key=pl=>pl.cards.map(c=>c.id).sort((a,b)=>a-b).join();
+  G.fixed=(G.fixed||[]).map(gr=>gr.filter(id=>have.has(id))).filter(gr=>gr.length);
+  if(!G.fixed.length)return list;
+  const key=pl=>pl.cards.map(c=>c.id).sort((a,b)=>a-b).join(),fixed=new Set(G.fixed.flat());
   const own=[];
-  for(const b of G.blocks){
-    const cards=b.map(id=>hand.find(c=>c.id===id));
+  for(const gr of G.fixed){
+    const cards=gr.map(id=>hand.find(c=>c.id===id));
     const r=analyze(cards,G.L).filter(a=>beats(a,cur)&&(!isBomb(a)||cur&&isBomb(cur))).sort((a,b)=>strength(a)-strength(b))[0];
     if(r)own.push({...r,cards,wu:cards.filter(c=>isWild(c,G.L)).length});
   }
-  const ownK=new Set(own.map(key));
-  const breaks=pl=>G.blocks.some(b=>{const n=pl.cards.filter(c=>b.includes(c.id)).length;return n>0&&n<b.length});
-  const rest=list.filter(pl=>!ownK.has(key(pl)));
+  const ownK=new Set(own.map(key)),rest=list.filter(pl=>!ownK.has(key(pl)));
+  const nf=pl=>pl.cards.filter(c=>fixed.has(c.id)).length;
+  const whole=pl=>nf(pl)===pl.cards.length&&G.fixed.every(gr=>{const n=pl.cards.filter(c=>gr.includes(c.id)).length;return!n||n===gr.length});
   // a play that empties the hand still comes first of all
   const fin=rest.filter(pl=>pl.cards.length===hand.length);
-  return fin.concat(own,rest.filter(pl=>!fin.includes(pl)&&!breaks(pl)),rest.filter(pl=>!fin.includes(pl)&&breaks(pl)));
+  const more=rest.filter(pl=>!fin.includes(pl));
+  const act=more.filter(pl=>nf(pl)===0),part=more.filter(pl=>nf(pl)===pl.cards.length&&!whole(pl));
+  const out=fin.concat(own,more.filter(pl=>whole(pl)&&(!isBomb(pl)||cur&&isBomb(cur))),
+    act.filter(pl=>!isBomb(pl)),part.filter(pl=>!isBomb(pl)),act.filter(isBomb),part.filter(isBomb),
+    more.filter(pl=>whole(pl)&&isBomb(pl)&&!(cur&&isBomb(cur))));
+  return out.length?out:more.filter(pl=>nf(pl)>0&&nf(pl)<pl.cards.length);
 }
 
 function doPlay(p,play){
@@ -1935,6 +1953,9 @@ function renderControls(){
   const playable=(my||soon)&&picked&&analyze(selectedCards(),G.L).some(r=>beats(r,cur));
   const can={playBtn:playable,hintBtn:my,passBtn:my&&!!G.trick,clearBtn:picked};
   for(const id in can){const b=$('#'+id);b.disabled=!can[id];b.classList.toggle('primary',can[id])}
+  const fb=$('#fixBtn'),fixedNow=new Set((G.fixed||[]).flat());
+  fb.disabled=!picked||!G.hands[0].length;
+  fb.textContent=picked&&[...sel].every(id=>fixedNow.has(id))?'放回':'固定';
   const deckTurn=(G.phase==='shuffle'&&G.shuffler===0)||(G.phase==='cut'&&G.cutter===0);
   $('#deckBtn').hidden=!deckTurn||!!G.busy;
   $('#deckBtn').textContent=G.phase==='cut'?'切牌':'洗牌';
@@ -1989,20 +2010,23 @@ function setMsg(t,err){
 }
 
 // the hand in the order the player arranged it; cards that arrive later slot in by rank
+// the fixed groups first (each as the player set it aside), then the active cards; cards that leave the hand leave
+// their group too, and a group left empty goes
 function orderedHand(){
   const h=G.hands[0],byId=new Map(h.map(c=>[c.id,c]));
-  const ord=(G.myOrder||[]).filter(id=>byId.has(id));
-  if(ord.length!==h.length){
+  G.fixed=(G.fixed||[]).map(gr=>gr.filter(id=>byId.has(id))).filter(gr=>gr.length);
+  const fixed=new Set(G.fixed.flat()),act=h.filter(c=>!fixed.has(c.id));
+  const ord=(G.myOrder||[]).filter(id=>byId.has(id)&&!fixed.has(id));
+  if(ord.length!==act.length){
     const have=new Set(ord);
-    for(const c of sortHand(h.slice(),G.L)){
+    for(const c of sortHand(act,G.L)){
       if(have.has(c.id))continue;
       const i=ord.findIndex(id=>cmpCards(byId.get(id),c,G.L)>0);
-      // a card arriving later never lands inside a group the player has sorted out
-      if(i<0)ord.push(c.id);else ord.splice(blockSnap(ord,i,[]),0,c.id);
+      if(i<0)ord.push(c.id);else ord.splice(i,0,c.id);
     }
   }
   G.myOrder=ord;
-  return ord.map(id=>byId.get(id));
+  return G.fixed.flat().concat(ord).map(id=>byId.get(id));
 }
 let handView='fan',handRows=3,flatRows=1,flatShown=1,flatOneFits=true;
 try{
@@ -2035,15 +2059,57 @@ let colW=90;
 // hint button (pass, clear) still clear the hand tools in the corner
 const SPOT_UP=226;
 const actionInset=w=>Math.min(150,Math.max(colW/2+16,w*.12));
+// The hand has two parts: on the left the fixed zone, where the groups the player has set aside (the combinations
+// they mean to play) sit one per row; to the right the active zone, the rest of the cards, fanned or flat.
+// n: how many active cards, keys: their row-split keys. Also returns where each fixed card goes (fix), the row
+// tags (fixTags), the zone's size (fixW, fixH) and the line a dragged card crosses to land in the zone (fixEdge).
+const FIX_GAP=14,FIX_TAG=46;
 function handGeo(n,keys){
-  const el=$('#hand'),probe=el.firstElementChild;
-  // the cards stay centred under your name, with the action column's room kept free on both sides
+  const el=$('#hand'),probe=el.firstElementChild,Wall=el.clientWidth;
+  // the active cards stay centred under your name, with the action column's room kept free on both sides,
+  // as long as the fixed zone fits in the free room on the left; a wider zone pushes them right
   if(sideBtns()&&$('#btns').offsetWidth)colW=$('#btns').offsetWidth;
-  const side=sideBtns()?actionInset(el.clientWidth)+colW/2+BTN_GAP:0,W=el.clientWidth-2*side;
+  const side=sideBtns()?actionInset(Wall)+colW/2+BTN_GAP:0;
   const cw=probe.offsetWidth,ch=probe.offsetHeight;
+  // each group in one row, overlapping just enough to show every card's corner; a long group closes up
+  const rows=(G&&G.fixed||[]).map(gr=>{const k=gr.length,off=k>1?Math.min(cw*.42,(Wall*.34-cw)/(k-1)):0;return{gr,off,w:cw+off*(k-1)}});
+  const fw=rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:0;
+  const x0=Math.max(side,fw?fw+FIX_GAP:0),W=Wall-side-x0;
   const g=fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
-  if(side)g.slots=g.slots.map(sl=>({...sl,x:sl.x+side}));
+  g.slots=g.slots.map(sl=>({...sl,x:sl.x+x0}));
+  // the groups step down like flat rows (each still shows its row of corners), closer together if there are many;
+  // on a computer or tablet the zone keeps clear of the button under it
+  const lift=ch*.22,pad=sideBtns()?36:4,base=n?g.height:0;
+  let gap=ch*ROW_STEP;
+  if(rows.length>1)gap=Math.max(ch*.3,Math.min(gap,(Math.max(base,ch*2.4)-lift-ch-pad)/(rows.length-1)));
+  g.fix=new Map();g.fixTags=[];
+  rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:r.w+5,y,gr:r.gr})});
+  g.fixW=fw;g.fixH=rows.length?lift+ch+(rows.length-1)*gap+6:0;g.cw=cw;g.ch=ch;
+  g.fixEdge=fw?fw+FIX_GAP/2:Math.max(side*.8,cw*.6);
+  g.height=Math.max(base,rows.length?g.fixH+pad:0);
   return g;
+}
+// the fixed zone's outline (behind the cards) and, beside each group, what kind of play it makes (over them);
+// the outline also shows while cards are being dragged, as the place to drop them
+function drawFixZone(g){
+  let z=$('#fixZone'),t=$('#fixTags');
+  if(!z){
+    z=document.createElement('div');z.id='fixZone';handEl.parentNode.insertBefore(z,handEl);
+    t=document.createElement('div');t.id='fixTags';handEl.parentNode.insertBefore(t,handEl.nextSibling);
+  }
+  const on=!!g&&(g.fixW>0||!!(mv&&mv.active));
+  z.hidden=t.hidden=!on;
+  if(!on)return;
+  const L=handEl.offsetLeft,T=handEl.offsetTop;
+  z.style.left=L-6+'px';z.style.top=T+'px';z.style.width=(g.fixW||g.fixEdge)+6+'px';z.style.height=(g.fixH||handEl.offsetHeight)+'px';
+  z.innerHTML=`<span class="fzl">${g.fixW?'固定区':'拖到这里固定'}</span>`;
+  t.style.left=L+'px';t.style.top=T+'px';
+  t.innerHTML=g.fixTags.map(r=>{
+    const cards=r.gr.map(id=>G.hands[0].find(c=>c.id===id)).filter(Boolean);
+    const a=analyze(cards,G.L).sort((x,y)=>strength(y)-strength(x))[0];
+    const name=!a?'散牌':a.type==='bomb'?'炸弹':TYPE_NAME[a.type];
+    return`<span class="fzt${!a?' loose':isBomb(a)?' boom':''}" style="left:${r.x}px;top:${r.y+3}px">${name}</span>`;
+  }).join('');
 }
 // a card's corner index (rank over suit) takes about half its height
 const ROW_STEP=.58;
@@ -2116,29 +2182,9 @@ function fanGeo(n,W,cw,ch,keys){
   const slots=raw.map(s=>({x:s.cx-cw/2,y:s.cy-top+lift,rot:s.rot}));
   return{slots,cw,ch,counts,height:Math.max(...slots.map(s=>s.y))+ch+cw*.25};
 }
-// where cards inserted at position t of this order (in front of order[t]) may go: if t falls inside one of the player's
-// groups (still in one piece), the nearer end of the group instead; ids: cards being moved, which no longer count
-function blockSnap(order,t,ids){
-  for(const b of G.blocks||[]){
-    const at=b.filter(id=>!ids.includes(id)).map(id=>order.indexOf(id)).filter(i=>i>=0).sort((x,y)=>x-y);
-    if(at.length<2||at[at.length-1]-at[0]!==at.length-1)continue;
-    const s0=at[0],e0=at[at.length-1]+1;
-    if(t>s0&&t<e0)return t-s0<=e0-t?s0:e0;
-  }
-  return t;
-}
 function cardKey(id){const c=G.hands[0].find(x=>x.id===id);return c?val(c,G.L):0}
-// row-split keys for a hand in this order: a card's rank, except that the cards of a group you dragged together
-// share one key, so the rows never cut through the group (it only counts while it is still in one piece)
-function handKeys(ids){
-  const keys=ids.map(cardKey);
-  (G.blocks||[]).forEach((b,bi)=>{
-    const at=b.map(id=>ids.indexOf(id)).filter(i=>i>=0).sort((x,y)=>x-y);
-    if(at.length<2||at[at.length-1]-at[0]!==at.length-1)return;
-    for(const i of at)keys[i]='g'+bi;
-  });
-  return keys;
-}
+// row-split keys for the active cards in this order: each card's rank, so the rows never split a rank
+const handKeys=ids=>ids.map(cardKey);
 // a dragged group lands tidied: if it makes a combination it is laid out the way that combination reads
 // (a straight runs low to high), otherwise it is sorted by rank
 function tidyGroup(ids){
@@ -2160,20 +2206,24 @@ function layoutHand(){
   // while dealing, each card goes straight into its slot in a full 27-card hand,
   // so cards already dealt never shift and the hand's height (and the table above it) stays put
   const dealing=G&&(G.phase==='deal'||G.phase==='shuffle'||G.phase==='cut');
-  if(!n&&!dealing){el.style.height='';placeActionBtns();return}
+  if(!n&&!dealing){el.style.height='';drawFixZone(null);placeActionBtns();return}
   let probe=null;
   if(!n){probe=document.createElement('div');probe.className='card';probe.style.visibility='hidden';el.appendChild(probe)}
-  const g=handGeo(dealing?27:n,dealing?null:handKeys(cards.map(c=>+c.dataset.id)));
+  const fixed=new Set((G.fixed||[]).flat()),act=cards.filter(c=>!fixed.has(+c.dataset.id));
+  const g=handGeo(dealing?27:act.length,dealing?null:handKeys(act.map(c=>+c.dataset.id)));
   if(probe)probe.remove();
-  cards.forEach((c,i)=>placeCard(c,g.slots[i],i));
+  act.forEach((c,i)=>placeCard(c,g.slots[i],100+i));
+  cards.filter(c=>fixed.has(+c.dataset.id)).forEach((c,i)=>placeCard(c,g.fix.get(+c.dataset.id),i));
   el.style.height=g.height+'px';
+  drawFixZone(g);
   placeButtons(g);
   syncHandBtns();
 }
 // the button column hugs the right edge of the cards, centred on the hand's height
 function placeButtons(g){
   const b=$('#btns');
-  if(!sideBtns()){b.style.left=b.style.top='';return}
+  if(!sideBtns())b.style.left=b.style.top='';
+  // also after turning a phone from sideways to upright, so the big buttons leave their desktop spot
   placeActionBtns();
 }
 // one action spot for the buttons pressed again and again: shuffle / cut, "done sorting", tribute / return, the hint
@@ -2937,31 +2987,53 @@ handEl.addEventListener('pointercancel',()=>{if(mv){mv.cancel=true;dropCards()}s
 function moveCards(e){
   if(!mv.active){
     if(Math.hypot(e.clientX-mv.x0,e.clientY-mv.y0)<6)return;
-    const ord=[...handEl.children].map(c=>+c.dataset.id);
-    mv.ids=sel.has(mv.id)&&sel.size>1?ord.filter(i=>sel.has(i)):[mv.id];
+    const all=[...handEl.children].map(c=>+c.dataset.id),fixed=new Set(G.fixed.flat()),ord=all.filter(i=>!fixed.has(i));
+    mv.ids=sel.has(mv.id)&&sel.size>1?all.filter(i=>sel.has(i)):[mv.id];
     mv.grab=mv.ids.indexOf(mv.id);
     mv.others=ord.filter(i=>!mv.ids.includes(i));
     mv.order=ord;
-    mv.g=handGeo(ord.length,handKeys(ord));
+    // the active zone as it will be with the dragged cards dropped into it
+    mv.g=handGeo(mv.others.length+mv.ids.length,null);
     mv.rowOf=mv.g.counts.flatMap((k,r)=>Array(k).fill(r));
     const L=handEl.getBoundingClientRect(),el=cardEl(mv.id);
     mv.dx=mv.x0-L.left-parseFloat(el.style.left);
     mv.dy=mv.y0-L.top-parseFloat(el.style.top);
     mv.ids.forEach((id,j)=>{const c=cardEl(id);c.classList.add('drag');c.style.zIndex=1000+j});
     mv.active=true;lastDown=null;
+    drawFixZone(mv.g);
   }
   const L=handEl.getBoundingClientRect(),g=mv.g,k=mv.ids.length;
   const x=e.clientX-L.left-mv.dx,y=e.clientY-L.top-mv.dy;
   mv.ids.forEach((id,j)=>{const c=cardEl(id);c.style.left=x+(j-mv.grab)*g.cw*.36+'px';c.style.top=y+'px'});
+  // over the fixed zone: on a group's cards they will join that group (its tag lights up); anywhere else in the zone
+  // (beside the groups, on the tags) they make a new group
+  const px=e.clientX-L.left,py=e.clientY-L.top,fz=$('#fixZone');
+  if(px<g.fixEdge){
+    let row=-1;g.fixTags.forEach((r,i)=>{if(py>=r.y-4&&py<r.y+g.ch&&px<r.x-5)row=i});
+    if(mv.t==='fix'&&mv.row===row)return;
+    mv.t='fix';mv.row=row;
+    mv.others.forEach((id,i)=>placeCard(cardEl(id),g.slots[i],100+i));
+    const lm=$('#landMark');if(lm)lm.remove();
+    fz.classList.add('over');
+    fz.querySelector('.fzl').textContent=row<0?'放下成为新的一组':'放下加入这一组';
+    document.querySelectorAll('#fixTags .fzt').forEach((t,i)=>t.classList.toggle('hot',i===row));
+    Sound.play('deal');
+    return;
+  }
+  if(fz.classList.contains('over')){
+    fz.classList.remove('over');
+    fz.querySelector('.fzl').textContent=g.fixW?'固定区':'拖到这里固定';
+    document.querySelectorAll('#fixTags .fzt').forEach(t=>t.classList.remove('hot'));
+  }
+  if(mv.t==='fix')mv.t=null;
   const cx=x+g.cw/2,cy=y+g.ch/2;
   let s=0,best=Infinity;
   g.slots.forEach((sl,i)=>{const d=(sl.x+g.cw/2-cx)**2+((sl.y+g.ch/2-cy)*1.6)**2;if(d<best){best=d;s=i}});
-  // a group the player has sorted out stays in one piece: cards dropped into its middle land beside it instead
-  const t=blockSnap(mv.others,Math.max(0,Math.min(g.slots.length-k,s-mv.grab)),mv.ids);
+  const t=Math.max(0,Math.min(g.slots.length-k,s-mv.grab));
   if(t===mv.t)return;
   mv.t=t;
   mv.order=[...mv.others.slice(0,t),...mv.ids,...mv.others.slice(t)];
-  mv.order.forEach((id,i)=>{if(!mv.ids.includes(id))placeCard(cardEl(id),spreadSlot(i),i)});
+  mv.order.forEach((id,i)=>{if(!mv.ids.includes(id))placeCard(cardEl(id),spreadSlot(i),100+i)});
   showLanding();
   Sound.play('deal');
 }
@@ -2989,24 +3061,42 @@ function dropCards(){
     return;
   }
   if(!m.cancel){
-    G.myOrder=m.order;
-    // cards taken out of a group leave it (what is left of it stays a group); several cards moved together become a group
-    G.blocks=(G.blocks||[]).map(b=>b.filter(id=>!m.ids.includes(id))).filter(b=>b.length>1);
-    if(m.ids.length>1){
-      const tidy=tidyGroup(m.ids),at=G.myOrder.indexOf(m.ids[0]);
-      const rest=G.myOrder.filter(id=>!m.ids.includes(id));
-      G.myOrder=[...rest.slice(0,at),...tidy,...rest.slice(at)];
-      G.blocks.push(tidy);
+    if(m.t==='fix')fixCards(m.ids,m.row);
+    else if(m.t!=null){
+      // dropped among the active cards: out of any group, and several cards land tidied as a combination reads
+      unfixCards(m.ids);
+      G.myOrder=m.order;
+      if(m.ids.length>1){
+        const tidy=tidyGroup(m.ids),at=G.myOrder.indexOf(m.ids[0]);
+        const rest=G.myOrder.filter(id=>!m.ids.includes(id));
+        G.myOrder=[...rest.slice(0,at),...tidy,...rest.slice(at)];
+      }
     }
   }
   for(const id of m.ids)sel.delete(id);
-  if(m.dirty)renderHand();
-  else{
-    for(const id of G.myOrder){const c=cardEl(id);if(c){c.classList.remove('drag');c.classList.toggle('sel',sel.has(id));handEl.appendChild(c)}}
-    layoutHand();
-    renderControls();
-  }
+  const z=$('#fixZone');if(z)z.classList.remove('over');
+  if(m.dirty)renderHand();else reflowHand();
   Sound.play('play');
+}
+// the cards move to their new places without being rebuilt, so each one slides there
+function reflowHand(){
+  for(const c of orderedHand()){const el=cardEl(c.id);if(el){el.classList.remove('drag');el.classList.toggle('sel',sel.has(c.id));handEl.appendChild(el)}}
+  layoutHand();
+  renderControls();
+}
+// cards set aside in the fixed zone: joining the group they were dropped on, or as a group of their own (tidied the way
+// the combination reads); unfixCards puts cards back among the active ones, where they slot in by rank
+function fixCards(ids,row){
+  const target=row>=0?G.fixed[row]:null;
+  G.fixed=G.fixed.map(gr=>gr===target?gr:gr.filter(id=>!ids.includes(id)));
+  if(target){const i=G.fixed.indexOf(target);G.fixed[i]=tidyGroup(target.filter(id=>!ids.includes(id)).concat(ids))}
+  else G.fixed.push(tidyGroup(ids));
+  G.fixed=G.fixed.filter(gr=>gr.length);
+  G.myOrder=(G.myOrder||[]).filter(id=>!ids.includes(id));
+}
+function unfixCards(ids){
+  G.fixed=(G.fixed||[]).map(gr=>gr.filter(id=>!ids.includes(id))).filter(gr=>gr.length);
+  G.myOrder=(G.myOrder||[]).filter(id=>!ids.includes(id));
 }
 $('#playBtn').onclick=onPlay;
 // if anything goes wrong, quietly keep the last error (with the page version) on this device for checking later
@@ -3041,7 +3131,18 @@ $('#rowsBtn').onclick=()=>{
   layoutHand();
 };
 syncHandBtns();
-$('#sortBtn').onclick=()=>{G.myOrder=[];G.blocks=[];renderHand();Sound.play('shuffle')};
+// 复原 sorts the active cards back by rank; the fixed groups stay as they are
+$('#sortBtn').onclick=()=>{G.myOrder=[];renderHand();Sound.play('shuffle')};
+// 固定: the picked cards go to the fixed zone as one group; when every picked card is already there, 放回 puts them back
+$('#fixBtn').onclick=()=>{
+  const have=new Set(G.hands[0].map(c=>c.id)),ids=[...sel].filter(id=>have.has(id));
+  if(!ids.length)return;
+  const fixed=new Set((G.fixed||[]).flat());
+  if(ids.every(id=>fixed.has(id)))unfixCards(ids);else fixCards(ids,-1);
+  sel=new Set();
+  reflowHand();
+  Sound.play('play');
+};
 $('#clearBtn').onclick=()=>{sel=new Set();renderHand()};
 $('#rulesBtn').onclick=showRules;
 // card backs: the goose photo, or the original red stripes; remembered on this computer
