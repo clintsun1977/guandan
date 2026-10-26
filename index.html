@@ -1301,10 +1301,9 @@ function renderClocks(){
   }
 }
 // hints go by the shape of your hand (see hintOrder): a pair of 5s before breaking up three 4s
-// and around the fixed zone: a fixed group that makes a play which beats the table (or may lead) comes first, exactly
-// as the player set it aside, unless it is a bomb, then plays made of whole fixed groups together (a fixed three and a
-// fixed pair as a full house); then plays from the active cards alone, then from fixed cards that break a group up,
-// each without bombs first; plays that mix fixed and active cards only when nothing else will do
+// and zone by zone: first plays from the active cards alone; then plays from the fixed cards alone (a whole group that
+// beats the table first, exactly as the player set it aside, then whole groups together, then plays that break a group
+// up, bombs last); then plays that take cards from both zones. A play that empties the hand still comes first of all.
 function sortHints(plays){
   const hand=G.hands[0],cur=G.trick?G.trick.play:null,list=hintOrder(hand,G.L,cur,plays);
   const have=new Set(hand.map(c=>c.id));
@@ -1317,17 +1316,16 @@ function sortHints(plays){
     const r=analyze(cards,G.L).filter(a=>beats(a,cur)&&(!isBomb(a)||cur&&isBomb(cur))).sort((a,b)=>strength(a)-strength(b))[0];
     if(r)own.push({...r,cards,wu:cards.filter(c=>isWild(c,G.L)).length});
   }
-  const ownK=new Set(own.map(key)),rest=list.filter(pl=>!ownK.has(key(pl)));
+  const ownK=new Set(own.map(key));
   const nf=pl=>pl.cards.filter(c=>fixed.has(c.id)).length;
-  const whole=pl=>nf(pl)===pl.cards.length&&G.fixed.every(gr=>{const n=pl.cards.filter(c=>gr.includes(c.id)).length;return!n||n===gr.length});
-  // a play that empties the hand still comes first of all
-  const fin=rest.filter(pl=>pl.cards.length===hand.length);
-  const more=rest.filter(pl=>!fin.includes(pl));
-  const act=more.filter(pl=>nf(pl)===0),part=more.filter(pl=>nf(pl)===pl.cards.length&&!whole(pl));
-  const out=fin.concat(own,more.filter(pl=>whole(pl)&&(!isBomb(pl)||cur&&isBomb(cur))),
-    act.filter(pl=>!isBomb(pl)),part.filter(pl=>!isBomb(pl)),act.filter(isBomb),part.filter(isBomb),
-    more.filter(pl=>whole(pl)&&isBomb(pl)&&!(cur&&isBomb(cur))));
-  return out.length?out:more.filter(pl=>nf(pl)>0&&nf(pl)<pl.cards.length);
+  const whole=pl=>G.fixed.every(gr=>{const n=pl.cards.filter(c=>gr.includes(c.id)).length;return!n||n===gr.length});
+  const fin=list.filter(pl=>pl.cards.length===hand.length);
+  const more=list.filter(pl=>!fin.includes(pl)&&!ownK.has(key(pl)));
+  const fx=more.filter(pl=>nf(pl)===pl.cards.length);
+  return fin.concat(
+    more.filter(pl=>nf(pl)===0),
+    own,fx.filter(pl=>whole(pl)&&!isBomb(pl)),fx.filter(pl=>!whole(pl)&&!isBomb(pl)),fx.filter(isBomb),
+    more.filter(pl=>nf(pl)>0&&nf(pl)<pl.cards.length));
 }
 
 function doPlay(p,play){
@@ -2961,8 +2959,9 @@ handEl.addEventListener('pointerdown',e=>{
   try{handEl.setPointerCapture(e.pointerId)}catch(_){}
 });
 handEl.addEventListener('pointermove',e=>{
-  // on your own turn a press-and-sweep selects the cards it passes over; at any other time it moves cards
-  if(mv&&!mv.active&&G.phase==='play'&&G.turn===0){
+  // on your own turn a press-and-sweep that starts on an unpicked card picks the cards it passes over; one that starts
+  // on a picked card carries the picked cards (to the fixed zone, or another place), as it does at any other time
+  if(mv&&!mv.active&&G.phase==='play'&&G.turn===0&&!sel.has(mv.id)){
     if(Math.hypot(e.clientX-mv.x0,e.clientY-mv.y0)<6)return;
     const id=mv.id,on=!sel.has(id);
     mv=null;lastDown=null;
@@ -3083,9 +3082,14 @@ function dropCards(){
   if(m.dirty)renderHand();else reflowHand();
   Sound.play('play');
 }
-// the cards move to their new places without being rebuilt, so each one slides there
+// the cards move to their new places without being rebuilt, so each one slides there; on your turn the hints follow
+// the new zones
 function reflowHand(){
   for(const c of orderedHand()){const el=cardEl(c.id);if(el){el.classList.remove('drag');el.classList.toggle('sel',sel.has(c.id));handEl.appendChild(el)}}
+  if(G.phase==='play'&&G.turn===0&&isHumanSeat(0)){
+    const cur=G.trick?G.trick.play:null;
+    hints=sortHints(genPlays(G.hands[0],G.L).filter(pl=>beats(pl,cur)));hintIdx=0;
+  }
   layoutHand();
   renderControls();
 }
@@ -3336,7 +3340,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1026-1753';
+const VERSION='1026-1807';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
