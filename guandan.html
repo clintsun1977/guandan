@@ -225,7 +225,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .prep .pt{font-size:17px;color:var(--ink)}
 /* the "done sorting" button calls for attention: gold, larger, pulsing */
 .prep .btn{--d:74px;font-size:19px}
-#readyBtn{animation:readyFlash 1s ease-in-out infinite}
+#readyBtn,#nextBtn:not(:disabled){animation:readyFlash 1s ease-in-out infinite}
 /* on a computer or tablet these two stand in the action column (placed by placeActionBtns) */
 #seat0 #deckBtn.atcol,#seat0 #readyBtn.atcol,#nextBtn.atcol{position:fixed;right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:20;--d:100px;font-size:22px}
 @keyframes readyFlash{50%{filter:brightness(1.3);box-shadow:0 0 0 6px rgba(221,176,80,.35),0 0 26px var(--gold)}}
@@ -410,8 +410,6 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 @media (max-width:560px){
   .overlay.dock .panel{width:100%}
   #btns{justify-content:center;margin-bottom:6px}
-  /* on a phone the buttons stand in a row over the hand: play, hint, pass, then clear */
-  #clearBtn{order:9}
   .table{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr)}
   .emblem{width:84px;height:84px}
   .emblem .r{font-size:50px}
@@ -430,7 +428,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   .cnt small{font-size:12px}
 }
 /* finishing moments: first place gets a gold badge and confetti, second and third a small badge,
-   last place a stamp, a shudder, a grey-out and a little rain */
+   last place a stamp, a grey-out and a crying face */
 .fx{position:fixed;left:0;top:0;z-index:90;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap}
 .fx-tag{font-family:var(--font-display);font-weight:900;border-radius:999px;padding:4px 16px}
 .fx-tag.first{font-size:30px;background:var(--gold);color:var(--on-gold);box-shadow:0 0 22px var(--gold);animation:fxPop 2.4s ease-out forwards}
@@ -450,13 +448,11 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   background:linear-gradient(90deg,transparent,rgba(255,226,140,.35) 45%,#fff3c4);box-shadow:0 0 22px rgba(255,214,110,.85);
   transition:transform .85s cubic-bezier(.45,0,.2,1),opacity .3s}
 .fx-canvas{position:fixed;inset:0;z-index:89;pointer-events:none}
-.shake{animation:shake .5s ease-in-out .3s}
 .fx-stamp.kang{font-size:46px;color:var(--gold);border-color:var(--gold);animation-duration:3.2s}
 /* the match is won: a large gold banner across the table */
 .fx-banner{font-family:var(--font-display);font-weight:900;font-size:clamp(40px,7vw,80px);letter-spacing:.16em;padding:10px 30px 10px 42px;color:var(--on-gold);
   background:linear-gradient(180deg,#f3d27a,var(--gold));border-radius:16px;box-shadow:0 0 0 3px var(--felt-deep),0 0 0 6px var(--gold),0 0 60px var(--gold);animation:bannerIn 3.9s cubic-bezier(.2,.9,.3,1.2) forwards}
 @keyframes bannerIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-8deg)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.12) rotate(2deg)}20%{transform:translate(-50%,-50%) scale(1) rotate(0)}88%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.04)}}
-@keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
 .gloom{filter:grayscale(1) brightness(.7);transition:filter .6s}
 /* on a computer the header gives its row back to the table: the name and the two sides' levels sit in the
    top-left corner and the sound / rules / new-game buttons in the top-right, both over the felt */
@@ -517,11 +513,11 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   </div>
   <div class="handwrap">
     <div class="btns" id="btns">
-      <button class="btn round" id="clearBtn">重选</button>
       <button class="btn primary round" id="playBtn">出牌</button>
       <button class="btn primary round" id="returnBtn" hidden>还贡</button>
       <button class="btn round" id="hintBtn">提示</button>
       <button class="btn round" id="passBtn">过</button>
+      <button class="btn round" id="clearBtn">重选</button>
     </div>
     <div id="hand"></div>
     <div class="handtools"><button class="link tog" id="fanBtn" aria-pressed="true" title="像手里握着牌一样展开，可以拖动牌插到别处">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
@@ -1288,8 +1284,27 @@ function renderClocks(){
   }
 }
 // hints go by the shape of your hand (see hintOrder): a pair of 5s before breaking up three 4s
+// and around the groups the player has sorted out by dragging cards together: a group that makes a play which beats
+// the table (or may lead) comes first, exactly as it was arranged, unless it is a bomb; hints that would break up a
+// group come last
 function sortHints(plays){
-  return hintOrder(G.hands[0],G.L,G.trick?G.trick.play:null,plays);
+  const hand=G.hands[0],cur=G.trick?G.trick.play:null,list=hintOrder(hand,G.L,cur,plays);
+  const have=new Set(hand.map(c=>c.id));
+  G.blocks=(G.blocks||[]).map(b=>b.filter(id=>have.has(id))).filter(b=>b.length>1);
+  if(!G.blocks.length)return list;
+  const key=pl=>pl.cards.map(c=>c.id).sort((a,b)=>a-b).join();
+  const own=[];
+  for(const b of G.blocks){
+    const cards=b.map(id=>hand.find(c=>c.id===id));
+    const r=analyze(cards,G.L).filter(a=>beats(a,cur)&&(!isBomb(a)||cur&&isBomb(cur))).sort((a,b)=>strength(a)-strength(b))[0];
+    if(r)own.push({...r,cards,wu:cards.filter(c=>isWild(c,G.L)).length});
+  }
+  const ownK=new Set(own.map(key));
+  const breaks=pl=>G.blocks.some(b=>{const n=pl.cards.filter(c=>b.includes(c.id)).length;return n>0&&n<b.length});
+  const rest=list.filter(pl=>!ownK.has(key(pl)));
+  // a play that empties the hand still comes first of all
+  const fin=rest.filter(pl=>pl.cards.length===hand.length);
+  return fin.concat(own,rest.filter(pl=>!fin.includes(pl)&&!breaks(pl)),rest.filter(pl=>!fin.includes(pl)&&breaks(pl)));
 }
 
 function doPlay(p,play){
@@ -1984,7 +1999,8 @@ function orderedHand(){
     for(const c of sortHand(h.slice(),G.L)){
       if(have.has(c.id))continue;
       const i=ord.findIndex(id=>cmpCards(byId.get(id),c,G.L)>0);
-      if(i<0)ord.push(c.id);else ord.splice(i,0,c.id);
+      // a card arriving later never lands inside a group the player has sorted out
+      if(i<0)ord.push(c.id);else ord.splice(blockSnap(ord,i,[]),0,c.id);
     }
   }
   G.myOrder=ord;
@@ -2017,9 +2033,9 @@ const BTN_GAP=18;
 // the action column: the play buttons, and in their place the shuffle / cut and "done sorting" buttons, all centred
 // the same distance in from the right edge, where a right thumb on a tablet reaches without stretching
 let colW=90;
-// the action spot sits this far up from the bottom of the hand area: high enough that the play buttons below the
-// hint button still clear the hand tools in the corner
-const SPOT_UP=162;
+// the action spot sits this far up from the bottom of the hand area: high enough that the two buttons below the
+// hint button (pass, clear) still clear the hand tools in the corner
+const SPOT_UP=226;
 const actionInset=w=>Math.min(150,Math.max(colW/2+16,w*.12));
 function handGeo(n,keys){
   const el=$('#hand'),probe=el.firstElementChild;
@@ -2101,6 +2117,17 @@ function fanGeo(n,W,cw,ch,keys){
   const top=Math.min(...raw.map(s=>s.cy));
   const slots=raw.map(s=>({x:s.cx-cw/2,y:s.cy-top+lift,rot:s.rot}));
   return{slots,cw,ch,counts,height:Math.max(...slots.map(s=>s.y))+ch+cw*.25};
+}
+// where cards inserted at position t of this order (in front of order[t]) may go: if t falls inside one of the player's
+// groups (still in one piece), the nearer end of the group instead; ids: cards being moved, which no longer count
+function blockSnap(order,t,ids){
+  for(const b of G.blocks||[]){
+    const at=b.filter(id=>!ids.includes(id)).map(id=>order.indexOf(id)).filter(i=>i>=0).sort((x,y)=>x-y);
+    if(at.length<2||at[at.length-1]-at[0]!==at.length-1)continue;
+    const s0=at[0],e0=at[at.length-1]+1;
+    if(t>s0&&t<e0)return t-s0<=e0-t?s0:e0;
+  }
+  return t;
 }
 function cardKey(id){const c=G.hands[0].find(x=>x.id===id);return c?val(c,G.L):0}
 // row-split keys for a hand in this order: a card's rank, except that the cards of a group you dragged together
@@ -2205,76 +2232,34 @@ function tween(dur,step,done){
   };
   requestAnimationFrame(f);
 }
-const easeOut=k=>1-Math.pow(1-k,3),easeInOut=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
-// a card-sharp's shuffle: fan the deck open, riffle the halves into a waterfall, spring the cards
-// across in an arc from hand to hand, then square the deck up with a tap
+// a plain riffle shuffle: the deck splits into two halves, the cards riffle back together from both sides,
+// and the squared deck gets a tap on the table (about a second and a half)
 function animShuffle(done,at){
   let g=pileGeo();if(at)g={...g,cx:at.x,hy:at.y};
   const deck=$('#deck');
   if(!deck||reduceMotion()){Sound.play('shuffle');later(done,300);return}
   const layer=pileEl(),cx=g.cx,cy=g.hy,cw=g.cw,tok=G.tok;
-  const finish=()=>{if(G.tok===tok)done()};
   const mk=()=>{const f=document.createElement('div');f.className='flick';f.style.transition='none';layer.appendChild(f);return f};
-  const put=(f,x,y,r,sc=1)=>{f.style.transform=`translate(${x}px,${y}px) rotate(${r}deg) scale(${sc})`};
+  const put=(f,x,y,r)=>{f.style.transform=`translate(${x}px,${y}px) rotate(${r}deg)`};
   deck.style.transition='none';deck.style.opacity='0';
-
-  // 1. the fan: the whole deck sweeps open into a wide arc and snaps shut
-  const fan=[];
-  for(let i=0;i<24;i++){const f=mk();f.style.transformOrigin='50% 130%';put(f,cx,cy,0);fan.push(f)}
-  Sound.play('whoosh');Sound.play('flick');
-  tween(420,k=>fan.forEach((f,i)=>put(f,cx,cy-10*easeOut(k),(i-11.5)*6.5*easeOut(k))),()=>{
-    later(()=>{
-      Sound.play('riffle');
-      tween(260,k=>fan.forEach((f,i)=>put(f,cx,cy-10*(1-k),(i-11.5)*6.5*(1-easeInOut(k)))),()=>{
-        fan.forEach(f=>f.remove());
-        riffle();
-      });
-    },260);
-  });
-
-  // 2. the riffle: two tilted halves, cards cascading in from alternate sides
-  const A=makeStack(4),B=makeStack(4);
-  function riffle(){
-    for(const st of [A,B]){st.style.transition='none';stackAt(st,g,0,0);layer.appendChild(st);st.getBoundingClientRect();st.style.transition=''}
-    const split=cw*1.25;
-    stackAt(A,g,-split,8,-16);stackAt(B,g,split,8,16);
-    Sound.play('riffleLong');
-    later(()=>Sound.play('riffleLong'),560);
-    for(let i=0;i<28;i++)later(()=>{
-      const f=mk(),sx=i%2?split:-split,r0=i%2?16:-16;
-      tween(150,k=>put(f,cx+sx*(1-k),cy+8-14*Math.sin(Math.PI*k)-i*.15,r0*(1-k)),()=>f.remove());
-    },260+i*26);
-    later(()=>{stackAt(A,g,-cw*.08,0,-3);stackAt(B,g,cw*.08,0,3)},260+28*26+120);
-    later(spring,260+28*26+420);
-  }
-
-  // 3. the spring: cards leap from one hand to the other in a high arc
-  function spring(){
-    const lx=-cw*1.7,rx=cw*1.7,peak=cw*1.9;
-    stackAt(A,g,lx,0,-8);stackAt(B,g,rx,0,8);
-    later(()=>Sound.play('whoosh'),200);
-    for(let i=0;i<20;i++)later(()=>{
-      Sound.play('flick');
-      const f=mk();
-      tween(380,k=>{
-        const e=easeInOut(k);
-        put(f,cx+lx+(rx-lx)*e,cy-peak*4*e*(1-e),-8+16*e+Math.sin(k*Math.PI)*-24,1+.12*Math.sin(k*Math.PI));
-      },()=>f.remove());
-    },220+i*34);
-    later(squareUp,220+20*34+420);
-  }
-
-  // 4. square up: both halves come together and the deck takes a little tap on the table
-  function squareUp(){
+  const A=makeStack(4),B=makeStack(4),split=cw*.9;
+  for(const st of [A,B]){st.style.transition='none';stackAt(st,g,0,0);layer.appendChild(st);st.getBoundingClientRect();st.style.transition=''}
+  stackAt(A,g,-split,6,-10);stackAt(B,g,split,6,10);
+  Sound.play('riffleLong');
+  for(let i=0;i<16;i++)later(()=>{
+    const f=mk(),sx=i%2?split:-split,r0=i%2?10:-10;
+    tween(140,k=>put(f,cx+sx*(1-k),cy+6-10*Math.sin(Math.PI*k),r0*(1-k)),()=>f.remove());
+  },320+i*30);
+  later(()=>{
     stackAt(A,g,0,0);stackAt(B,g,0,0);
     later(()=>{
       A.remove();B.remove();
       deck.style.transition='';deck.style.opacity='1';
       stackAt(deck,g,0,-6);
       later(()=>{stackAt(deck,g,0,0);Sound.play('cardSlap')},140);
-      later(finish,420);
+      later(()=>{if(G.tok===tok)done()},420);
     },300);
-  }
+  },320+16*30+200);
 }
 // a cut: the top half is lifted off and set down beside, then the bottom half goes on top of it
 function animCut(done,at){
@@ -2385,6 +2370,8 @@ const Sound=(()=>{
     if(!ctx){
       const AC=window.AudioContext||window.webkitAudioContext;
       if(!AC)return;
+      // on an iPad the silent switch / silent mode would otherwise mute the page: play like a media app
+      try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(_){}
       ctx=new AC();
       const master=ctx.createGain();master.gain.value=.9;master.connect(ctx.destination);
       sfxBus=ctx.createGain();sfxBus.gain.value=1;sfxBus.connect(master);
@@ -2402,7 +2389,12 @@ const Sound=(()=>{
       room=ctx.createConvolver();room.buffer=ir;
       const roomWet=ctx.createGain();roomWet.gain.value=.22;room.connect(roomWet);roomWet.connect(sfxBus);
     }
-    if(ctx.state==='suspended')ctx.resume();
+    // still silent (not yet allowed, or interrupted when the iPad switched apps or locked): ask again, and play a
+    // one-sample silent sound inside this tap, which is what lets Safari start the audio
+    if(ctx.state!=='running'){
+      try{const r=ctx.resume();if(r&&r.catch)r.catch(()=>{})}catch(_){}
+      try{const b=ctx.createBufferSource();b.buffer=ctx.createBuffer(1,1,22050);b.connect(ctx.destination);b.start(0)}catch(_){}
+    }
     if(prefs.music)startMusic();
   }
   const ready=()=>ctx&&ctx.state==='running';
@@ -2476,8 +2468,13 @@ const Sound=(()=>{
     // a fast riffle: a run of crisp little card snaps
     riffle(){for(let i=0;i<14;i++)burst(now+i*.028+Math.random()*.008,.022,{freq:3800+Math.random()*1500,type:'highpass',gain:.09})},
     // air moving as the cards sweep: band-passed noise gliding up
-    // far-off thunder: a long low rumble with a sharper crack at the start
-    thunder(){burst(now,1.8,{freq:160,q:.4,type:'lowpass',gain:.55});burst(now+.02,.3,{freq:900,type:'lowpass',gain:.22})},
+    // sobbing: three short whimpers sliding down
+    sob(){
+      for(const [d,f] of [[0,620],[.32,580],[.66,520]]){
+        const o=tone(f,now+d,.26,{type:'triangle',gain:.06,attack:.02});
+        o.frequency.exponentialRampToValueAtTime(f*.72,now+d+.24);
+      }
+    },
     whoosh(){const f=burst(now,.42,{freq:500,q:1.2,type:'bandpass',gain:.22});f.frequency.exponentialRampToValueAtTime(2600,now+.35)},
     error(){tone(150,now,.16,{type:'square',gain:.035})},
     win(){[587,659,740,880,988,1175].forEach((f,i)=>pluck(f,now+i*.09,1.1,.12,sfxBus))},
@@ -2567,7 +2564,8 @@ const Sound=(()=>{
     if(kind==='music')prefs.music?startMusic():stopMusic();
     return prefs[kind];
   }
-  return {unlock,play,toggle,prefs};
+  const wake=()=>{if(ctx&&ctx.state!=='running')try{const r=ctx.resume();if(r&&r.catch)r.catch(()=>{})}catch(_){}};
+  return {unlock,wake,play,toggle,prefs};
 })();
 function syncAudioBtns(){
   $('#sfxBtn').setAttribute('aria-pressed',Sound.prefs.sfx);
@@ -2652,47 +2650,61 @@ function victory(team){
   fxEl('fx-banner',`${team===0?'我方':'对方'}赢得全场`,m.left+m.width/2,m.top+m.height*.42);
   fireworks([team,team+2].map(seatPoint));
 }
-// a small grey cloud's worth of rain over the last-place seat
-// a dark cloud gathers over the seat, flickers once with a rumble of thunder and rains on it; drops splash where they land
-function rain(x,y){
+// a crying face pops up by the seat and sobs: tears stream down its cheeks and drip off, splashing where they land
+function tears(x,y,ground){
   if(reduceMotion())return;
-  const cy=Math.max(40,y-100),ground=y+34,W=150;
+  const R=30,T=3400;
   let all=null,started=false;
-  setTimeout(()=>Sound.play('thunder'),650);
+  setTimeout(()=>Sound.play('sob'),300);
+  const drop=(cx,px,py,a)=>{
+    cx.globalAlpha=a;cx.fillStyle='#8fd0ff';cx.beginPath();cx.moveTo(px,py-7);
+    cx.bezierCurveTo(px+5,py-1,px+4.5,py+4,px,py+4.5);cx.bezierCurveTo(px-4.5,py+4,px-5,py-1,px,py-7);cx.fill();cx.globalAlpha=1;
+  };
   particles((ps,age)=>{
     all=ps;
-    if(!started){started=true;ps.push({k:'cloud'})}
-    if(age>350&&age<2700)for(let i=0;i<3;i++)ps.push({k:'drop',x:x+(Math.random()-.5)*W*.85,y:cy+16,vy:7+Math.random()*3,len:12+Math.random()*8});
+    if(!started){started=true;ps.push({k:'face'})}
+    if(age>350&&age<T-600&&Math.random()<.45){
+      const side=Math.random()<.5?-1:1;
+      ps.push({k:'tear',x:x+side*R*.42,y:y+R*.75,vx:side*(.5+Math.random()*1.1),vy:.5+Math.random()})
+    }
   },(cx,p,age)=>{
-    if(p.k==='cloud'){
-      if(age>3400)return false;
-      const a=Math.min(1,age/350)*Math.min(1,Math.max(0,(3400-age)/500));
-      const flash=age>650&&age<760;
-      cx.save();cx.globalAlpha=a*.95;
-      for(const [dx,dy,r] of [[-70,14,18],[-52,8,26],[-24,-8,34],[10,-14,38],[44,-2,30],[66,10,22],[0,10,34]]){
-        const g=cx.createRadialGradient(x+dx,cy+dy-r*.4,r*.2,x+dx,cy+dy,r);
-        g.addColorStop(0,flash?'#eef3f8':'#8d98a3');g.addColorStop(1,flash?'#a3b0bd':'#46505a');
-        cx.fillStyle=g;cx.beginPath();cx.arc(x+dx,cy+dy,r,0,Math.PI*2);cx.fill();
+    if(p.k==='face'){
+      if(age>T)return false;
+      // pops in, then shakes with sobs, and fades at the end
+      const sc=age<280?1.15*Math.sin(age/280*Math.PI*.6)/Math.sin(Math.PI*.6):1,a=Math.min(1,Math.max(0,(T-age)/400));
+      const fy=y+(age>280?Math.sin(age/85)*1.6:0);
+      cx.save();cx.globalAlpha=a;cx.translate(x,fy);cx.scale(sc,sc);
+      const g=cx.createRadialGradient(-8,-10,4,0,0,R);g.addColorStop(0,'#ffe27a');g.addColorStop(1,'#f0ac2e');
+      cx.fillStyle=g;cx.beginPath();cx.arc(0,0,R,0,Math.PI*2);cx.fill();
+      cx.strokeStyle='#8a5a00';cx.lineWidth=2.6;cx.lineCap='round';
+      // brows raised in the middle, eyes squeezed shut, mouth wide open and turned down
+      for(const sd of [-1,1]){
+        cx.beginPath();cx.moveTo(sd*R*.62,-R*.42);cx.lineTo(sd*R*.18,-R*.6);cx.stroke();
+        cx.beginPath();cx.arc(sd*R*.4,-R*.08,R*.17,Math.PI*1.1,Math.PI*1.9);cx.stroke();
+      }
+      cx.fillStyle='#6b3a12';cx.beginPath();cx.ellipse(0,R*.47,R*.36,R*.24,0,Math.PI,0);cx.closePath();cx.fill();
+      // two streams of tears running from the eyes to the chin
+      if(age>200){
+        const run=Math.min(1,(age-200)/400)*R*.85;
+        cx.fillStyle='rgba(120,195,255,.8)';
+        for(const sd of [-1,1]){cx.beginPath();cx.roundRect?cx.roundRect(sd*R*.4-3.5,0,7,run,3.5):cx.rect(sd*R*.4-3.5,0,7,run);cx.fill()}
       }
       cx.restore();
       return true;
     }
-    if(p.k==='drop'){
-      p.y+=p.vy;p.x-=.8;
-      cx.strokeStyle='rgba(180,210,240,.85)';cx.lineWidth=2;cx.lineCap='round';
-      cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x+1.2,p.y-p.len);cx.stroke();
+    if(p.k==='tear'){
+      p.vy+=.28;p.x+=p.vx;p.y+=p.vy;
+      drop(cx,p.x,p.y,.95);
       if(p.y<ground)return true;
       all.push({k:'splash',x:p.x,y:ground,r:2,life:1});
       return false;
     }
-    p.r+=1.1;p.life-=.07;
-    cx.strokeStyle=`rgba(180,210,240,${Math.max(0,p.life)*.8})`;cx.lineWidth=1.5;
+    p.r+=1;p.life-=.08;
+    cx.strokeStyle=`rgba(150,210,255,${Math.max(0,p.life)*.8})`;cx.lineWidth=1.5;
     cx.beginPath();cx.ellipse(p.x,p.y,p.r,p.r*.35,0,0,Math.PI*2);cx.stroke();
     return p.life>0;
-  },3400);
+  },T);
 }
-// 接风: a gold gust flies from the seat that went out to the partner taking the lead, then "接风" pops up there
-// (above a side seat's plate, so it stays clear of the cards that seat is about to play)
 function jieFeng(from,to){
   Sound.play('whoosh');
   const a=seatPoint(from),b=seatPoint(to),plate=to===0?$('.meinfo'):$('#seat'+to+' .who');
@@ -2746,10 +2758,12 @@ function celebrate(p,place,dbl){
   }else{
     // the sad trombone only when it hurts: your side was double-downed (the other side took first and second)
     if(place===3&&dbl&&p%2===0&&G.out[0]%2===1)Sound.play('sad');
-    rain(pt.x,pt.y);
+    // a crying face by the seat: above the plate, or beside it for the player across the table (no room above)
+    if(p===2&&sr)tears(sr.right+52,sr.top+sr.height/2,sr.bottom+70);
+    else tears(pt.x,Math.max(56,pt.y-92),pt.y+28);
     if(seat&&!reduceMotion()){
-      seat.classList.add('shake','gloom');
-      setTimeout(()=>seat.classList.remove('shake','gloom'),2600);
+      seat.classList.add('gloom');
+      setTimeout(()=>seat.classList.remove('gloom'),2600);
     }
   }
 }
@@ -2944,7 +2958,8 @@ function moveCards(e){
   const cx=x+g.cw/2,cy=y+g.ch/2;
   let s=0,best=Infinity;
   g.slots.forEach((sl,i)=>{const d=(sl.x+g.cw/2-cx)**2+((sl.y+g.ch/2-cy)*1.6)**2;if(d<best){best=d;s=i}});
-  const t=Math.max(0,Math.min(g.slots.length-k,s-mv.grab));
+  // a group the player has sorted out stays in one piece: cards dropped into its middle land beside it instead
+  const t=blockSnap(mv.others,Math.max(0,Math.min(g.slots.length-k,s-mv.grab)),mv.ids);
   if(t===mv.t)return;
   mv.t=t;
   mv.order=[...mv.others.slice(0,t),...mv.ids,...mv.others.slice(t)];
@@ -2977,11 +2992,12 @@ function dropCards(){
   }
   if(!m.cancel){
     G.myOrder=m.order;
+    // cards taken out of a group leave it (what is left of it stays a group); several cards moved together become a group
+    G.blocks=(G.blocks||[]).map(b=>b.filter(id=>!m.ids.includes(id))).filter(b=>b.length>1);
     if(m.ids.length>1){
       const tidy=tidyGroup(m.ids),at=G.myOrder.indexOf(m.ids[0]);
       const rest=G.myOrder.filter(id=>!m.ids.includes(id));
       G.myOrder=[...rest.slice(0,at),...tidy,...rest.slice(at)];
-      G.blocks=(G.blocks||[]).filter(b=>!b.some(id=>m.ids.includes(id)));
       G.blocks.push(tidy);
     }
   }
@@ -3057,9 +3073,11 @@ function startNextIfReady(){
 $('#sfxBtn').onclick=()=>{Sound.toggle('sfx');syncAudioBtns()};
 $('#musicBtn').onclick=()=>{Sound.toggle('music');syncAudioBtns()};
 syncAudioBtns();
-// browsers only allow audio after the first tap or key press
-document.addEventListener('pointerdown',()=>Sound.unlock(),{capture:true});
-document.addEventListener('keydown',()=>Sound.unlock(),{capture:true});
+// browsers only allow audio after the first tap or key press; Safari on an iPad counts only the end of a tap (not
+// the touch going down), so every kind of tap event tries, and each later tap tries again until the sound is on
+for(const ev of ['pointerdown','pointerup','touchend','click','keydown'])document.addEventListener(ev,()=>Sound.unlock(),{capture:true,passive:true});
+// coming back to the page (after switching apps or unlocking the iPad) wakes the sound up again where allowed
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)Sound.wake()});
 $('#quitBtn').onclick=askQuit;
 $('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start')act({k:'pause',on:!G.paused,p:toAbs(0)})};
 $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();renderHand()}});
