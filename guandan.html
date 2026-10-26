@@ -1307,32 +1307,34 @@ function renderClocks(){
 // and zone by zone: first plays from the active cards alone; then plays from the fixed cards alone (a whole group that
 // beats the table first, exactly as the player set it aside, then whole groups together, then plays that break a group
 // up, bombs last); then plays that take cards from both zones. A play that empties the hand still comes first of all.
+// Each zone's plays are found among its own cards and ordered by its own cards: a 9 in the active zone is a lone
+// single there even if a fixed straight holds another 9, so it is offered as such and not held back as half a pair.
 function sortHints(plays){
-  const hand=G.hands[0],cur=G.trick?G.trick.play:null,list=hintOrder(hand,G.L,cur,plays);
+  const hand=G.hands[0],L=G.L,cur=G.trick?G.trick.play:null,full=hintOrder(hand,L,cur,plays);
   const have=new Set(hand.map(c=>c.id));
   G.fixed=(G.fixed||[]).map(gr=>gr.filter(id=>have.has(id))).filter(gr=>gr.length);
-  if(!G.fixed.length)return list;
+  if(!G.fixed.length)return full;
   const key=pl=>pl.cards.map(c=>c.id).sort((a,b)=>a-b).join(),fixed=new Set(G.fixed.flat());
-  const own=[];
-  for(const gr of G.fixed){
-    const cards=gr.map(id=>hand.find(c=>c.id===id));
-    const r=analyze(cards,G.L).filter(a=>beats(a,cur)&&(!isBomb(a)||cur&&isBomb(cur))).sort((a,b)=>strength(a)-strength(b))[0];
-    if(r)own.push({...r,cards,wu:cards.filter(c=>isWild(c,G.L)).length});
-  }
-  const ownK=new Set(own.map(key));
   const nf=pl=>pl.cards.filter(c=>fixed.has(c.id)).length;
   const whole=pl=>G.fixed.every(gr=>{const n=pl.cards.filter(c=>gr.includes(c.id)).length;return!n||n===gr.length});
   // a fixed bomb (or straight flush, or the four jokers) is never split up, alone or with active cards: it is
   // offered whole, among the fixed plays
-  const solid=G.fixed.filter(gr=>analyze(gr.map(id=>hand.find(c=>c.id===id)),G.L).some(isBomb));
+  const solid=G.fixed.filter(gr=>analyze(gr.map(id=>hand.find(c=>c.id===id)),L).some(isBomb));
   const splits=pl=>solid.some(gr=>{const n=pl.cards.filter(c=>gr.includes(c.id)).length;return n>0&&n<gr.length});
-  const fin=list.filter(pl=>pl.cards.length===hand.length);
-  const more=list.filter(pl=>!fin.includes(pl)&&!ownK.has(key(pl))&&!splits(pl));
-  const fx=more.filter(pl=>nf(pl)===pl.cards.length);
-  return fin.concat(
-    more.filter(pl=>nf(pl)===0),
+  const zone=cards=>cards.length?hintOrder(cards,L,cur,genPlays(cards,L).filter(pl=>beats(pl,cur))):[];
+  const own=[];
+  for(const gr of G.fixed){
+    const cards=gr.map(id=>hand.find(c=>c.id===id));
+    const r=analyze(cards,L).filter(a=>beats(a,cur)&&(!isBomb(a)||cur&&isBomb(cur))).sort((a,b)=>strength(a)-strength(b))[0];
+    if(r)own.push({...r,cards,wu:cards.filter(c=>isWild(c,L)).length});
+  }
+  const fx=zone(hand.filter(c=>fixed.has(c.id))).filter(pl=>!splits(pl));
+  const seen=new Set();
+  return full.filter(pl=>pl.cards.length===hand.length).concat(
+    zone(hand.filter(c=>!fixed.has(c.id))),
     own,fx.filter(pl=>whole(pl)&&!isBomb(pl)),fx.filter(pl=>!whole(pl)&&!isBomb(pl)),fx.filter(isBomb),
-    more.filter(pl=>nf(pl)>0&&nf(pl)<pl.cards.length));
+    full.filter(pl=>nf(pl)>0&&nf(pl)<pl.cards.length&&!splits(pl))
+  ).filter(pl=>{const k=key(pl);return!seen.has(k)&&seen.add(k)});
 }
 
 function doPlay(p,play){
