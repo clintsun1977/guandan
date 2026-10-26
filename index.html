@@ -303,6 +303,9 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 @media (min-width:561px){.handwrap .handtools{position:absolute;left:0;right:0;bottom:2px;margin:0;z-index:1;pointer-events:none}.handtools .link{pointer-events:auto}}
 /* 固定 / 放回 stands at the left end, under the fixed zone */
 #fixBtn{margin-right:auto}
+@media (min-width:561px){#fixBtn{position:absolute;margin:0}}
+/* lit whenever it can be pressed, that is once cards are picked */
+#fixBtn:not(:disabled){background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700;box-shadow:0 0 12px rgba(221,176,80,.5)}
 .link:disabled{opacity:.35;cursor:default}
 /* the fixed zone: a dashed frame on the left of the hand around the groups set aside, each group's kind of play beside it */
 #fixZone{position:absolute;z-index:0;pointer-events:none;border:2px dashed rgba(221,176,80,.45);border-radius:12px;background:rgba(221,176,80,.06);transition:background .15s,border-color .15s}
@@ -2080,7 +2083,8 @@ const actionInset=w=>Math.min(150,Math.max(colW/2+16,w*.12));
 // they mean to play) sit one per row; to the right the active zone, the rest of the cards, fanned or flat.
 // n: how many active cards, keys: their row-split keys. Also returns where each fixed card goes (fix), the row
 // tags (fixTags), the zone's size (fixW, fixH) and the line a dragged card crosses to land in the zone (fixEdge).
-const FIX_GAP=14,FIX_TAG=46;
+// FIX_BTN: on a computer or tablet the 固定 button stands just right of the frame's bottom corner, in a strip of its own
+const FIX_GAP=14,FIX_TAG=46,FIX_BTN=66;
 function handGeo(n,keys){
   const el=$('#hand'),probe=el.firstElementChild,Wall=el.clientWidth;
   // the active cards stay centred under your name, with the action column's room kept free on both sides,
@@ -2090,21 +2094,21 @@ function handGeo(n,keys){
   const cw=probe.offsetWidth,ch=probe.offsetHeight;
   // each group in one row, overlapping just enough to show every card's corner; a long group closes up
   const rows=(G&&G.fixed||[]).map(gr=>{const k=gr.length,off=k>1?Math.min(cw*.42,(Wall*.34-cw)/(k-1)):0;return{gr,off,w:cw+off*(k-1)}});
-  // with no groups yet the zone is an empty frame: in the free room on the left on a computer or tablet, a narrow
-  // strip on a phone
-  const fw=rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:side?Math.round(side*.8):30;
-  const x0=Math.max(side,fw+FIX_GAP),W=Wall-side-x0;
+  // with no groups yet the zone is an empty frame: in the free room on the left on a computer or tablet (leaving the
+  // button its strip), a narrow strip on a phone, where the button sits in the row under the hand
+  const bw=side?FIX_BTN:0;
+  const fw=rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:side?Math.max(70,Math.round(side-bw-FIX_GAP)):30;
+  const x0=Math.max(side,fw+bw+FIX_GAP),W=Wall-side-x0;
   const g=fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
   g.slots=g.slots.map(sl=>({...sl,x:sl.x+x0}));
-  // the groups step down like flat rows (each still shows its row of corners), closer together if there are many;
-  // on a computer or tablet the zone keeps clear of the button under it
-  const lift=ch*.22,pad=sideBtns()?36:4,base=n?g.height:0;
+  // the groups step down like flat rows (each still shows its row of corners), closer together if there are many
+  const lift=ch*.22,pad=4,base=n?g.height:0;
   let gap=ch*ROW_STEP;
   if(rows.length>1)gap=Math.max(ch*.3,Math.min(gap,(Math.max(base,ch*2.4)-lift-ch-pad)/(rows.length-1)));
   g.fix=new Map();g.fixTags=[];
   rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:r.w+5,y,gr:r.gr})});
   g.fixW=fw;g.fixH=rows.length?lift+ch+(rows.length-1)*gap+6:0;g.cw=cw;g.ch=ch;g.fixEmpty=!rows.length;
-  g.fixEdge=fw+FIX_GAP/2;
+  g.fixEdge=fw+bw/2+FIX_GAP/2;
   g.height=Math.max(base,rows.length?g.fixH+pad:0);
   return g;
 }
@@ -2117,13 +2121,17 @@ function drawFixZone(g){
     t=document.createElement('div');t.id='fixTags';handEl.parentNode.insertBefore(t,handEl.nextSibling);
   }
   const on=!!g;
-  z.hidden=t.hidden=!on;
+  z.hidden=t.hidden=$('#fixBtn').hidden=!on;
   if(!on)return;
   const L=handEl.offsetLeft,T=handEl.offsetTop;
   z.style.left=L-6+'px';z.style.top=T+'px';z.style.width=g.fixW+6+'px';z.style.height=(g.fixH||handEl.offsetHeight)+'px';
   z.classList.toggle('empty',g.fixEmpty);
   z.innerHTML=`<span class="fzl">固定区</span>`+(g.fixEmpty?'<span class="fzh">把牌拖到这里，或选好牌点“固定”</span>':'');
   t.style.left=L+'px';t.style.top=T+'px';
+  // the button by the frame's bottom right corner (on a phone it stays in the row under the hand)
+  const b=$('#fixBtn'),tb=b.parentNode;
+  if(sideBtns()){b.style.left=L+g.fixW+6-tb.offsetLeft+'px';b.style.top=T+(g.fixH||handEl.offsetHeight)-b.offsetHeight-tb.offsetTop+'px'}
+  else b.style.left=b.style.top='';
   t.innerHTML=g.fixTags.map(r=>{
     const cards=r.gr.map(id=>G.hands[0].find(c=>c.id===id)).filter(Boolean);
     const a=analyze(cards,G.L).sort((x,y)=>strength(y)-strength(x))[0];
@@ -3169,7 +3177,8 @@ $('#fixBtn').onclick=()=>{
   reflowHand();
   Sound.play('play');
 };
-$('#clearBtn').onclick=()=>{sel=new Set();renderHand()};
+// 重选 puts the picked cards down and starts the hints over from the first
+$('#clearBtn').onclick=()=>{sel=new Set();hintIdx=0;renderHand()};
 $('#rulesBtn').onclick=showRules;
 // card backs: the goose photo, or the original red stripes; remembered on this computer
 // card backs, in the order a click steps through them: the goose photo, the maple leaf, the original red stripes
@@ -3205,7 +3214,7 @@ for(const ev of ['pointerdown','pointerup','touchend','click','keydown'])documen
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)Sound.wake()});
 $('#quitBtn').onclick=askQuit;
 $('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start')act({k:'pause',on:!G.paused,p:toAbs(0)})};
-$('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();renderHand()}});
+$('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();hintIdx=0;renderHand()}});
 document.addEventListener('keydown',e=>{
   if(!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input'))return;
   if(e.key==='Enter'){e.preventDefault();G.phase==='return'||G.phase==='tribPick'||owesReturn(0)?onReturn():sel.size?onPlay():onHint()}
@@ -3357,7 +3366,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1026-1921';
+const VERSION='1026-1932';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
