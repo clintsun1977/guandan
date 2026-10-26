@@ -1933,19 +1933,15 @@ function renderControls(){
   // once your hand is empty (out, or the round is over) the play buttons have nothing left to do
   // while you are sorting, the "done sorting" button takes the play buttons' place
   $('#btns').hidden=(!ret&&G.phase!=='deal'&&!G.hands[0].length)||(sideBtns()&&G.phase==='prep'&&!ret&&!(G.ready||[]).includes(0));
-  $('#playBtn').disabled=!my&&!soon;
-  $('#hintBtn').disabled=!my;
-  $('#passBtn').disabled=!my||!G.trick;
-  $('#clearBtn').disabled=!sel.size;
+  // every button that does something right now is lit, the others are dimmed and cannot be pressed:
+  // 出牌 once cards are picked on your turn (or while you are about to lead), 提示 on your turn, 过 when there is
+  // something on the table to pass on, 重选 while any cards are picked
+  const picked=sel.size>0,can={playBtn:(my||soon)&&picked,hintBtn:my,passBtn:my&&!!G.trick,clearBtn:picked};
+  for(const id in can){const b=$('#'+id);b.disabled=!can[id];b.classList.toggle('primary',can[id])}
   const deckTurn=(G.phase==='shuffle'&&G.shuffler===0)||(G.phase==='cut'&&G.cutter===0);
   $('#deckBtn').hidden=!deckTurn||!!G.busy;
   $('#deckBtn').textContent=G.phase==='cut'?'切牌':'洗牌';
   placeActionBtns();
-  // the lit (default, Enter) button: 提示 while nothing is picked, 出牌 once some cards are
-  const picked=sel.size>0;
-  $('#playBtn').classList.toggle('primary',(my||soon)&&picked);
-  $('#hintBtn').classList.toggle('primary',my&&!picked);
-  $('#passBtn').classList.remove('primary');
 }
 // the table speaks for itself: only things you could not otherwise see get a line here
 // (what changed hands in the tribute, a lead passing to a partner, which card you still owe)
@@ -3237,7 +3233,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1026-1710';
+const VERSION='1026-1724';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
