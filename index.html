@@ -308,6 +308,14 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 #fixZone{position:absolute;z-index:0;pointer-events:none;border:2px dashed rgba(221,176,80,.45);border-radius:12px;background:rgba(221,176,80,.06);transition:background .15s,border-color .15s}
 #fixZone.over{border-color:var(--gold);background:rgba(221,176,80,.2);box-shadow:0 0 16px rgba(221,176,80,.5)}
 #fixZone .fzl{position:absolute;left:8px;top:1px;font-size:12px;line-height:1.2;color:var(--gold);letter-spacing:.1em;white-space:nowrap}
+/* the empty frame names itself in the middle and says how cards get in */
+#fixZone.empty .fzl{left:0;right:0;top:30%;text-align:center;font-size:16px;font-weight:700}
+#fixZone .fzh{position:absolute;left:8px;right:8px;top:calc(30% + 26px);text-align:center;font-size:12px;line-height:1.4;color:var(--muted)}
+@media (max-width:560px){
+  /* a phone has only a narrow strip: the name reads downwards and the how-to is left to the button */
+  #fixZone.empty .fzl{top:10px;left:50%;right:auto;translate:-50% 0;writing-mode:vertical-rl;font-size:13px;letter-spacing:.3em}
+  #fixZone .fzh{display:none}
+}
 #fixTags{position:absolute;z-index:1;pointer-events:none}
 .fzt{position:absolute;font-size:12px;font-weight:700;line-height:1;padding:3px 6px;border-radius:999px;background:var(--felt-deep);color:var(--gold);border:1px solid var(--gold);white-space:nowrap}
 .fzt.boom{background:var(--gold);color:var(--on-gold)}
@@ -410,7 +418,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .lobby-go{font-size:23px;padding:10px 20px;border-radius:14px}
 /* the table rules: chosen by whoever plays alone or opens the room, shown greyed to friends who join */
 .lobby-rules{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--shade)}
-.rule-row{display:grid;grid-template-columns:116px 1fr 1fr;gap:8px;align-items:center}
+.rule-row{display:grid;grid-template-columns:116px;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;align-items:center}
 .rule-k{font-size:18px;color:var(--muted);text-align:left;white-space:nowrap}
 .rule-btn{font:inherit;font-size:17px;padding:6px 4px;border-radius:10px;cursor:pointer;background:transparent;color:var(--ink);border:1.5px solid var(--line-strong)}
 .rule-btn.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700}
@@ -554,7 +562,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
     </div>
     <div class="lobby-rules" id="rulesBox">
       <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
-      <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button></div>
+      <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="keep">一直打</button></div>
       <div class="rule-note" id="rulesNote"></div>
     </div>
     <div class="lobby-join" id="joinRow" hidden>
@@ -1319,8 +1327,12 @@ function sortHints(plays){
   const ownK=new Set(own.map(key));
   const nf=pl=>pl.cards.filter(c=>fixed.has(c.id)).length;
   const whole=pl=>G.fixed.every(gr=>{const n=pl.cards.filter(c=>gr.includes(c.id)).length;return!n||n===gr.length});
+  // a fixed bomb (or straight flush, or the four jokers) is never split up, alone or with active cards: it is
+  // offered whole, among the fixed plays
+  const solid=G.fixed.filter(gr=>analyze(gr.map(id=>hand.find(c=>c.id===id)),G.L).some(isBomb));
+  const splits=pl=>solid.some(gr=>{const n=pl.cards.filter(c=>gr.includes(c.id)).length;return n>0&&n<gr.length});
   const fin=list.filter(pl=>pl.cards.length===hand.length);
-  const more=list.filter(pl=>!fin.includes(pl)&&!ownK.has(key(pl)));
+  const more=list.filter(pl=>!fin.includes(pl)&&!ownK.has(key(pl))&&!splits(pl));
   const fx=more.filter(pl=>nf(pl)===pl.cards.length);
   return fin.concat(
     more.filter(pl=>nf(pl)===0),
@@ -1404,7 +1416,7 @@ function finishRound(){
   const after=G.levels[team];
   // each side gets three tries at A: after the third miss the match is drawn, or that side starts again from 2
   let aTry=0,draw=false,reset=false;
-  if(atA&&!win){
+  if(atA&&!win&&RULES.aFail!=='keep'){
     const f=G.aFails||(G.aFails=[0,0]);
     aTry=++f[aTeam];
     if(aTry>=3){if(RULES.aFail==='draw')draw=true;else{G.levels[aTeam]=2;f[aTeam]=0;reset=true}}
@@ -1890,7 +1902,7 @@ function render(){
   for(let p=0;p<4;p++){const el=p===0?$('#mebar'):$('#seat'+p);el.classList.toggle('t-red',isRedSeat(p));el.classList.toggle('t-blue',!isRedSeat(p))}
   $('#lv0').textContent=rankName(G.levels[0]);
   $('#lv1').textContent=rankName(G.levels[1]);
-  for(const t of [0,1]){const n=(G.aFails||[0,0])[t];$('#lvx'+t).textContent=G.levels[t]===14&&n?`余${3-n}次`:''}
+  for(const t of [0,1]){const n=(G.aFails||[0,0])[t];$('#lvx'+t).textContent=G.levels[t]===14&&n&&RULES.aFail!=='keep'?`余${3-n}次`:''}
   for(const t of [0,1]){
     const el=$('#team'+t);
     el.classList.toggle('playing',G.lvlTeam===t);
@@ -2076,8 +2088,10 @@ function handGeo(n,keys){
   const cw=probe.offsetWidth,ch=probe.offsetHeight;
   // each group in one row, overlapping just enough to show every card's corner; a long group closes up
   const rows=(G&&G.fixed||[]).map(gr=>{const k=gr.length,off=k>1?Math.min(cw*.42,(Wall*.34-cw)/(k-1)):0;return{gr,off,w:cw+off*(k-1)}});
-  const fw=rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:0;
-  const x0=Math.max(side,fw?fw+FIX_GAP:0),W=Wall-side-x0;
+  // with no groups yet the zone is an empty frame: in the free room on the left on a computer or tablet, a narrow
+  // strip on a phone
+  const fw=rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:side?Math.round(side*.8):30;
+  const x0=Math.max(side,fw+FIX_GAP),W=Wall-side-x0;
   const g=fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
   g.slots=g.slots.map(sl=>({...sl,x:sl.x+x0}));
   // the groups step down like flat rows (each still shows its row of corners), closer together if there are many;
@@ -2087,8 +2101,8 @@ function handGeo(n,keys){
   if(rows.length>1)gap=Math.max(ch*.3,Math.min(gap,(Math.max(base,ch*2.4)-lift-ch-pad)/(rows.length-1)));
   g.fix=new Map();g.fixTags=[];
   rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:r.w+5,y,gr:r.gr})});
-  g.fixW=fw;g.fixH=rows.length?lift+ch+(rows.length-1)*gap+6:0;g.cw=cw;g.ch=ch;
-  g.fixEdge=fw?fw+FIX_GAP/2:Math.max(side*.8,cw*.6);
+  g.fixW=fw;g.fixH=rows.length?lift+ch+(rows.length-1)*gap+6:0;g.cw=cw;g.ch=ch;g.fixEmpty=!rows.length;
+  g.fixEdge=fw+FIX_GAP/2;
   g.height=Math.max(base,rows.length?g.fixH+pad:0);
   return g;
 }
@@ -2100,12 +2114,13 @@ function drawFixZone(g){
     z=document.createElement('div');z.id='fixZone';handEl.parentNode.insertBefore(z,handEl);
     t=document.createElement('div');t.id='fixTags';handEl.parentNode.insertBefore(t,handEl.nextSibling);
   }
-  const on=!!g&&(g.fixW>0||!!(mv&&mv.active));
+  const on=!!g;
   z.hidden=t.hidden=!on;
   if(!on)return;
   const L=handEl.offsetLeft,T=handEl.offsetTop;
-  z.style.left=L-6+'px';z.style.top=T+'px';z.style.width=(g.fixW||g.fixEdge)+6+'px';z.style.height=(g.fixH||handEl.offsetHeight)+'px';
-  z.innerHTML=`<span class="fzl">${g.fixW?'固定区':'拖到这里固定'}</span>`;
+  z.style.left=L-6+'px';z.style.top=T+'px';z.style.width=g.fixW+6+'px';z.style.height=(g.fixH||handEl.offsetHeight)+'px';
+  z.classList.toggle('empty',g.fixEmpty);
+  z.innerHTML=`<span class="fzl">固定区</span>`+(g.fixEmpty?'<span class="fzh">把牌拖到这里，或选好牌点“固定”</span>':'');
   t.style.left=L+'px';t.style.top=T+'px';
   t.innerHTML=g.fixTags.map(r=>{
     const cards=r.gr.map(id=>G.hands[0].find(c=>c.id===id)).filter(Boolean);
@@ -2877,7 +2892,7 @@ function showRules(){
     <li>炸弹从小到大：4 张 &lt; 5 张 &lt; 同花顺 &lt; 6 张 &lt; 7 张 … &lt; 四个王（天王炸）。炸弹可以压任何非炸弹牌型。</li>
     <li>头游一方升级：队友二游升 3 级，三游升 2 级，末游升 1 级。打到 A 并且队友不是末游，赢下整场。</li>
     <li>${RULES.trib?'从第二局起进贡：末游把最大的牌给头游，头游还一张 10 或以下的牌；双下则两人都进贡。要进贡的一方合起来有两张大王（一人两张，或双下时两人各一张）就可以抗贡：这一局不进贡、不还贡，由头游先出。':'本场不进贡：每局由上一局的头游先出。'}</li>
-    <li>每一方打 A 有三次机会，三次都没打过${RULES.aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。</li>
+    <li>${RULES.aFail==='keep'?'打 A 不限次数，一直打到打过为止。':`每一方打 A 有三次机会，三次都没打过${RULES.aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。`}</li>
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
     <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排，按住一张牌拖动可以把它插到别处；先选中几张再拖，可以整组一起挪。平铺模式也一样。轮到你出牌时，按住滑过几张牌是连选这些牌；其他时候按住拖动才是挪牌。“复原”恢复成按大小排好的样子。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
@@ -3026,7 +3041,7 @@ function moveCards(e){
   }
   if(fz.classList.contains('over')){
     fz.classList.remove('over');
-    fz.querySelector('.fzl').textContent=g.fixW?'固定区':'拖到这里固定';
+    fz.querySelector('.fzl').textContent='固定区';
     document.querySelectorAll('#fixTags .fzt').forEach(t=>t.classList.remove('hot'));
   }
   if(mv.t==='fix')mv.t=null;
@@ -3340,7 +3355,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1026-1807';
+const VERSION='1026-1823';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
