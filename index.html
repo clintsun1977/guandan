@@ -544,7 +544,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
     </div>
     <div id="pile" aria-hidden="true"><div class="probe"></div></div>
     <div class="lastplay" id="lastPlay"></div>
-    <div class="prepbig" id="prepBig" hidden><b id="prepL">理牌</b><span class="clock bigclock" id="prepR"><b><span id="prepBigNum">60</span></b></span></div>
+    <div class="prepbig" id="prepBig" hidden><b id="prepL">理牌</b><span class="clock bigclock" id="prepR"><b><span id="prepBigNum">90</span></b></span></div>
     <section class="seat" id="seat1">
       <div class="whorow"><span class="cnt"></span><div class="who"><span class="clock"></span><span class="stat"></span><span class="place"></span><span class="name">下家</span><span class="back"></span></div></div>
     </section>
@@ -1260,7 +1260,7 @@ function startTurn(){
 }
 
 /* ---------- clocks: one ticker drives turn limits, computer thinking and the pre-play countdown ---------- */
-const PLAY_MS=60000,TRIB_MS=30000,RET_MS=20000,PREP_MS=60000,HURRY_MS=5000;
+const PLAY_MS=60000,TRIB_MS=30000,RET_MS=20000,PREP_MS=90000,HURRY_MS=5000;
 // computer "thinking" time per move; shortened for testing (the full-feel setting was 2000-5000)
 const AI_THINK_MIN=500,AI_THINK_MAX=1000;
 let lastTick=performance.now();
@@ -2997,7 +2997,7 @@ function showRules(){
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
     <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排。按住没选中的牌滑过几张，是连选这些牌；从选中的牌上按住拖动，是把选中的牌一起挪到别处（也可以拖进左边的固定区）。平铺模式也一样。“复原”恢复成按大小排好的样子。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
-    <li>发完牌先进贡（最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒），有抗贡也在这时亮出；然后有 60 秒理牌时间（理好了点“理牌结束”），理完再还贡（限时 20 秒）。每次出牌限时 60 秒，最后 5 秒倒计时会闪烁，超时由电脑代你出牌。</li>
+    <li>发完牌先进贡（最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒），有抗贡也在这时亮出；然后有 90 秒理牌时间（理好了点“理牌结束”），理完再还贡（限时 20 秒）。每次出牌限时 60 秒，最后 5 秒倒计时会闪烁，超时由电脑代你出牌。</li>
   </ul>
   <p class="muted">点选牌，双击任意一张牌直接出牌，“提示”会依次给出能出的牌，“过”是这一轮不要。</p>
   <div class="btns"><button class="btn primary" id="closeBtn">知道了</button></div>`);
@@ -3479,7 +3479,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1027-0925';
+const VERSION='1027-0935';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
