@@ -921,6 +921,9 @@ function leadHints(hand,L,plays){
   for(const c of hand)if(!isWild(c,L))(by[c.r]||(by[c.r]=[])).push(c);
   const v=r=>r>=16?+r:(r==L?15:+r);
   for(const pl of plays)if(/straight|pairs3|trip2/.test(pl.type)&&hintTier(pl,g)===0)out.push({pl,k:pl.value,s:0});
+  // a run that needs a wild card to fill a gap (33 4 55 and a wild as two 4s) but breaks no group comes right after
+  // the plays of its lowest rank
+  for(const pl of plays)if(pl.wu&&/straight|pairs3|trip2/.test(pl.type)&&hintTier({...pl,cards:pl.cards.filter(c=>!isWild(c,L)),wu:0},g)===0)out.push({pl,k:pl.value,s:2});
   const pairs=Object.keys(by).filter(r=>by[r].length===2&&g.n[groupKey(by[r][0],g.jk)]===2).sort((a,b)=>v(a)-v(b));
   for(const r in by){
     const cs=by[r];
@@ -3475,7 +3478,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1026-2136';
+const VERSION='1026-2147';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
