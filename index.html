@@ -778,7 +778,22 @@ function genPlays(hand,L){
 }
 
 /* ---------- hand evaluation: roughly how many turns of control the hand still needs ---------- */
-const unitCost=v=>v>=15?.25:v>=14?.5:v>=12?.75:1;
+// every number the computer players weigh; tuned by self-play in the 07-guandan-ai training folder
+const AIP={
+  // hand evaluation: a single, pair or three counts 1 turn, less for big cards; runs, bombs and wild cards
+  ucTop:.25,ucA:.5,ucQK:.75,tripPairMax:14,seqUnit:.9,fourJokers:1.5,smallJoker:.3,bigJoker:.2,bombBase:.4,bombExtra:.1,wild:.9,
+  // following: when to beat an opponent's cards
+  urgentWin:7,urgentOpp:5,followFree:.35,followMaybe:1.2,followMaybeProb:.3,saveJokerCurBelow:13,saveJokerHand:8,saveJokerProb:.6,topFree:1,
+  // when to bomb
+  bombWinLeft:7,bombRest:2,bombOverBomb:12,bombBigVal:14,bombBigProb:.25,safeBombRest:3,
+  // arranging the hand: what counts as a play that wins the lead back, and how arrangements are scored
+  ctrlSingle:14,ctrlPair:13,ctrlTrip:12,ctrlSeq:9,armHand:1,armBomb:1.2,armCtrl:.5,armSeq:.3,armSmall:.3,armNodes:400,
+  // early and middle game: how often a play that would win the lead back is kept, or a fit left to your partner
+  saveCtrlProb:0,midLeaveProb:.2,
+  // 牌力 (1-10) from the arranged hand
+  powA:8,powB:1,
+};
+const unitCost=v=>v>=15?AIP.ucTop:v>=14?AIP.ucA:v>=12?AIP.ucQK:1;
 function baseCost(cnt,L){
   const pairs=[],trips=[];let c=0;
   for(let r=2;r<=14;r++){
@@ -787,7 +802,7 @@ function baseCost(cnt,L){
     if(k===1)c+=unitCost(v);else if(k===2)pairs.push(v);else trips.push(v);
   }
   pairs.sort((a,b)=>a-b);
-  for(const t of trips){c+=unitCost(t);if(pairs.length&&pairs[0]<14)pairs.shift()}
+  for(const t of trips){c+=unitCost(t);if(pairs.length&&pairs[0]<AIP.tripPairMax)pairs.shift()}
   for(const p of pairs)c+=unitCost(p);
   return c;
 }
@@ -800,7 +815,7 @@ function seqCost(cnt,L,depth){
       for(let p=s;p<s+len;p++)if(cnt[p===1?14:p]<need){ok=false;break}
       if(!ok)continue;
       for(let p=s;p<s+len;p++)cnt[p===1?14:p]-=need;
-      const v=.9+seqCost(cnt,L,depth+1);
+      const v=AIP.seqUnit+seqCost(cnt,L,depth+1);
       for(let p=s;p<s+len;p++)cnt[p===1?14:p]+=need;
       if(v<best)best=v;
     }
@@ -811,55 +826,229 @@ function handCost(hand,L){
   const cnt=new Array(15).fill(0);let w=0,sj=0,bj=0;
   for(const c of hand){if(isWild(c,L))w++;else if(c.r===16)sj++;else if(c.r===17)bj++;else cnt[c.r]++}
   let cost=0;
-  if(sj+bj===4)cost-=1.5;else{if(sj)cost+=.3;if(bj)cost+=.2}
-  for(let r=2;r<=14;r++)if(cnt[r]>=4){cost-=.4+.1*(cnt[r]-4);cnt[r]=0}
+  if(sj+bj===4)cost-=AIP.fourJokers;else{if(sj)cost+=AIP.smallJoker;if(bj)cost+=AIP.bigJoker}
+  for(let r=2;r<=14;r++)if(cnt[r]>=4){cost-=AIP.bombBase+AIP.bombExtra*(cnt[r]-4);cnt[r]=0}
   cost+=seqCost(cnt,L,0);
-  return cost-.9*w;
+  return cost-AIP.wild*w;
+}
+
+/* ---------- arranging the hand (配牌) and its strength (牌力) ---------- */
+// the computer splits its hand into plays the way a player sorts their cards: it tries the runs, pairs in a row,
+// steel plates and straight flushes the hand allows (a wild card may fill a gap), deals with the rest rank by rank,
+// and keeps the arrangement that scores best: few plays, many bombs, plays that win the lead back, runs, few small singles
+const isSeq=t=>t==='straight'||t==='pairs3'||t==='trip2';
+// a play that can win the lead back: a big single, pair, three or run
+const isCtrl=u=>u.type==='single'?u.value>=AIP.ctrlSingle:u.type==='pair'?u.value>=AIP.ctrlPair:
+  u.type==='triple'||u.type==='full'?u.value>=AIP.ctrlTrip:isSeq(u.type)&&u.value>=AIP.ctrlSeq;
+function armScore(units){
+  let s=0;
+  for(const u of units){
+    if(isBomb(u)){s+=AIP.armBomb;continue}
+    s-=AIP.armHand;
+    if(isCtrl(u))s+=AIP.armCtrl;
+    if(isSeq(u.type))s+=AIP.armSeq;
+    if(u.type==='single'&&u.value<=10)s-=AIP.armSmall;
+  }
+  return s;
+}
+const armUnit=(type,value,cards,wu=0)=>({type,value,n:cards.length,cards,wu});
+// what is left after the runs, rank by rank: four or more make a bomb, a three takes the smallest pair along,
+// unused wild cards are kept as big singles
+function armRest(by,jk,wild,L){
+  const units=[],pairs=[],trips=[];
+  if(jk.length===4)units.push(armUnit('jokers',99,jk));
+  else for(const r of [16,17]){const g=jk.filter(c=>c.r===r);if(g.length)units.push(armUnit(g.length===2?'pair':'single',r,g))}
+  for(let r=2;r<=14;r++){
+    const g=by[r];if(!g||!g.length)continue;
+    const v=r===L?15:r;
+    if(g.length>=4)units.push(armUnit('bomb',v,g.slice()));
+    else if(g.length===3)trips.push(g.slice());
+    else if(g.length===2)pairs.push(g.slice());
+    else units.push(armUnit('single',v,g.slice()));
+  }
+  pairs.sort((a,b)=>val(a[0],L)-val(b[0],L));
+  for(const t of trips){
+    const i=pairs.findIndex(q=>val(q[0],L)<AIP.tripPairMax);
+    units.push(i>=0?armUnit('full',val(t[0],L),t.concat(pairs.splice(i,1)[0])):armUnit('triple',val(t[0],L),t));
+  }
+  for(const q of pairs)units.push(armUnit('pair',val(q[0],L),q));
+  for(const c of wild)units.push(armUnit('single',15,[c],1));
+  return units;
+}
+// a kept wild card joins whatever it improves most: a single becomes a pair, a pair a three, a three or bomb a bigger bomb
+function armWilds(units){
+  for(;;){
+    const wi=units.findIndex(u=>u.wu&&u.n===1);
+    if(wi<0)return units;
+    const w=units[wi],rest=units.filter((_,i)=>i!==wi);
+    let best=null,bs=armScore(units);
+    rest.forEach((u,i)=>{
+      if(u.value>=16||!['single','pair','triple','bomb'].includes(u.type))return;
+      const n=u.n+1,cand=rest.slice();
+      cand[i]=armUnit(n===2?'pair':n===3?'triple':'bomb',u.value,u.cards.concat(w.cards),u.wu+1);
+      const s=armScore(cand);if(s>bs){bs=s;best=cand}
+    });
+    if(!best)return units;
+    units=best;
+  }
+}
+// every run, pair-run, steel plate and straight flush shape: [type, length, cards of each rank, lowest rank, suit]
+const ARM_SHAPES=[];
+for(const [type,len,need] of [['straight',5,1],['pairs3',3,2],['trip2',2,3]])for(let s=1;s+len-1<=14;s++)ARM_SHAPES.push([type,len,need,s]);
+for(const su of SUITS)for(let s=1;s<=10;s++)ARM_SHAPES.push(['sflush',5,1,s,su]);
+function arrange(hand,L){
+  const wild=hand.filter(c=>isWild(c,L)),jk=hand.filter(c=>c.r>=16),by={};
+  for(const c of hand)if(!isWild(c,L)&&c.r<16)(by[c.r]||(by[c.r]=[])).push(c);
+  const runs=[];let best=null,bs=-1e9,nodes=0;
+  (function dfs(i0,wl){
+    const units=runs.concat(armRest(by,jk,wild.slice(0,wl),L));
+    const s=armScore(units);if(s>bs){bs=s;best=units}
+    // each shape may be taken again, but never one listed before the last one taken
+    for(let i=i0;i<ARM_SHAPES.length&&nodes<AIP.armNodes;i++){
+      const [type,len,need,st,su]=ARM_SHAPES[i];
+      let gap=0;
+      for(let q=st;q<st+len;q++){
+        const g=by[q===1?14:q]||[];
+        gap+=su?(g.some(c=>c.s===su)?0:1):Math.max(0,need-g.length);
+      }
+      if(gap>wl||gap>=len)continue;
+      nodes++;
+      const cards=[];
+      for(let q=st;q<st+len;q++){
+        const g=by[q===1?14:q];if(!g)continue;
+        if(su){const k=g.findIndex(c=>c.s===su);if(k>=0)cards.push(g.splice(k,1)[0])}
+        else cards.push(...g.splice(g.length-Math.min(need,g.length)));
+      }
+      const all=cards.concat(wild.slice(wl-gap,wl)),a=analyze(all,L).find(a=>a.type===type);
+      if(a){runs.push({...a,cards:all,wu:gap});dfs(i,wl-gap);runs.pop()}
+      for(const c of cards)by[c.r].push(c);
+    }
+  })(0,wild.length);
+  return armWilds(best);
+}
+// arranging runs a small search, so each hand is arranged once per round (per set of numbers, while training
+// compares two); a new round deals new card objects, so the cache only holds for the round it was made in
+let armCache=new WeakMap();
+function armPlays(hand,L){
+  let m=armCache.get(AIP);if(!m)armCache.set(AIP,m=new Map());
+  const key=L+':'+hand.map(c=>c.id).sort((a,b)=>a-b).join();
+  let x=m.get(key);
+  if(!x||x.round!==G.hands){if(m.size>500)m.clear();m.set(key,x={round:G.hands,u:arrange(hand,L)})}
+  return x.u;
+}
+// 牌力 1-10: plays that cannot win the lead back count against the hand, bombs for it
+function handPower(hand,L){
+  const u=armPlays(hand,L),B=u.filter(isBomb).length;
+  const loose=u.filter(x=>!isBomb(x)&&!isCtrl(x)).length;
+  return Math.max(1,Math.min(10,Math.round(AIP.powA-AIP.powB*(loose-2*B))));
 }
 
 /* ---------- AI ---------- */
-// the computer picks its cards in the same order as the hints (see hintOrder); it only decides whether to play
+// the computer plays from its arranged hand; late in the round it may break groups, in the hint order
 const restCost=(hand,pl,L)=>handCost(hand.filter(c=>!pl.cards.includes(c)),L);
-// leading: the first hint, except when someone is about to go out
-function aiLead(p,order){
+// card memory: the cards the other three still hold between them (the deck less your hand and everything played),
+// and every play they could make from them; pooling the three hands errs on the safe side
+function outside(p){
+  const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
+  const plays=genPlays(makeDeck().filter(c=>!gone.has(c.id)),G.L);
+  return{plays,topBomb:plays.filter(isBomb).reduce((m,x)=>Math.max(m,power(x)),0)};
+}
+// nobody can beat it: for a bomb, no bigger bomb is left; otherwise nothing but a bomb can
+const isTop=(pl,o)=>isBomb(pl)?power(pl)>o.topBomb:!o.plays.some(x=>!isBomb(x)&&beats(x,pl));
+// leading: the two-plays-from-out case, then help a partner about to go out, keep an opponent about to go out from
+// getting their kind of play, and otherwise lead from the arranged hand (see pickLead)
+function aiLead(p,units,plays,ph){
+  const hand=G.hands[p],L=G.L;
+  // two plays from going out: lead the one nobody can beat, then the other
+  if(hand.length<=16){
+    let o;
+    for(const pl of plays){
+      const rest=hand.filter(c=>!pl.cards.includes(c));
+      if(analyze(rest,L).length&&isTop(pl,o||(o=outside(p))))return pl;
+    }
+  }
+  // early and middle game the wild cards stay in hand; bombs are led only when nothing else is left
+  let pool=units.filter(u=>!isBomb(u)&&!(ph!=='late'&&u.wu));
+  if(!pool.length)pool=units.filter(u=>!isBomb(u));
+  if(!pool.length)return units.slice().sort((a,b)=>power(a)-power(b))[0];
   const mateLeft=G.hands[(p+2)%4].length;
   const oppMin=Math.min(...[(p+1)%4,(p+3)%4].map(i=>G.hands[i].length||99));
-  const of=t=>order.filter(pl=>pl.type===t);
+  const of=t=>pool.filter(u=>u.type===t);
   // partner down to one or two cards: hand them the smallest single or pair
-  for(const [n,t] of [[1,'single'],[2,'pair']])if(mateLeft===n&&of(t).length)return of(t).reduce((m,pl)=>pl.value<m.value?pl:m);
+  for(const [n,t] of [[1,'single'],[2,'pair']])if(mateLeft===n&&of(t).length)return of(t).reduce((m,u)=>u.value<m.value?u:m);
   // an opponent down to one or two cards: lead something else, or else the largest of that kind
   for(const [n,t] of [[1,'single'],[2,'pair']])if(oppMin===n){
-    const other=order.find(pl=>pl.type!==t);
-    return other||of(t).reduce((m,pl)=>pl.value>m.value?pl:m);
+    const other=pool.filter(u=>u.type!==t);
+    return other.length?pickLead(other):of(t).reduce((m,u)=>u.value>m.value?u:m);
   }
-  return order[0];
+  return pickLead(pool);
 }
+// lead the kind of play you are strong in: where a big one can win the lead back, its smallest one goes first;
+// otherwise the smallest play that could not win the lead back anyway
+function pickLead(pool){
+  const kinds={};
+  for(const u of pool)(kinds[u.type+u.n]||(kinds[u.type+u.n]=[])).push(u);
+  let best=null,most=0;
+  for(const k in kinds){
+    const g=kinds[k].sort((a,b)=>a.value-b.value),small=g.filter(u=>!isCtrl(u)).length;
+    if(!small||small===g.length)continue;
+    if(small>most||small===most&&g[0].value<best.value){most=small;best=g[0]}
+  }
+  if(best)return best;
+  const by=(a,b)=>a.value-b.value||b.n-a.n;
+  return pool.filter(u=>!isCtrl(u)).sort(by)[0]||pool.slice().sort(by)[0];
+}
+// early: all four hold 16 or more cards; late: someone is down to 10 or fewer (or out); middle: in between
+const gamePhase=()=>{const n=G.hands.map(h=>h.length);return n.some(k=>k<=10)?'late':n.every(k=>k>=16)?'early':'mid'};
 function aiDecide(p){
   const hand=G.hands[p],L=G.L,cur=G.trick?G.trick.play:null;
   const plays=genPlays(hand,L).filter(pl=>beats(pl,cur));
   if(!plays.length)return null;
   const fin=plays.find(pl=>pl.cards.length===hand.length);
   if(fin)return fin;
-  const order=hintOrder(hand,L,cur,plays);
-  if(!cur)return aiLead(p,order);
+  const ph=gamePhase(),units=armPlays(hand,L);
+  if(!cur)return aiLead(p,units,plays,ph);
 
   const winner=G.trick.player;
   if(winner%2===p%2)return null; // let partner's cards ride
-  const base=handCost(hand,L);
   const winLeft=G.hands[winner].length;
   const oppMin=Math.min(...[(p+1)%4,(p+3)%4].map(i=>G.hands[i].length||99));
-  const urgent=winLeft<=6||oppMin<=4;
+  const urgent=winLeft<=AIP.urgentWin||oppMin<=AIP.urgentOpp;
+  let o;const out=()=>o||(o=outside(p));
+  // a group of the arranged hand that fits exactly: the smallest one (no wild cards before the late game)
+  const early=ph!=='late';
+  const fit=units.filter(u=>!isBomb(u)&&u.type===cur.type&&u.n===cur.n&&beats(u,cur)&&!(early&&u.wu)).sort((a,b)=>a.value-b.value)[0];
+  if(fit){
+    let ok=true;
+    if(early){
+      // in the middle game, with your partner still to play after this opponent, you may leave it to them
+      const mateNext=ph==='mid'&&winner===(p+3)%4&&G.hands[(p+2)%4].length>0;
+      if(mateNext&&Math.random()<AIP.midLeaveProb)ok=false;
+      else if(isCtrl(fit)&&Math.random()<AIP.saveCtrlProb)ok=false;
+    }
+    if(ok)return fit;
+  }
+  if(early){
+    // early and middle game: nothing that breaks a group; a bomb only when it nearly finishes the hand
+    const b=units.filter(u=>isBomb(u)&&!u.wu&&beats(u,cur)).sort((a,b)=>power(a)-power(b))[0];
+    return b&&restCost(hand,b,L)<=AIP.bombRest?b:null;
+  }
+  // late game: break groups if need be, in the hint order, and bomb when it matters
+  const base=handCost(hand,L);
+  const order=hintOrder(hand,L,cur,plays);
   const normal=order.filter(pl=>!isBomb(pl));
   if(normal.length){
     const b={pl:normal[0]},delta=restCost(hand,b.pl,L)-base;
-    let ok=delta<=.35||urgent||(delta<=1.2&&Math.random()<.3);
-    if(ok&&b.pl.value>=16&&cur.value<13&&!urgent&&hand.length>8&&Math.random()<.6)ok=false;
+    let ok=delta<=AIP.followFree||urgent||(delta<=AIP.followMaybe&&Math.random()<AIP.followMaybeProb);
+    if(ok&&b.pl.value>=16&&cur.value<AIP.saveJokerCurBelow&&!urgent&&hand.length>AIP.saveJokerHand&&Math.random()<AIP.saveJokerProb)ok=false;
+    // a play nobody can beat wins the lead back, so it is worth more
+    if(!ok&&delta<=AIP.topFree&&isTop(b.pl,out()))ok=true;
     if(ok)return b.pl;
   }
   const bombs=order.filter(isBomb);
   if(bombs.length){
     const b={pl:bombs[0],rc:restCost(hand,bombs[0],L)};
-    const want=winLeft<=7||b.rc<=2||(isBomb(cur)&&winLeft<=12)||(cur.value>=14&&Math.random()<.25);
+    const want=winLeft<=AIP.bombWinLeft||b.rc<=AIP.bombRest||(isBomb(cur)&&winLeft<=AIP.bombOverBomb)||(cur.value>=AIP.bombBigVal&&Math.random()<AIP.bombBigProb)||(b.rc<=AIP.safeBombRest&&isTop(b.pl,out()));
     if(want)return b.pl;
   }
   return null;
@@ -983,7 +1172,7 @@ function startRound(e){
   G.deck=e.deck.map(id=>byId.get(id));
   G.hands=[[],[],[],[]];
   G.trick=null;G.passes=0;G.last=[null,null,null,null];G.out=[];G.fresh=[];G.result=null;
-  G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.rest=[];G.myOrder=[];G.fixed=[];pileRebuild();G.dealCount=0;
+  G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.seen=[];G.log=[];G.rest=[];G.myOrder=[];G.fixed=[];pileRebuild();G.dealCount=0;
   // as at a real table: the last round's first-out cuts and the player before them shuffles
   // (the very first round picks the cutter at random)
   G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
@@ -1391,6 +1580,8 @@ function doPlay(p,play){
     if(goesOut){G.out.push(p);G.reveal=G.out.length;showPlace(p===0?$('#myPlace'):$('#seat'+p+' .place'),G.out.length-1)}
     pileThrow(p,play,origins,true);
     G.trickPlays.push({p,play:{type:play.type,value:play.value,n:play.n,cards:play.cards}});
+    G.seen.push(...play.cards); // every card played this round, for the computer's card memory
+    G.log.push({p,cards:play.cards,lead:!G.trick}); // and who played what, in order, leading or following
     const ids=new Set(play.cards.map(c=>c.id));
     G.hands[p]=G.hands[p].filter(c=>!ids.has(c.id));
     G.trick={player:p,play};
@@ -1404,6 +1595,7 @@ function doPlay(p,play){
   }else{
     G.passes++;
     G.last[p]='pass';
+    G.log.push({p,cards:null});
   }
   advance();
 }
@@ -3344,7 +3536,7 @@ if(window.ResizeObserver)new ResizeObserver(()=>{const w=handEl.clientWidth;if(w
 function boot(data){
   if(data&&data.G&&data.G.hands&&data.G.phase!=='start'){
     G=data.G;G.tok++;sel=new Set();
-    G.trickPlays=G.trickPlays||[];G.heapN=G.heapN||0;
+    G.trickPlays=G.trickPlays||[];G.heapN=G.heapN||0;G.seen=G.seen||[];G.log=G.log||[];
     if(G.phase==='play'&&G.turn===-1){
       G.heapN+=G.trickPlays.reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];
       G.trick=null;G.passes=0;G.last=[null,null,null,null];G.turn=G.nextLeader??G.leader??0;
@@ -3479,7 +3671,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1027-0935';
+const VERSION='1027-1708';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
