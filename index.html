@@ -1684,7 +1684,8 @@ function pileGeo(){
   const b=$('#btns'),br=sideBtns()&&!b.hidden&&b.offsetHeight?b.getBoundingClientRect():null;
   const col=br?{left:br.left-L.left,top:br.top-L.top}:null;
   return{L,top,bottom,left,right,cx:L.width/2,cy:(top+bottom)/2,hy:e.top+e.height/2-L.top,sideY:{1:mid('#seat1 .who'),3:mid('#seat3 .who')},cw,ch:cw*1.4,col,
-    ...(r=>r.height?{lp:r.bottom-L.top,lpBox:{l:r.left-L.left,r:r.right-L.left,t:r.top-L.top}}:{lp:0,lpBox:{l:0,r:0,t:0}})(R('#lastPlay'))};
+    ...(r=>r.height?{lp:r.bottom-L.top,lpBox:{l:r.left-L.left,r:r.right-L.left,t:r.top-L.top}}:{lp:0,lpBox:{l:0,r:0,t:0}})(R('#lastPlay')),
+    near:nearBottom()-L.top};
 }
 // the players' room changed (the action column or the line under the disc moved): the cards on the table are fitted
 // again, the whole trick stepping down in size if they no longer fit
@@ -1693,6 +1694,12 @@ function pileRefit(){
   // as when a play is thrown: the newest play's player must fit, and the right-hand player beside the column
   while([1,last&&last.p].some(q=>q!=null&&!layoutPlayer(q,g,false))&&TS>MIN_TS)TS=Math.max(MIN_TS,TS*.9);
   for(let q=0;q<4;q++)layoutPlayer(q,g,true);
+}
+// how far down your own cards on the table may reach: to your name plate (or your place label once you are out); the
+// message line above the plate is empty nearly all the time, so its room is used too
+function nearBottom(){
+  const pl=$('#myPlace'),r=(pl.textContent?pl:$('#mebar .meinfo')).getBoundingClientRect();
+  return r.top;
 }
 // a small margin kept clear along each plate
 const PASS_X=12,PASS_Y=10;
@@ -1708,7 +1715,7 @@ function zoneFor(p,g){
   const z=p===3?{x0:g.left+PASS_X,x1:mx0,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y}
     :p===1?{x0:mx1,x1:g.right-PASS_X,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y}
     :p===2?{x0:mx0,x1:mx1,y0:g.top+PASS_Y,y1:g.cy}
-    :{x0:mx0,x1:mx1,y0:g.bottom-g.lp-2*PASS_Y>=g.ch*.74?Math.max(g.cy,g.lp+PASS_Y):g.cy,y1:g.bottom-PASS_Y};
+    :{x0:mx0,x1:mx1,y0:g.near-g.lp-2*PASS_Y>=g.ch*.74?Math.max(g.cy,g.lp+PASS_Y):g.cy,y1:g.near-PASS_Y};
   // a side player's cards also stop above the line where it reaches into their part of the table (a narrow screen)
   if((p===1||p===3)&&g.lpBox.r>z.x0&&g.lpBox.l<z.x1&&g.lpBox.t-PASS_Y-z.y0>g.ch)z.y1=Math.min(z.y1,g.lpBox.t-PASS_Y);
   // the right-hand player's cards stop above the action column, so they never lie under the buttons
@@ -2010,9 +2017,9 @@ function placeLastPlay(){
   el.style.maxWidth=Math.max(120,g?g.right-g.left-8:$('.mid').offsetWidth)+'px';
   // just under the disc; when that leaves the near player too little room for a row of cards, it rides up over the
   // disc's lower edge (below the figure) to give some back
-  const S=$('#seat0').getBoundingClientRect(),cw=$('#pile .probe').offsetWidth||48;
+  const cw=$('#pile .probe').offsetWidth||48;
   let y=e.bottom+6-T.top;
-  const short=cw*1.4*.75-(S.top-T.top-(y+el.offsetHeight)-2*PASS_Y);
+  const short=cw*1.4*.75-(nearBottom()-T.top-(y+el.offsetHeight)-2*PASS_Y);
   if(short>0)y=Math.max(e.top+e.height*.74-T.top,y-short);
   const top=y+'px';
   el.style.left=e.left+e.width/2-T.left+'px';
@@ -3471,7 +3478,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1026-2047';
+const VERSION='1026-2102';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
