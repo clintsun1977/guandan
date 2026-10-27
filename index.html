@@ -2995,7 +2995,7 @@ function showRules(){
     <li>${RULES.trib?'从第二局起进贡：末游把最大的牌给头游，头游还一张 10 或以下的牌；双下则两人都进贡。要进贡的一方合起来有两张大王（一人两张，或双下时两人各一张）就可以抗贡：这一局不进贡、不还贡，由头游先出。':'本场不进贡：每局由上一局的头游先出。'}</li>
     <li>${RULES.aFail==='keep'?'打 A 不限次数，一直打到打过为止。':`每一方打 A 有三次机会，三次都没打过${RULES.aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。`}</li>
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
-    <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排，按住一张牌拖动可以把它插到别处；先选中几张再拖，可以整组一起挪。平铺模式也一样。轮到你出牌时，按住滑过几张牌是连选这些牌；其他时候按住拖动才是挪牌。“复原”恢复成按大小排好的样子。</li>
+    <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排。按住没选中的牌滑过几张，是连选这些牌；从选中的牌上按住拖动，是把选中的牌一起挪到别处（也可以拖进左边的固定区）。平铺模式也一样。“复原”恢复成按大小排好的样子。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
     <li>发完牌先进贡（最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒），有抗贡也在这时亮出；然后有 60 秒理牌时间（理好了点“理牌结束”），理完再还贡（限时 20 秒）。每次出牌限时 60 秒，最后 5 秒倒计时会闪烁，超时由电脑代你出牌。</li>
   </ul>
@@ -3075,9 +3075,10 @@ handEl.addEventListener('pointerdown',e=>{
   try{handEl.setPointerCapture(e.pointerId)}catch(_){}
 });
 handEl.addEventListener('pointermove',e=>{
-  // on your own turn a press-and-sweep that starts on an unpicked card picks the cards it passes over; one that starts
-  // on a picked card carries the picked cards (to the fixed zone, or another place), as it does at any other time
-  if(mv&&!mv.active&&G.phase==='play'&&G.turn===0&&!sel.has(mv.id)){
+  // a press-and-sweep that starts on an unpicked card picks the cards it passes over; one that starts on a picked card
+  // carries the picked cards (into the fixed zone, or to another place) - while sorting as much as while playing, so a
+  // bomb or a run can be swept up and dragged into the fixed zone in one go
+  if(mv&&!mv.active&&!sel.has(mv.id)){
     if(Math.hypot(e.clientX-mv.x0,e.clientY-mv.y0)<6)return;
     const id=mv.id,on=!sel.has(id);
     mv=null;lastDown=null;
@@ -3478,7 +3479,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1026-2147';
+const VERSION='1027-0925';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
