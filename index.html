@@ -786,12 +786,31 @@ const AIP={
   urgentWin:7,urgentOpp:5,followFree:.35,followMaybe:1.2,followMaybeProb:.3,saveJokerCurBelow:13,saveJokerHand:8,saveJokerProb:.6,topFree:1,
   // when to bomb
   bombWinLeft:7,bombRest:2,bombOverBomb:12,bombBigVal:14,bombBigProb:.25,safeBombRest:3,
-  // arranging the hand: what counts as a play that wins the lead back, and how arrangements are scored
-  ctrlSingle:14,ctrlPair:13,ctrlTrip:12,ctrlSeq:9,armHand:1,armBomb:1.2,armCtrl:.5,armSeq:.3,armSmall:.3,armNodes:400,
+  // what counts as a play that wins the lead back; arranging the hand: what each play (not bombs) costs on top of its score
+  ctrlSingle:14,ctrlPair:13,ctrlTrip:12,ctrlSeq:9,armHand:.3,armNodes:400,
   // early and middle game: how often a play that would win the lead back is kept, or a fit left to your partner
   saveCtrlProb:0,midLeaveProb:.2,
   // 牌力 (1-10) from the arranged hand
   powA:8,powB:1,
+};
+// how good each kind of play is to hold, by its value (runs: their lowest card, 1 = A played low), from self-play in
+// 07-guandan-ai (stats.js): how often it wins the lead back, and how often an opponent's smaller one of its kind comes
+// along so it can follow; between -1 (a small single: hardly ever wins, rarely gets a chance to follow) and +1, bombs 1-2
+const UNIT_SCORE={
+  single1:{2:-.94,3:-.8,4:-.66,5:-.55,6:-.44,7:-.36,8:-.28,9:-.18,10:-.11,11:-.03,12:.08,13:.18,14:.25,15:.39,16:.55,17:.77},
+  pair2:{2:-.66,3:-.61,4:-.52,5:-.46,6:-.41,7:-.34,8:-.26,9:-.2,10:-.12,11:-.01,12:.08,13:.2,14:.32,15:.48,16:.61,17:.69},
+  triple3:{2:0,3:-.05,4:.1,5:.1,6:.08,7:.13,8:.18,9:.2,10:.29,11:.32,12:.27,13:.37,14:.32,15:.18},
+  full5:{2:-.65,3:-.48,4:-.36,5:-.24,6:-.16,7:-.09,8:-.01,9:.07,10:.14,11:.2,12:.25,13:.39,14:.45,15:.52},
+  straight5:{1:-.46,2:-.3,3:-.18,4:-.08,5:.03,6:.12,7:.2,8:.26,9:.38,10:.59},
+  pairs36:{1:-.16,2:-.07,3:-.05,4:.01,5:-.01,6:.05,7:.08,8:.08,9:.15,10:.18,11:.25,12:.28},
+  trip26:{1:.26,2:.32,3:.34,4:.29,5:.3,6:.29,7:.32,8:.25,9:.25,10:.22,11:.23,12:.18,13:.13},
+  bomb4:{2:1.54,3:1.55,4:1.55,5:1.56,6:1.55,7:1.57,8:1.57,9:1.58,10:1.59,11:1.6,12:1.62,13:1.63,14:1.6,15:1.61},
+  bomb5:{2:1.64,3:1.66,4:1.68,5:1.7,6:1.7,7:1.7,8:1.71,9:1.73,10:1.72,11:1.73,12:1.72,13:1.73,14:1.69,15:1.74},
+  bomb6:{2:1.91,3:1.91,4:1.91,5:1.92,6:1.93,7:1.93,8:1.95,9:1.95,10:1.96,11:1.98,12:1.98,13:1.99,14:1.97,15:1.97},
+  bomb7:{2:1.98,3:2,4:2,5:1.96,6:2,7:2,8:2,9:1.94,10:2,11:1.94,12:2,13:2,14:2},
+  bomb8:{2:2,3:2,4:2,5:2,9:2,11:2},
+  sflush5:{1:1.8,2:1.82,3:1.85,4:1.83,5:1.85,6:1.85,7:1.87,8:1.88,9:1.91,10:1.94},
+  jokers4:{99:2},
 };
 const unitCost=v=>v>=15?AIP.ucTop:v>=14?AIP.ucA:v>=12?AIP.ucQK:1;
 function baseCost(cnt,L){
@@ -835,24 +854,27 @@ function handCost(hand,L){
 /* ---------- arranging the hand (配牌) and its strength (牌力) ---------- */
 // the computer splits its hand into plays the way a player sorts their cards: it tries the runs, pairs in a row,
 // steel plates and straight flushes the hand allows (a wild card may fill a gap), deals with the rest rank by rank,
-// and keeps the arrangement that scores best: few plays, many bombs, plays that win the lead back, runs, few small singles
+// and keeps the arrangement that scores best: the scores of its plays (UNIT_SCORE), less a little for each play
 const isSeq=t=>t==='straight'||t==='pairs3'||t==='trip2';
 // a play that can win the lead back: a big single, pair, three or run
 const isCtrl=u=>u.type==='single'?u.value>=AIP.ctrlSingle:u.type==='pair'?u.value>=AIP.ctrlPair:
   u.type==='triple'||u.type==='full'?u.value>=AIP.ctrlTrip:isSeq(u.type)&&u.value>=AIP.ctrlSeq;
+function unitScore(u){
+  const t=UNIT_SCORE[u.type+u.n];
+  if(!t)return isBomb(u)?2:0;
+  if(t[u.value]!==undefined)return t[u.value];
+  // a value never seen in self-play: the nearest one
+  let best=0,d=99;
+  for(const v in t)if(Math.abs(v-u.value)<d){d=Math.abs(v-u.value);best=t[v]}
+  return best;
+}
 function armScore(units){
   let s=0;
-  for(const u of units){
-    if(isBomb(u)){s+=AIP.armBomb;continue}
-    s-=AIP.armHand;
-    if(isCtrl(u))s+=AIP.armCtrl;
-    if(isSeq(u.type))s+=AIP.armSeq;
-    if(u.type==='single'&&u.value<=10)s-=AIP.armSmall;
-  }
+  for(const u of units)s+=unitScore(u)-(isBomb(u)?0:AIP.armHand);
   return s;
 }
 const armUnit=(type,value,cards,wu=0)=>({type,value,n:cards.length,cards,wu});
-// what is left after the runs, rank by rank: four or more make a bomb, a three takes the smallest pair along,
+// what is left after the runs, rank by rank: four or more make a bomb, a three takes along the pair that gains most (if any),
 // unused wild cards are kept as big singles
 function armRest(by,jk,wild,L){
   const units=[],pairs=[],trips=[];
@@ -868,8 +890,13 @@ function armRest(by,jk,wild,L){
   }
   pairs.sort((a,b)=>val(a[0],L)-val(b[0],L));
   for(const t of trips){
-    const i=pairs.findIndex(q=>val(q[0],L)<AIP.tripPairMax);
-    units.push(i>=0?armUnit('full',val(t[0],L),t.concat(pairs.splice(i,1)[0])):armUnit('triple',val(t[0],L),t));
+    const v=val(t[0],L),alone=unitScore({type:'triple',n:3,value:v});
+    let i=-1,gain=0;
+    pairs.forEach((q,k)=>{
+      const g=unitScore({type:'full',n:5,value:v})+AIP.armHand-alone-unitScore({type:'pair',n:2,value:val(q[0],L)});
+      if(g>gain){gain=g;i=k}
+    });
+    units.push(i>=0?armUnit('full',v,t.concat(pairs.splice(i,1)[0])):armUnit('triple',v,t));
   }
   for(const q of pairs)units.push(armUnit('pair',val(q[0],L),q));
   for(const c of wild)units.push(armUnit('single',15,[c],1));
@@ -1581,7 +1608,7 @@ function doPlay(p,play){
     pileThrow(p,play,origins,true);
     G.trickPlays.push({p,play:{type:play.type,value:play.value,n:play.n,cards:play.cards}});
     G.seen.push(...play.cards); // every card played this round, for the computer's card memory
-    G.log.push({p,cards:play.cards,lead:!G.trick}); // and who played what, in order, leading or following
+    G.log.push({p,cards:play.cards,lead:!G.trick,type:play.type,value:play.value,n:play.n}); // and who played what, in order, leading or following
     const ids=new Set(play.cards.map(c=>c.id));
     G.hands[p]=G.hands[p].filter(c=>!ids.has(c.id));
     G.trick={player:p,play};
@@ -3671,7 +3698,7 @@ if(myNick)$('#myName').textContent=myNick;
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1027-1708';
+const VERSION='1027-2151';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
