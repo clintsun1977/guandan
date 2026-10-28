@@ -521,6 +521,85 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
 }
+/* the test version: every hand face up (the computer's in the groups it has arranged), and every play numbered in a
+   record down the right-hand side, which can be stepped back through and replayed */
+.lobby-test{align-self:center;margin-top:4px}
+body.test{--tside-w:340px}
+body.test #app{max-width:none;margin:0 var(--tside-w) 0 0}
+body.test #fanBtn,body.test #rowsBtn{display:none}
+#tsBtn{display:none}
+.peek{--cw:clamp(26px,2.4vw,36px);display:flex;flex-direction:column;gap:2px;pointer-events:auto}
+#seat2 .peek{align-items:center}
+#seat1 .peek{align-items:flex-end}
+.peek .pw{font-size:13px;color:var(--muted);line-height:1.2}
+.peek .pw:empty{display:none}
+.prows{display:flex;flex-direction:column}
+.prow{display:flex;gap:calc(var(--cw)*.32)}
+.prow+.prow{margin-top:calc(var(--cw)*-.58)}
+.grp{display:flex;flex:none}
+.grp .card{position:relative}
+.grp .card+.card{margin-left:calc(var(--cw)*-.58)}
+.tside{position:fixed;top:0;right:0;bottom:0;width:var(--tside-w);z-index:30;display:flex;flex-direction:column;gap:8px;padding:10px 12px;
+  background:var(--felt-deep);border-left:1px solid var(--line-strong);color:var(--ink)}
+.tsh{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.tsh b{font-size:18px}
+.tsh span{font-size:14px;color:var(--muted)}
+.tsb{display:flex;flex-wrap:wrap;gap:6px}
+.tsb .link{font-size:15px;padding:3px 10px}
+.tlist{flex:1;min-height:0;overflow:auto;margin:0;padding:0;list-style:none;font-size:14px;line-height:1.5}
+.tlist li{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 6px;padding:2px 4px;border-radius:6px}
+.tlist li.tp{cursor:pointer}
+.tlist li.tp:hover{background:var(--shade)}
+.tlist li.on{background:rgba(221,176,80,.22);box-shadow:inset 0 0 0 1px var(--gold)}
+.tlist .no{min-width:2.2em;text-align:right;font-variant-numeric:tabular-nums;color:var(--gold);font-weight:700}
+.tlist .tw{font-weight:700}
+.tlist .lt{font-size:12px;color:var(--muted)}
+.tlist .lt{white-space:nowrap}
+.tlist .tc{display:inline-flex;flex-wrap:wrap;gap:2px}
+.tlist .ct{font-size:13px;padding:0 3px;margin:0}
+.tlist li.tpass{color:var(--muted);padding-left:3.2em}
+.tlist li.tend{color:var(--muted);font-size:12px;padding-left:3.2em}
+.tlist li.thead{color:var(--gold);font-weight:700;margin-top:6px}
+.tview{position:fixed;inset:0;z-index:120;display:flex;flex-direction:column;color:var(--ink);
+  background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-deep) 100%)}
+.tvh{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 16px;border-bottom:1px solid var(--line)}
+.tvh .tvi{font-size:17px;font-weight:700;margin-right:auto}
+.tvh .tvi small{font-weight:400;color:var(--muted);margin-left:8px}
+.tvh select{font:inherit;font-size:15px;background:var(--felt-deep);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:3px 6px}
+.tvh .link.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold)}
+.tvb{flex:1;min-height:0;display:flex}
+.tvt{flex:1;min-width:0;overflow:auto;padding:12px 16px;display:grid;gap:14px;
+  grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"top top top" "left mid right" "me me me"}
+.tvs{display:flex;flex-direction:column;gap:4px}
+.tvs .peek{--cw:clamp(30px,2.8vw,42px)}
+.tvs[data-p="2"]{grid-area:top;align-items:center}
+.tvs[data-p="3"]{grid-area:left;justify-content:center}
+.tvs[data-p="1"]{grid-area:right;justify-content:center;align-items:flex-end}
+.tvs[data-p="0"]{grid-area:me;align-items:center}
+.tvs[data-p="1"] .peek{align-items:flex-end}
+.tvs[data-p="0"] .peek,.tvs[data-p="2"] .peek{align-items:center}
+.tvn{font-size:16px;font-weight:700}
+.tvn small{font-weight:400;color:var(--muted);margin-left:6px}
+.tvmid{grid-area:mid;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;--cw:clamp(34px,3.4vw,50px)}
+.tvp{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:10px;font-size:15px}
+.tvp .tw{min-width:5.5em;text-align:right;font-weight:700}
+.tvp small{white-space:nowrap}
+.tvp .no{color:var(--gold);font-weight:700}
+.tvp.pass{color:var(--muted)}
+.tvp.cur{background:rgba(54,201,255,.12);box-shadow:0 0 0 2px var(--latest)}
+.tvnote{font-size:14px;color:var(--muted)}
+.tvl{width:var(--tside-w,340px);flex:none;display:flex;flex-direction:column;border-left:1px solid var(--line);padding:8px 10px}
+.trec textarea{width:100%;height:50vh;font:13px/1.5 ui-monospace,Consolas,monospace;background:var(--felt-deep);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:8px}
+/* made for a computer or an iPad: on an iPad held sideways the record column is narrower, held upright it folds away
+   behind the 记录 button */
+@media (max-width:1199px){body.test{--tside-w:280px}}
+@media (max-width:899px){
+  body.test #app{margin:0}
+  body.test #tsBtn{display:inline-flex}
+  .tside{display:none;width:min(340px,92vw)}
+  .tside.open{display:flex}
+  .tvl{display:none}
+}
 </style>
 </head>
 <body>
@@ -529,7 +608,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹"><span><span class="long">牌背：</span><span id="backName">大雁</span></span></button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹"><span><span class="long">牌背：</span><span id="backName">大雁</span></span></button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">记录</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -605,6 +684,11 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
       <button class="seat-btn t-red" data-seat="S" style="grid-area:s"><b>南</b><span>空位</span></button>
     </div>
     <button class="btn primary lobby-go" id="sitBtn" disabled>坐下开始</button>
+    <button class="link lobby-test" id="testBtn">测试版</button>
+    <div class="lobby-join" id="testRow" hidden>
+      <input class="lobby-nick" id="testPw" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="测试版密码">
+      <button class="btn primary" id="testGo">进入</button>
+    </div>
     <div class="lobby-ver" id="verTag"></div>
   </div>
 </div>
@@ -1196,6 +1280,9 @@ function hintOrder(hand,L,cur,plays){
 /* ---------- game state ---------- */
 let G=null;
 let sel=new Set();
+// the test version (entered from the lobby with a password): every hand face up, every play numbered; TV is its look-back view
+let TEST=false;
+const TV={open:false};
 // Who sits where. Seat 0 is always you: every player's view is turned so they sit at the bottom.
 // Online, the host decides everything (deals, computer moves, timeouts) and sends each step as an event;
 // events name seats in the host's numbering, and NET.off turns those into your own.
@@ -1477,6 +1564,7 @@ function beginPlay(){
 }
 function startPlay(leader){
   G.phase='play';G.turn=leader;G.clock=null;
+  if(TEST)testRoundStart();
   startTurn();
 }
 
@@ -1518,7 +1606,7 @@ setInterval(()=>{
   const now=performance.now(),dt=Math.min(now-lastTick,1000);
   lastTick=now;
   const c=G&&G.clock;
-  if(!c||G.paused||(NET.mode==='solo'&&!$('#overlay').hidden))return; // paused, or a solo game with a panel open
+  if(!c||G.paused||(NET.mode==='solo'&&!$('#overlay').hidden)||TV.open)return; // paused, a solo game with a panel open, or looking back in the test version
   const before=c.left;
   c.left-=dt;
   if(c.think==null&&c.left>0&&c.left<=HURRY_MS&&Math.ceil(before/1000)!==Math.ceil(c.left/1000))Sound.play('tick');
@@ -1707,6 +1795,7 @@ function finishRound(){
     if(aTry>=3){if(RULES.aFail==='draw')draw=true;else{G.levels[aTeam]=2;f[aTeam]=0;reset=true}}
   }
   G.result={order:G.out.slice(),team,up,before,after,win,draw,reset,aTry,aTeam,playedLevel:G.L};
+  if(TEST)testRoundEnd();
   G.prevOut=G.out.slice();
   G.lvlTeam=team;
   G.phase=win||draw?'over':'roundEnd';
@@ -1929,10 +2018,17 @@ const pileEl=()=>$('#pile');
 // the open play area between the four plates
 function pileGeo(){
   const L=pileEl().getBoundingClientRect(),R=q=>$(q).getBoundingClientRect();
-  const top=R('#seat2 .whorow').bottom-L.top;
+  // a player's plate, and in the test version the face-up hand beside it, which the table's cards keep clear of too
+  const P=p=>{
+    const a=R('#seat'+p+' .whorow'),k=TEST&&$('#peek'+p);
+    if(!k||!k.offsetHeight)return a;
+    const b=k.getBoundingClientRect();
+    return{left:Math.min(a.left,b.left),right:Math.max(a.right,b.right),bottom:Math.max(a.bottom,b.bottom)};
+  };
+  const top=P(2).bottom-L.top;
   const bottom=R('#seat0').top-L.top;
   // the same margin on both sides (a ticking clock widens one plate, which must not push one player's cards in)
-  const side=Math.max(R('#seat3 .whorow').right-L.left,L.right-R('#seat1 .whorow').left);
+  const side=Math.max(P(3).right-L.left,L.right-P(1).left);
   const left=side,right=L.width-side;
   const cw=$('#pile .probe').offsetWidth||48;
   const e=R('.emblem'),mid=q=>{const r=R(q);return r.top+r.height/2-L.top};
@@ -2251,13 +2347,14 @@ function render(){
   renderHand();
   renderMsg();
   renderClocks();
+  if(TEST)testRender();
 }
 // the line under the disc: the play now on the table and who made it, or who leads when the table is clear
 function renderLastPlay(){
   let t='';
   if(G.phase==='play'&&G.trick){
     const p=G.trick.player,pl=G.trick.play;
-    t=`${p===0?'你':NAMES[p]} 出 ${displayOrder(pl,G.L).map(cardTag).join('')}<small>${pl.type==='bomb'?pl.n+'张炸弹':TYPE_NAME[pl.type]}</small>`;
+    t=`${TEST?`<small>第 ${G.log.filter(e=>e.cards).length} 手</small> `:''}${p===0?'你':NAMES[p]} 出 ${displayOrder(pl,G.L).map(cardTag).join('')}<small>${pl.type==='bomb'?pl.n+'张炸弹':TYPE_NAME[pl.type]}</small>`;
   }else if(G.phase==='play'&&G.turn>=0)t=`${G.turn===0?'你':NAMES[G.turn]} 先出`;
   const el=$('#lastPlay');
   if(el.dataset.t!==t){el.dataset.t=t;el.innerHTML=t}
@@ -2397,7 +2494,8 @@ try{
   handRows=+localStorage.getItem('guandan-rows')||3;
   flatRows=+localStorage.getItem('guandan-flatrows')||1;
 }catch(_){}
-const fanMode=()=>handView==='fan';
+// the test version always lays the hand out flat, in three rows
+const fanMode=()=>!TEST&&handView==='fan';
 // cards that just arrived in your hand, with when they came: they flash until ARRIVE_MS has passed
 const arrivals=new Map(),ARRIVE_MS=4000;
 function renderHand(){
@@ -2486,7 +2584,7 @@ function drawFixZone(g){
 const ROW_STEP=.58;
 // flat rows of about equal length, the player's choice of one to three; a single row too cramped to read becomes two
 function flatGeo(n,W,cw,ch,keys){
-  let rows=Math.max(1,Math.min(flatRows,Math.ceil(n/5)));
+  let rows=Math.max(1,Math.min(TEST?3:flatRows,Math.ceil(n/5)));
   flatOneFits=!(n>12&&(W-cw)/(n-1)<cw*.36);
   if(rows===1&&!flatOneFits)rows=2;
   flatShown=rows;
@@ -2769,7 +2867,7 @@ function dealView(p,c){
   if(p===0){
     $('#hand').insertAdjacentHTML('beforeend',cardHTML(c,G.L));
     layoutHand();
-  }
+  }else if(TEST)testPeeks();
 }
 // a count is only announced once a hand is down to 10 or fewer (never while dealing)
 function showCount(el,n){
@@ -3216,8 +3314,9 @@ function showResult(){
   }
   showPanel(`<h2>${head}</h2>${body}
     ${waitHtml()}
-    <div class="btns">${nextBtnHtml()}</div>`,true);
+    <div class="btns">${TEST?'<button class="btn" id="replayBtn">回放</button>':''}${nextBtnHtml()}</div>`,true);
   $('#panel').dataset.kind='result';
+  if(TEST)$('#replayBtn').onclick=()=>testView(TREC.rounds.length-1,0,true);
   const nb=$('#nextBtn');if(nb){nb.onclick=askNext;placeActionBtns();if(!nb.disabled)nb.focus()}
 }
 // with friends at the table: who has pressed the button and who everyone is waiting for
@@ -3275,9 +3374,10 @@ function setPaused(on,by){
   }
 }
 function askQuit(){
-  const why=NET.mode==='host'?'你是房主，退出后其他玩家可以选择和电脑继续打。':NET.mode==='guest'?'你的座位会交给电脑接着打。':'这一场的级数和牌都不会保存。';
+  const why=NET.mode==='host'?'你是房主，退出后其他玩家可以选择和电脑继续打。':NET.mode==='guest'?'你的座位会交给电脑接着打。':TEST?'出牌记录不会保存，要留着请先点“保存记录”。':'这一场的级数和牌都不会保存。';
   showPanel(`<h2>退出游戏？</h2><p class="muted">${why}</p>
-  <div class="btns"><button class="btn" id="stayBtn">继续打</button><button class="btn primary" id="quitYes">退出</button></div>`);
+  <div class="btns"><button class="btn" id="stayBtn">继续打</button>${TEST?'<button class="btn" id="quitSave">保存记录</button>':''}<button class="btn primary" id="quitYes">退出</button></div>`);
+  if(TEST)$('#quitSave').onclick=testSave;
   $('#stayBtn').onclick=()=>{hideOverlay();if(G.phase==='roundEnd'||G.phase==='over')showResult()};
   $('#quitYes').onclick=quitGame;
   $('#stayBtn').focus();
@@ -3582,7 +3682,8 @@ $('#quitBtn').onclick=askQuit;
 $('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start')act({k:'pause',on:!G.paused,p:toAbs(0)})};
 $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();hintIdx=0;sfIdx=0;renderHand()}});
 document.addEventListener('keydown',e=>{
-  if(!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input'))return;
+  if(TV.open||!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input'))return;
+  if(TEST&&e.key==='ArrowLeft'){e.preventDefault();testBack();return}
   if(e.key==='Enter'){e.preventDefault();G.phase==='return'||G.phase==='tribPick'||owesReturn(0)?onReturn():sel.size?onPlay():onHint()}
   else if(e.key===' '){e.preventDefault();onPass()}
   else if(e.key==='h'||e.key==='H')onHint();
@@ -3728,11 +3829,282 @@ $('#joinBtn').onclick=()=>{
 $('#roomCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('#joinBtn').click()});
 if(myNick)$('#myName').textContent=myNick;
 
+/* ---------- the test version: a solo game for checking how the computer plays ---------- */
+// Behind a password in the lobby. Every hand is face up: yours flat in three rows, the computer's in the groups it has
+// arranged (the very arrangement it plays from). Every play gets a number, from 1 in each round, and goes into the
+// record down the right-hand side; 上一步 (or the ← key) opens a view of the table as it stood after any earlier play,
+// 回放 plays a round through again, and the whole record (each round's hands, plays and result) saves as a text file.
+const TEST_PW='985';
+const TREC={started:null,rounds:[]};
+$('#testBtn').onclick=()=>{const r=$('#testRow');r.hidden=!r.hidden;if(!r.hidden)$('#testPw').focus()};
+$('#testPw').addEventListener('keydown',e=>{if(e.key==='Enter')$('#testGo').click()});
+$('#testGo').onclick=()=>{
+  if($('#testPw').value!==TEST_PW){lobbyStatus('测试版密码不对');$('#testPw').select();return}
+  if(lobbyMode!=='solo')setMode('solo');
+  myNick=nickNow()||'测试';myDir=myDir||'S';
+  Sound.unlock();
+  enterTest();
+};
+function enterTest(){
+  TEST=true;document.body.classList.add('test');
+  TREC.started=new Date();TREC.rounds=[];
+  NET.mode='solo';NET.off=0;setHumans([0]);
+  $('#myName').textContent=myNick;
+  $('#lobby').hidden=true;
+  for(const p of [1,2,3]){
+    const e=document.createElement('div');
+    e.className='peek';e.id='peek'+p;e.innerHTML='<div class="pw"></div><div class="prows"></div>';
+    $('#seat'+p).appendChild(e);
+  }
+  const s=document.createElement('aside');
+  s.className='tside';s.id='tside';
+  s.innerHTML=`<div class="tsh"><b>出牌记录</b><span id="tsRound"></span></div>
+    <div class="tsb"><button class="link" id="tsPrev" title="看上一手牌打出后桌上的样子（键盘 ←）">上一步</button><button class="link" id="tsReplay">回放</button><button class="link" id="tsSave">保存记录</button><button class="link" id="tsCopy">复制</button></div>
+    <ol class="tlist" id="tsList"></ol>`;
+  document.body.appendChild(s);
+  const v=document.createElement('div');
+  v.className='tview';v.id='tview';v.hidden=true;
+  document.body.appendChild(v);
+  v.onclick=tvClick;
+  v.onchange=e=>{if(e.target.id==='tvRound'){tvPlay(false);TV.ri=+e.target.value;TV.step=0;tvDraw()}};
+  $('#tsPrev').onclick=testBack;
+  $('#tsReplay').onclick=()=>{if(TREC.rounds.length)testView(TREC.rounds.length-1,0,true)};
+  $('#tsSave').onclick=testSave;
+  $('#tsCopy').onclick=testCopy;
+  $('#tsList').onclick=e=>{const li=e.target.closest('li[data-k]');if(li)testView(TREC.rounds.length-1,+li.dataset.k,false)};
+  $('#tsBtn').onclick=()=>s.classList.toggle('open');
+  newGame();
+}
+const tierNum=pw=>pw>=AIP.tier1?1:pw>=AIP.tier2?2:pw>=AIP.tier3?3:4;
+const powerText=pw=>`牌力 ${pw}（第 ${tierNum(pw)} 档）`;
+const playName=e=>e.type==='bomb'?e.n+'张炸弹':TYPE_NAME[e.type];
+// how a trick ended: its winner leads the next, or went out and the lead passed on
+const trickEnd=(w,lead)=>w===lead?`${NAMES[w]}收回出牌权`:`${NAMES[w]}出完，${NAMES[lead]}接风`;
+// a round's record starts when play starts (the tribute and returns done): the four hands, each one's 牌力, the log
+function testRoundStart(){
+  const L=G.L;
+  TREC.rounds.push({no:G.round,L,lvlTeam:G.lvlTeam,leader:G.turn,hands:G.hands.map(h=>h.slice()),
+    power:G.hands.map(h=>handPower(h,L)),
+    trib:(G.trib||[]).map(t=>`${NAMES[t.g]}进贡 ${cardText(t.tc)} 给${NAMES[t.r]}`+(t.rc?`，${NAMES[t.r]}还 ${cardText(t.rc)}`:'')),
+    kang:G.kang?kangHtml(true).replace(/<[^>]+>/g,''):'',
+    log:G.log,result:''});
+}
+function testRoundEnd(){
+  const rec=TREC.rounds[TREC.rounds.length-1];
+  if(!rec||rec.no!==G.round)return;
+  const r=G.result,side=t=>t===0?'我方':'对方';
+  rec.result=r.order.map((p,i)=>PLACE[i]+' '+NAMES[p]).join('，')+'；'+(r.draw?'三次打 A 未过，平局':r.win?`${side(r.team)}打过 A，赢下整场`:
+    r.before===r.after?`${side(r.team)}在 A 级，没能打过`:`${side(r.team)}升 ${r.up} 级（${rankName(r.before)} → ${rankName(r.after)}）`);
+}
+// a hand as groups to show: the computer's arrangement (bombs first, then runs, then the rest, larger first, the way the
+// hand is sorted), or, not arranged (yours, or while dealing), one group per rank
+const T_ORDER=['jokers','sflush','bomb','trip2','pairs3','straight','full','triple','pair','single'];
+function handUnits(cards,L,grouped){
+  if(grouped)return armPlays(cards,L).slice()
+    .sort((a,b)=>T_ORDER.indexOf(a.type)-T_ORDER.indexOf(b.type)||(isBomb(a)?power(b)-power(a):b.value-a.value))
+    .map(u=>({cards:displayOrder(u,L),name:u.type==='bomb'?u.n+'张炸弹':TYPE_NAME[u.type]}));
+  const out=[];
+  for(const c of sortHand(cards.slice(),L)){
+    const g=out[out.length-1];
+    if(g&&val(g.cards[0],L)===val(c,L)&&isWild(g.cards[0],L)===isWild(c,L))g.cards.push(c);else out.push({cards:[c],name:''});
+  }
+  return out;
+}
+// the groups in at most three rows, as even in length as the groups allow (lengths in card widths: each further card
+// shows 0.42 of a card, a gap of 0.32 between groups)
+function rowsOf(units){
+  const W=units.map(u=>1.32+.42*(u.cards.length-1)),n=units.length;
+  const sum=(a,b)=>W.slice(a,b).reduce((s,x)=>s+x,0);
+  let best=[n,n],bm=Infinity;
+  for(let i=1;i<=n;i++)for(let j=i;j<=n;j++){const m=Math.max(sum(0,i),sum(i,j),sum(j,n));if(m<bm-1e-9){bm=m;best=[i,j]}}
+  return[units.slice(0,best[0]),units.slice(best[0],best[1]),units.slice(best[1])].filter(r=>r.length);
+}
+const handRowsHTML=(cards,L,grouped)=>rowsOf(handUnits(cards,L,grouped)).map(r=>`<div class="prow">${
+  r.map(u=>`<span class="grp"${u.name?` title="${u.name}"`:''}>${u.cards.map(c=>cardHTML(c,L)).join('')}</span>`).join('')}</div>`).join('');
+const curRec=()=>TREC.rounds[TREC.rounds.length-1];
+function testRender(){testPeeks();testList()}
+// the three computer hands, face up beside their plates; arranged once the cards are all dealt
+function testPeeks(){
+  if(!TEST||!G)return;
+  const grouped=!['start','shuffle','cut','deal'].includes(G.phase),rec=curRec();
+  let moved=false;
+  for(const p of [1,2,3]){
+    const el=$('#peek'+p);if(!el)continue;
+    const h=G.hands[p],key=G.round+'|'+G.L+'|'+grouped+'|'+h.map(c=>c.id).join();
+    if(el.dataset.k===key)continue;
+    el.dataset.k=key;moved=true;
+    const pw=rec&&rec.no===G.round?rec.power[p]:grouped&&h.length?handPower(h,G.L):null;
+    el.querySelector('.pw').textContent=pw==null?'':powerText(pw);
+    el.querySelector('.prows').innerHTML=h.length?handRowsHTML(h,G.L,grouped):'';
+  }
+  if(moved&&pileGroups.length)pileRefit();
+}
+// the record: each play numbered, who played it, leading or following; the passes and how each trick ended in between
+function recListHTML(rec,on){
+  const out=[];let k=0,last=null,pass=[];
+  const flush=()=>{if(pass.length)out.push(`<li class="tpass">过：${pass.join('、')}</li>`);pass=[]};
+  for(const e of rec.log){
+    if(!e.cards){pass.push(NAMES[e.p]);continue}
+    flush();
+    if(e.lead&&last!=null)out.push(`<li class="tend">—— ${trickEnd(last,e.p)}</li>`);
+    k++;last=e.p;
+    out.push(`<li class="tp${k===on?' on':''}" data-k="${k}"><span class="no">${k}</span><span class="tw">${NAMES[e.p]}</span><span class="lt">${e.lead?'领出':'跟'} ${playName(e)}</span><span class="tc">${displayOrder(e,rec.L).map(cardTag).join('')}</span></li>`);
+  }
+  flush();
+  if(rec.result)out.push(`<li class="thead">${rec.result}</li>`);
+  return out.join('');
+}
+function testList(){
+  const el=$('#tsList');if(!el)return;
+  const rec=curRec(),key=rec?rec.no+'|'+rec.log.length+'|'+rec.result:'';
+  if(el.dataset.k===key)return;
+  el.dataset.k=key;
+  $('#tsRound').textContent=rec?`第 ${rec.no} 局 · 打 ${rankName(rec.L)}`:'';
+  el.innerHTML=rec?recListHTML(rec,-1):'<li class="tend">开始出牌后，每一手牌都记在这里</li>';
+  el.scrollTop=el.scrollHeight;
+}
+// 上一步: the table as it stood after the play before the latest one
+function testBack(){
+  const rec=curRec();if(!rec)return;
+  testView(TREC.rounds.length-1,Math.max(0,rec.log.filter(e=>e.cards).length-1),false);
+}
+// the look-back view, over the whole screen; the game waits while it is open
+TV.speed=1500;
+function testView(ri,step,play){
+  TV.open=true;TV.ri=ri;TV.step=step;
+  $('#tview').hidden=false;
+  tvPlay(!!play);
+}
+function tvClose(){tvPlay(false);TV.open=false;$('#tview').hidden=true}
+const tvRec=()=>TREC.rounds[TV.ri];
+const tvCount=()=>tvRec().log.filter(e=>e.cards).length;
+function tvPlay(on){
+  clearInterval(TV.timer);TV.play=on;
+  if(on){
+    if(TV.step>=tvCount())TV.step=0;
+    TV.timer=setInterval(()=>{if(TV.step>=tvCount()){tvPlay(false);return}TV.step++;tvDraw()},TV.speed);
+  }
+  tvDraw();
+}
+function tvClick(e){
+  const b=e.target.closest('button,li[data-k]');if(!b)return;
+  if(b.dataset.k){tvPlay(false);TV.step=+b.dataset.k;tvDraw();return}
+  if(b.dataset.ms){TV.speed=+b.dataset.ms;tvPlay(TV.play);return}
+  if(b.id==='tvClose'){tvClose();return}
+  if(b.id==='tvPlay'){tvPlay(!TV.play);return}
+  const n=tvCount();
+  TV.step={tvFirst:0,tvLast:n,tvPrev:TV.step-1,tvNext:TV.step+1}[b.id]??TV.step;
+  TV.step=Math.max(0,Math.min(n,TV.step));
+  tvPlay(false);
+}
+document.addEventListener('keydown',e=>{
+  if(!TV.open)return;
+  if(e.key==='Escape')tvClose();
+  else if(e.key===' '){e.preventDefault();tvPlay(!TV.play)}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
+    e.preventDefault();
+    TV.step=Math.max(0,Math.min(tvCount(),TV.step+(e.key==='ArrowLeft'?-1:1)));tvPlay(false);
+  }
+});
+// the table after the k-th play of the round (0: as play began): every hand, the trick so far, the record beside it
+function tvDraw(){
+  const rec=tvRec(),L=rec.L,n=tvCount(),k=TV.step=Math.min(TV.step,n);
+  let end=0;
+  for(let i=0,c=0;k&&i<rec.log.length;i++)if(rec.log[i].cards&&++c===k){end=i+1;break}
+  const done=rec.log.slice(0,end),plays=done.filter(e=>e.cards),cur=plays[k-1];
+  const gone=new Set(plays.flatMap(e=>e.cards.map(c=>c.id)));
+  const hands=rec.hands.map(h=>h.filter(c=>!gone.has(c.id)));
+  // who has gone out so far, in order
+  const left=rec.hands.map(h=>h.length),outs=[];
+  for(const e of plays){left[e.p]-=e.cards.length;if(!left[e.p])outs.push(e.p)}
+  // this trick, from its lead
+  let s=-1;
+  for(let i=end-1;i>=0;i--)if(done[i].cards&&done[i].lead){s=i;break}
+  const trick=s<0?[]:done.slice(s);
+  let note='';
+  if(s>0)for(let i=s-1;i>=0;i--)if(done[i].cards){note='上一圈：'+trickEnd(done[i].p,done[s].p);break}
+  const seat=p=>`<div class="tvs" data-p="${p}"><div class="tvn">${NAMES[p]}<small>${
+    hands[p].length?`剩 ${hands[p].length} 张`:PLACE[outs.indexOf(p)]||''} · ${powerText(rec.power[p])}</small></div>
+    <div class="peek"><div class="prows">${hands[p].length?handRowsHTML(hands[p],L,p!==0):''}</div></div></div>`;
+  const mid=`<div class="tvmid">${note?`<div class="tvnote">${note}</div>`:''}${trick.map(e=>e.cards?
+    `<div class="tvp${e===cur?' cur':''}"><span class="no">${plays.indexOf(e)+1}</span><span class="tw">${NAMES[e.p]} ${e.lead?'领出':'跟'}</span><span class="grp">${displayOrder(e,L).map(c=>cardHTML(c,L)).join('')}</span><small>${playName(e)}</small></div>`:
+    `<div class="tvp pass"><span class="tw">${NAMES[e.p]}</span>过</div>`).join('')}${
+    k?'':`<div class="tvnote">${NAMES[rec.leader]}先出</div>`}${k===n&&rec.result?`<div class="tvnote">${rec.result}</div>`:''}</div>`;
+  const v=$('#tview');
+  v.innerHTML=`<div class="tvh">
+      <div class="tvi">第 ${rec.no} 局 · 打 ${rankName(L)}<small>${k?`第 ${k} / ${n} 手：${NAMES[cur.p]}${cur.lead?'领出':'跟'} ${playName(cur)}`:`开局（共 ${n} 手）`}</small></div>
+      <select id="tvRound" title="看哪一局">${TREC.rounds.map((r,i)=>`<option value="${i}"${i===TV.ri?' selected':''}>第 ${r.no} 局</option>`).join('')}</select>
+      <button class="link" id="tvFirst">开头</button><button class="link" id="tvPrev">上一步</button><button class="link" id="tvNext">下一步</button><button class="link" id="tvLast">最后</button>
+      <button class="link${TV.play?' on':''}" id="tvPlay">${TV.play?'暂停':'回放'}</button>
+      <span class="muted">速度</span>${[['慢',2500],['中',1500],['快',700]].map(([t,ms])=>`<button class="link${TV.speed===ms?' on':''}" data-ms="${ms}">${t}</button>`).join('')}
+      <button class="btn primary" id="tvClose">回到牌局</button></div>
+    <div class="tvb"><div class="tvt">${[2,3,1,0].map(seat).join('')}${mid}</div>
+      <div class="tvl"><ol class="tlist">${recListHTML(rec,k)}</ol></div></div>`;
+  const on=v.querySelector('.tlist li.on');if(on)on.scrollIntoView({block:'nearest'});
+}
+// the whole record as text: for each round the hands as play began (the computer's as arranged), then every play in
+// order with the computer's arrangement just before it, the passes, how each trick ended, what was left and the result
+function testText(){
+  const out=['掼蛋测试版出牌记录',`开始时间：${TREC.started.toLocaleString()}　页面版本：${VERSION}`,
+    '你和对家一方，下家和上家一方。牌后带 * 的是逢人配（红桃级牌）。电脑的牌用 [ ] 分开，是它配好的一组一组。',''];
+  for(const r of TREC.rounds){
+    const ct=c=>cardText(c)+(isWild(c,r.L)?'*':'');
+    const shown=(cards,p)=>handUnits(cards,r.L,p!==0).map(u=>p?'['+u.cards.map(ct).join(' ')+']':u.cards.map(ct).join(' ')).join(p?' ':'  ');
+    out.push('='.repeat(48),`第 ${r.no} 局　打 ${rankName(r.L)}（${r.lvlTeam===0?'我方':'对方'}的级）　${NAMES[r.leader]}先出`);
+    for(const t of r.trib)out.push('  '+t);
+    if(r.kang)out.push('  '+r.kang);
+    out.push('','开局手牌（进贡、还贡之后）：');
+    for(const p of [0,1,2,3])out.push(`  ${NAMES[p]}　${r.hands[p].length} 张　${powerText(r.power[p])}`,'    '+shown(r.hands[p],p));
+    out.push('','出牌：');
+    const hands=r.hands.map(h=>h.slice());
+    let k=0,last=null,pass=[];
+    const flush=()=>{if(pass.length)out.push(`         过：${pass.join('、')}`);pass=[]};
+    for(const e of r.log){
+      if(!e.cards){pass.push(NAMES[e.p]);continue}
+      flush();
+      if(e.lead&&last!=null)out.push(`         —— ${trickEnd(last,e.p)}`);
+      k++;last=e.p;
+      out.push(`  ${String(k).padStart(3)}. ${NAMES[e.p]} ${e.lead?'领出':'跟　'} ${playName(e)}：${displayOrder(e,r.L).map(ct).join(' ')}`);
+      if(e.p!==0)out.push(`         （出牌前的配牌：${shown(hands[e.p],e.p)}）`);
+      const ids=new Set(e.cards.map(c=>c.id));
+      hands[e.p]=hands[e.p].filter(c=>!ids.has(c.id));
+    }
+    flush();
+    for(const p of [0,1,2,3])if(hands[p].length&&r.result)out.push(`  剩牌：${NAMES[p]}　${shown(hands[p],0)}`);
+    out.push('',r.result?'结果：'+r.result:'（这一局还没打完）','');
+  }
+  return out.join('\r\n');
+}
+function testSave(){
+  const d=new Date(),z=x=>String(x).padStart(2,'0');
+  const name=`掼蛋测试记录-${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.txt`;
+  try{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['﻿'+testText()],{type:'text/plain;charset=utf-8'}));a.download=name;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),10000);
+  }catch(_){testCopy()}
+}
+// the record in a box to copy from, for where a file cannot be saved (and to paste straight into a message)
+function testCopy(){
+  const back=()=>{hideOverlay();if(G.phase==='roundEnd'||G.phase==='over')showResult()};
+  showPanel(`<h2>出牌记录</h2><div class="trec"><textarea id="trecText" readonly></textarea></div>
+    <div class="btns"><button class="btn primary" id="trecCopy">复制</button><button class="btn" id="trecClose">关闭</button></div>`);
+  const t=$('#trecText');t.value=testText();t.focus();t.select();
+  $('#trecCopy').onclick=()=>{
+    t.select();
+    const ok=()=>{$('#trecCopy').textContent='已复制'};
+    if(navigator.clipboard)navigator.clipboard.writeText(t.value).then(ok,()=>{try{document.execCommand('copy');ok()}catch(_){}});
+    else{try{document.execCommand('copy');ok()}catch(_){}}
+  };
+  $('#trecClose').onclick=back;
+}
+
 /* ---------- connections (PeerJS: browsers talk to each other directly, matched by the room number) ---------- */
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1027-2219';
+const VERSION='1028-1048';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
