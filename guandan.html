@@ -520,10 +520,12 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* the test version: every hand face up (the computer's in the groups it has arranged), and every play numbered in a
    record down the right-hand side, which can be stepped back through and replayed */
 .lobby-test{align-self:center;margin-top:4px}
-body.test{--tside-w:300px}
-body.test #app{max-width:none;margin:0 var(--tside-w) 0 0}
+body.test{--tside-w:340px}
+body.test #app{max-width:none;margin:0}
 body.test #fanBtn,body.test #rowsBtn{display:none}
 #tsBtn,#fsBtn{display:none}
+body.test #tsBtn{display:inline-flex}
+body.test #tsBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 body.test.fsok #fsBtn{display:inline-flex}
 /* one card size for all four hands and the table (--tcw, worked out from the screen), with the side hands' columns as
    wide as the hands */
@@ -531,15 +533,17 @@ body.test #hand,body.test .peek,body.test .tvmid{--cw:var(--tcw,40px)}
 body.test #pile{--cw:calc(var(--tcw,40px)*.9)}
 body.test .table{grid-template-columns:auto minmax(0,1fr) auto}
 @media (min-width:561px){body.test #btns{flex-direction:row}}
-/* the cards thrown on the table give way to each player's framed box of plays; the level disc gets smaller */
+/* the cards thrown on the table, the level disc and the line under it give way to each player's framed box of plays */
 body.test #pile .pc,body.test #pile .ktag{visibility:hidden}
-body.test .emblem{width:64px;height:64px}
-body.test .emblem .r{font-size:40px}
+body.test .emblem{visibility:hidden}
+body.test #lastPlay{display:none}
 #tplays{position:absolute;inset:0;z-index:1;pointer-events:none}
 .tpb{position:absolute;--cw:30px;border:2px solid var(--team);border-radius:10px;background:rgba(0,0,0,.16);padding:15px 6px 4px;
   display:flex;flex-wrap:wrap;align-content:flex-start;gap:4px 7px;overflow:hidden}
 .tpb>b{position:absolute;left:8px;top:1px;font-size:11px;line-height:1.2;color:var(--team)}
-.tpl{display:inline-flex;flex-direction:column;align-items:flex-start;opacity:.85}
+.tpl{display:inline-flex;flex-direction:column;align-items:flex-start;opacity:.85;pointer-events:auto;cursor:pointer;border-radius:4px}
+.tpl:hover{outline:2px solid var(--gold);outline-offset:2px}
+.tpl.noted i::after{content:" 评";color:#ffe08a;font-weight:700}
 .tpl i{font-style:normal;font-size:10px;line-height:1.15;color:var(--muted)}
 .tpl.cur{opacity:1}
 .tpl.cur .card{box-shadow:0 0 0 1.5px var(--latest)}
@@ -590,6 +594,17 @@ body.test .tview .tvmid{--cw:calc(var(--tcw,40px)*.72)}
 .tlist li.tend{color:var(--muted);font-size:12px;padding-left:3.2em}
 .tlist li.thead{color:var(--gold);font-weight:700;margin-top:6px}
 .tlist li.tnote{display:block;color:#ffe08a;font-size:13px;padding-left:3.2em;white-space:pre-wrap;cursor:pointer}
+.tlist li.tnote:hover{text-decoration:underline}
+.tlist .tedit{margin-left:auto;font:inherit;font-size:12px;color:var(--gold);background:none;border:1px solid var(--line-strong);border-radius:999px;padding:0 8px;cursor:pointer}
+/* writing a comment on one play: a small box over the table */
+.tnbox{position:fixed;z-index:140;left:50%;top:50%;translate:-50% -50%;width:min(520px,calc(100vw - 32px));display:flex;flex-direction:column;gap:8px;
+  padding:14px 16px;border-radius:12px;background:var(--felt-deep);border:1px solid var(--gold);box-shadow:0 12px 40px rgba(0,0,0,.6);color:var(--ink)}
+.tnbox h3{margin:0;font-size:16px}
+.tnbox h3 .ct{font-size:14px;padding:0 4px}
+.tnbox textarea{font:inherit;font-size:16px;line-height:1.5;min-height:5.5em;background:rgba(0,0,0,.25);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:8px;resize:vertical}
+.tnbox textarea:focus{outline:none;border-color:var(--gold)}
+.tnbox .btns{justify-content:flex-end}
+.tnbox .btn{font-size:16px;padding:6px 18px}
 .tshint{font-size:12px;color:var(--muted)}
 .mypw{font-size:14px;color:var(--muted);white-space:nowrap}
 .tvcm{display:flex;align-items:center;gap:10px;padding:6px 16px;border-bottom:1px solid var(--line)}
@@ -626,16 +641,10 @@ body.test .tview .tvmid{--cw:calc(var(--tcw,40px)*.72)}
 .tvnote{font-size:14px;color:var(--muted)}
 .tvl{width:var(--tside-w,340px);flex:none;display:flex;flex-direction:column;border-left:1px solid var(--line);padding:8px 10px}
 .trec textarea{width:100%;height:50vh;font:13px/1.5 ui-monospace,Consolas,monospace;background:var(--felt-deep);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:8px}
-/* made for a computer or an iPad: below 1280px (an iPad) the record column folds away behind the 记录 button, so the
-   cards get the whole width */
-@media (min-width:1600px){body.test{--tside-w:320px}}
-@media (max-width:1279px){
-  body.test #app{margin:0}
-  body.test #tsBtn{display:inline-flex}
-  .tside{display:none;width:min(340px,92vw)}
-  .tside.open{display:flex}
-  .tvl{display:none}
-}
+/* the record opens over the table from the 出牌记录 button, so the cards get the whole screen */
+body.test .tside{width:min(var(--tside-w),92vw);box-shadow:-12px 0 32px rgba(0,0,0,.5)}
+body.test .tside:not(.open){display:none}
+@media (max-width:1279px){.tvl{display:none}}
 </style>
 
 <div id="app">
@@ -643,7 +652,7 @@ body.test .tview .tvmid{--cw:calc(var(--tcw,40px)*.72)}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹"><span><span class="long">牌背：</span><span id="backName">大雁</span></span></button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹"><span><span class="long">牌背：</span><span id="backName">大雁</span></span></button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -1646,7 +1655,7 @@ setInterval(()=>{
   const now=performance.now(),dt=Math.min(now-lastTick,1000);
   lastTick=now;
   const c=G&&G.clock;
-  if(!c||G.paused||(NET.mode==='solo'&&!$('#overlay').hidden)||TV.open)return; // paused, a solo game with a panel open, or looking back in the test version
+  if(!c||G.paused||(NET.mode==='solo'&&!$('#overlay').hidden)||TV.open||TV.edit)return; // paused, a solo game with a panel open, or looking back or writing a comment in the test version
   const before=c.left;
   c.left-=dt;
   if(c.think==null&&c.left>0&&c.left<=HURRY_MS&&Math.ceil(before/1000)!==Math.ceil(c.left/1000))Sound.play('tick');
@@ -3379,9 +3388,10 @@ function showResult(){
   }
   showPanel(`<h2>${head}</h2>${body}
     ${waitHtml()}
-    <div class="btns">${TEST?'<button class="btn" id="replayBtn">回放</button>':''}${nextBtnHtml()}</div>`,true);
+    ${TEST?'<p class="muted">点桌上的任意一手牌可以写评语；写完了点“生成记录交给 Claude”。</p>':''}
+    <div class="btns">${TEST?'<button class="btn" id="replayBtn">回放</button><button class="btn" id="doneBtn">生成记录交给 Claude</button>':''}${nextBtnHtml()}</div>`,true);
   $('#panel').dataset.kind='result';
-  if(TEST)$('#replayBtn').onclick=()=>testView(TREC.rounds.length-1,0,true);
+  if(TEST){$('#replayBtn').onclick=()=>testView(TREC.rounds.length-1,0,true);$('#doneBtn').onclick=testFinish}
   const nb=$('#nextBtn');if(nb){nb.onclick=askNext;placeActionBtns();if(!nb.disabled)nb.focus()}
 }
 // with friends at the table: who has pressed the button and who everyone is waiting for
@@ -3750,7 +3760,7 @@ $('#quitBtn').onclick=askQuit;
 $('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start')act({k:'pause',on:!G.paused,p:toAbs(0)})};
 $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();hintIdx=0;sfIdx=0;renderHand()}});
 document.addEventListener('keydown',e=>{
-  if(TV.open||!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input'))return;
+  if(TV.open||TV.edit||!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input,textarea'))return;
   if(TEST&&e.key==='ArrowLeft'){e.preventDefault();testBack();return}
   if(e.key==='Enter'){e.preventDefault();G.phase==='return'||G.phase==='tribPick'||owesReturn(0)?onReturn():sel.size?onPlay():onHint()}
   else if(e.key===' '){e.preventDefault();onPass()}
@@ -3935,8 +3945,9 @@ function enterTest(){
   const s=document.createElement('aside');
   s.className='tside';s.id='tside';
   s.innerHTML=`<div class="tsh"><b>出牌记录</b><span id="tsRound"></span></div>
+    <div class="tsb"><button class="link" id="tsDone" title="这一局和评语都写完了：生成记录，交给 Claude 读">生成记录交给 Claude</button><button class="link" id="tsClose">关闭</button></div>
     <div class="tsb"><button class="link" id="tsPrev" title="看上一手牌打出后桌上的样子（键盘 ←）">上一步</button><button class="link" id="tsReplay">回放</button><button class="link" id="tsSave">保存记录</button><button class="link" id="tsCopy">复制</button><button class="link" id="tsLoad">导入</button><button class="link" id="tsClear">清空</button></div>
-    <div class="tshint">点一手牌：看当时四家的牌，写评语，或重打这一局</div>
+    <div class="tshint">点桌上或这里的任意一手牌旁的“评”写评语；点一手牌看当时四家的牌、重打这一局</div>
     <ol class="tlist" id="tsList"></ol>`;
   document.body.appendChild(s);
   const v=document.createElement('div');
@@ -3952,8 +3963,17 @@ function enterTest(){
   $('#tsCopy').onclick=testCopy;
   $('#tsLoad').onclick=testImport;
   $('#tsClear').onclick=testClear;
-  $('#tsList').onclick=e=>{const li=e.target.closest('li[data-k]');if(li)testView(TREC.rounds.length-1,+li.dataset.k,false)};
-  $('#tsBtn').onclick=()=>s.classList.toggle('open');
+  $('#tsList').onclick=e=>{
+    const ed=e.target.closest('.tedit,.tnote');
+    if(ed){testNoteEdit(+ed.closest('li').dataset.k);return}
+    const li=e.target.closest('li.tp');if(li)testView(TREC.rounds.length-1,+li.dataset.k,false);
+  };
+  $('#tsDone').onclick=testFinish;
+  $('#tsClose').onclick=()=>{s.classList.remove('open');$('#tsBtn').classList.remove('on')};
+  // a play in the middle of the table: tap it to write its comment
+  $('#table').addEventListener('click',e=>{const t=e.target.closest('#tplays .tpl[data-k]');if(t)testNoteEdit(+t.dataset.k)});
+  testDbLoad();
+  $('#tsBtn').onclick=()=>{s.classList.toggle('open');$('#tsBtn').classList.toggle('on',s.classList.contains('open'));$('#tsList').dataset.k='';testList()};
   document.body.classList.toggle('fsok',!!(document.fullscreenEnabled||document.webkitFullscreenEnabled));
   $('#fsBtn').onclick=testFull;
   testFull(true);
@@ -3974,13 +3994,12 @@ function testFull(on){
   }catch(_){}
 }
 for(const ev of ['fullscreenchange','webkitfullscreenchange'])document.addEventListener(ev,()=>{$('#fsBtn').textContent=fsOn()?'退出全屏':'全屏'});
-// the one card size for every hand: a full hand in three rows is about 7 cards wide (each further card shows 0.42 of
-// one), a side hand on each side and the table about 5 between them; upright, three hands' rows (about 3 cards high
-// each) and the plates, buttons and margins (about 250px)
+// the one card size for every hand: the side hands in five rows are about 5.5 cards wide (each further card shows 0.42 of
+// one), with the table about 6 between them; upright, your partner's and your three rows (about 3 cards high each), the
+// side hands' five (about 4.7) and the plates, buttons and margins (about 250px)
 function testSize(){
   if(!TEST)return;
-  const s=$('#tside'),side=s&&matchMedia('(min-width:1280px)').matches?s.offsetWidth:0;
-  const w=(innerWidth-side-48)/19.5,h=(innerHeight-250)/9.4;
+  const w=(innerWidth-48)/17,h=(innerHeight-250)/11;
   document.body.style.setProperty('--tcw',Math.round(Math.max(28,Math.min(w,h,100)))+'px');
 }
 // again whenever the window changes size (turning the iPad, going full screen)
@@ -4261,16 +4280,27 @@ function recUnits(rec,p,cards){
   const by=new Map(cards.map(c=>[c.id,c]));
   return gs.map(gr=>gr.filter(id=>by.has(id)).map(id=>by.get(id))).filter(g=>g.length).map(g=>({cards:g,name:''}));
 }
-// the groups in at most three rows, as even in length as the groups allow (lengths in card widths: each further card
-// shows 0.42 of a card, a gap of 0.22 between groups)
-function rowsOf(units){
-  const W=units.map(u=>1.22+.42*(u.cards.length-1)),n=units.length;
-  const sum=(a,b)=>W.slice(a,b).reduce((s,x)=>s+x,0);
-  let best=[n,n],bm=Infinity;
-  for(let i=1;i<=n;i++)for(let j=i;j<=n;j++){const m=Math.max(sum(0,i),sum(i,j),sum(j,n));if(m<bm-1e-9){bm=m;best=[i,j]}}
-  return[units.slice(0,best[0]),units.slice(best[0],best[1]),units.slice(best[1])].filter(r=>r.length);
+// the groups in at most three rows (or as many as asked), as even in length as the groups allow (lengths in card widths:
+// each further card shows 0.42 of a card, a gap of 0.22 between groups)
+function rowsOf(units,k=3){
+  const W=units.map(u=>1.22+.42*(u.cards.length-1)),n=units.length,pre=[0];
+  for(const w of W)pre.push(pre[pre.length-1]+w);
+  // best[r][i]: the widest row when the first i groups go in r rows, and where its last row starts
+  const best=[[{m:0,at:0}].concat(Array(n).fill({m:Infinity,at:0}))];
+  for(let r=1;r<=k;r++){
+    const row=[{m:0,at:0}];
+    for(let i=1;i<=n;i++){
+      let b={m:Infinity,at:0};
+      for(let j=0;j<i;j++){const m=Math.max(best[r-1][j].m,pre[i]-pre[j]);if(m<b.m-1e-9)b={m,at:j}}
+      row.push(b.m<best[r-1][i].m-1e-9?b:{...best[r-1][i],same:true});
+    }
+    best.push(row);
+  }
+  const rows=[];
+  for(let r=k,i=n;r>0&&i>0;r--){const b=best[r][i];if(b.same)continue;rows.unshift(units.slice(b.at,i));i=b.at}
+  return rows;
 }
-const rowsHTML=(units,L,picked)=>rowsOf(units).map(r=>`<div class="prow">${
+const rowsHTML=(units,L,picked,k)=>rowsOf(units,k).map(r=>`<div class="prow">${
   r.map(u=>`<span class="grp"${u.name?` title="${u.name}"`:''}>${u.cards.map(c=>cardHTML(c,L,picked&&picked.has(c.id)?'sel':'')).join('')}</span>`).join('')}</div>`).join('');
 const handRowsHTML=(cards,L,grouped)=>rowsHTML(handUnits(cards,L,grouped),L);
 const curRec=()=>TREC.rounds[TREC.rounds.length-1];
@@ -4295,7 +4325,7 @@ function testPeeks(){
     el.classList.toggle('edit',edit);
     el.querySelector('.pw').innerHTML=esc(pw)+btns;
     const units=ua?seatGroups(p).map(gr=>({cards:gr.map(id=>h.find(c=>c.id===id)),name:''})):handUnits(h,G.L,grouped);
-    el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked):'';
+    el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked,p===2?3:5):'';
   }
   if(moved&&pileGroups.length)pileRefit();
 }
@@ -4310,30 +4340,50 @@ function testPlays(){
   if(!box){box=document.createElement('div');box.id='tplays';$('#table').appendChild(box)}
   if(!['play','roundEnd','over'].includes(G.phase)){if(box.innerHTML)box.innerHTML='';box.dataset.k='';return}
   const g=pileGeo();
-  const key=[G.round,G.log.length,(G.trickPlays||[]).length,(G.rest||[]).length,G.out.length,g.L.width,g.L.height,g.top,g.bottom,g.left,g.lp,g.near].map(Math.round).join('|');
+  const key=[G.round,G.log.length,(G.trickPlays||[]).length,(G.rest||[]).length,G.out.length,g.L.width,g.L.height,g.top,g.bottom,g.left,g.near,curRec()?curRec().nv:0].map(Math.round).join('|');
   if(box.dataset.k===key)return;
   box.dataset.k=key;
   const cur=new Set((G.trickPlays||[]).map(t=>t.play.cards)),plays=G.log.filter(x=>x.cards),last=plays[plays.length-1];
-  // your partner's and your own boxes run the width of the table, across its top and bottom; the side players' fill the
-  // middle on either side of the level disc and the line under it
-  const W=g.right-g.left,H=g.near-g.top,band=Math.max(60,Math.round(H*.3)),cm=Math.round(W*testMidHalf),pad=6;
+  const rec=curRec()&&curRec().live&&curRec().g===G.round?curRec():null;
+  // your partner's and your own boxes run the width of the table, across its top and bottom; the side players' share the
+  // middle between them
+  const W=g.right-g.left,H=g.near-g.top,band=Math.max(60,Math.round(H*.3)),cm=4,pad=6;
   const Z={2:{x0:g.left+pad,x1:g.right-pad,y0:g.top+pad,y1:g.top+band},0:{x0:g.left+pad,x1:g.right-pad,y0:g.near-band,y1:g.near-pad},
     3:{x0:g.left+pad,x1:g.cx-cm,y0:g.top+band+pad,y1:g.near-band-pad},1:{x0:g.cx+cm,x1:g.right-pad,y0:g.top+band+pad,y1:g.near-band-pad}};
   box.innerHTML=[0,1,2,3].map(p=>{
     const z=Z[p];
     const rest=(G.rest||[]).find(r=>r.p===p);
     const items=plays.map((x,i)=>({x,k:i+1})).filter(({x})=>x.p===p).map(({x,k})=>
-      `<span class="tpl${cur.has(x.cards)?' cur':''}${x===last?' last':''}"><i>${k}</i><span class="grp">${displayOrder(x,G.L).map(c=>cardHTML(c,G.L)).join('')}</span></span>`).join('')+
+      `<span class="tpl${cur.has(x.cards)?' cur':''}${x===last?' last':''}${rec&&rec.notes[k]?' noted':''}" data-k="${k}" title="点一下写评语"><i>${k}</i><span class="grp">${displayOrder(x,G.L).map(c=>cardHTML(c,G.L)).join('')}</span></span>`).join('')+
       (rest?`<span class="tpl rest"><i>剩牌</i><span class="grp">${rest.cards.map(c=>cardHTML(c,G.L)).join('')}</span></span>`:'');
     return`<div class="tpb ${isRedSeat(p)?'t-red':'t-blue'}" style="left:${z.x0}px;top:${z.y0}px;width:${Math.max(40,z.x1-z.x0)}px;height:${Math.max(30,z.y1-z.y0)}px"><b>${NAMES[p]}</b>${items}</div>`;
   }).join('');
   // the cards as large as will fit, the same size in all four boxes
   const t=tcwNow();let w=Infinity;
-  for(const b of box.children)for(const k of [.8,.7,.6,.52,.45,.38,.32,.27,.23]){
+  for(const b of box.children)for(const k of [1.1,1,.9,.8,.7,.6,.52,.45,.38,.32,.27,.23]){
     b.style.setProperty('--cw',Math.round(k*t)+'px');
     if(k===.23||b.scrollHeight<=b.clientHeight+1&&b.scrollWidth<=b.clientWidth+1){w=Math.min(w,k);break}
   }
   for(const b of box.children)b.style.setProperty('--cw',Math.round(w*t)+'px');
+}
+// a comment on the k-th play of the round being played (or just finished): written in a small box over the table, kept
+// with the record at once; the game waits meanwhile
+function testNoteEdit(k){
+  const rec=curRec();if(!rec||!k)return;
+  const e=rec.log.filter(x=>x.cards)[k-1];if(!e)return;
+  let b=$('#tnbox');
+  if(!b){b=document.createElement('div');b.id='tnbox';b.className='tnbox';document.body.appendChild(b)}
+  b.innerHTML=`<h3>第 ${k} 手：${NAMES[e.p]}${e.lead?'领出':'跟'} ${playName(e)} ${displayOrder(e,rec.L).map(cardTag).join('')}</h3>
+    <textarea id="tnText" placeholder="比如：这里应该出…，因为…">${esc(rec.notes[k]||'')}</textarea>
+    <div class="btns">${rec.notes[k]?'<button class="btn" id="tnDel">删掉评语</button>':''}<button class="btn" id="tnNo">取消</button><button class="btn primary" id="tnOk">保存</button></div>`;
+  b.hidden=false;TV.edit=true;
+  const close=()=>{b.hidden=true;TV.edit=false};
+  const put=t=>{if(t)rec.notes[k]=t;else delete rec.notes[k];rec.nv++;testStore();testList();testPlays();close()};
+  $('#tnOk').onclick=()=>put($('#tnText').value.trim());
+  $('#tnNo').onclick=close;
+  if($('#tnDel'))$('#tnDel').onclick=()=>put('');
+  $('#tnText').onkeydown=ev=>{if(ev.key==='Escape')close();else if(ev.key==='Enter'&&(ev.ctrlKey||ev.metaKey))$('#tnOk').click()};
+  $('#tnText').focus();
 }
 // the record: each play numbered, who played it, leading or following, its comment; the passes and how each trick ended
 // in between; a replayed round starts with how it went the first time
@@ -4348,7 +4398,7 @@ function recListHTML(rec,on){
     flush();
     if(e.lead&&last!=null)out.push(`<li class="tend">—— ${trickEnd(last,e.p)}</li>`);
     k++;last=e.p;
-    out.push(`<li class="tp${k===on?' on':''}" data-k="${k}"><span class="no">${k}</span><span class="tw">${NAMES[e.p]}</span><span class="lt">${e.lead?'领出':'跟'} ${playName(e)}</span><span class="tc">${displayOrder(e,rec.L).map(cardTag).join('')}</span></li>`,note(k));
+    out.push(`<li class="tp${k===on?' on':''}" data-k="${k}"><span class="no">${k}</span><span class="tw">${NAMES[e.p]}</span><span class="lt">${e.lead?'领出':'跟'} ${playName(e)}</span><span class="tc">${displayOrder(e,rec.L).map(cardTag).join('')}</span><button class="tedit" title="写评语">评</button></li>`,note(k));
   }
   flush();
   if(rec.result)out.push(`<li class="thead">${rec.result}</li>`);
@@ -4357,9 +4407,11 @@ function recListHTML(rec,on){
 function testList(){
   const el=$('#tsList');if(!el)return;
   const rec=curRec(),key=rec?rec.uid+'|'+rec.log.length+'|'+rec.result+'|'+rec.nv:'';
-  if(el.dataset.k===key)return;
   // a new play is kept at once, so a closed page loses nothing
-  if(rec&&rec.live&&el.dataset.k)testStore();
+  if(rec&&rec.live&&TREC.kept!==key){if(TREC.kept)testStore();TREC.kept=key}
+  // the list itself is built only while it is open
+  if(!$('#tside').classList.contains('open')){el.dataset.k='';return}
+  if(el.dataset.k===key)return;
   el.dataset.k=key;
   $('#tsRound').textContent=rec?`${roundName(rec)} · 打 ${rankName(rec.L)}`:'';
   el.innerHTML=rec?recListHTML(rec,-1):'<li class="tend">开始出牌后，每一手牌都记在这里</li>';
@@ -4400,7 +4452,7 @@ function tvNote(text){
   if(t)rec.notes[TV.step]=t;else delete rec.notes[TV.step];
   rec.nv++;
   const l=$('#tview .tvl .tlist');if(l)l.innerHTML=recListHTML(rec,TV.step);
-  testList();testStore();
+  testList();testStore();testPlays();
 }
 function tvClick(e){
   const b=e.target.closest('button,li[data-k]');if(!b)return;
@@ -4494,10 +4546,10 @@ function testReplay(rec){
 // for each round the hands as play began (the computer's as arranged, yours as you grouped them), then every play in
 // order with the computer's arrangement just before it and your comment, the passes, how each trick ended, what was left
 // and the result; at the end the same rounds as data, for 导入
-function testText(){
+function testText(rounds=TREC.rounds){
   const out=['掼蛋测试版出牌记录',`保存时间：${new Date().toLocaleString()}　页面版本：${VERSION}`,
     '你和对家一方，下家和上家一方。牌后带 * 的是逢人配（红桃级牌）。[ ] 里是配好的一组一组（电脑的是它的配牌，你的是你理好的牌）。',''];
-  for(const r of TREC.rounds){
+  for(const r of rounds){
     const ct=c=>cardText(c)+(isWild(c,r.L)?'*':'');
     const shown=(cards,p,grouped)=>(grouped?recUnits(r,p,cards):handUnits(cards,r.L,false)).map(u=>grouped?'['+u.cards.map(ct).join(' ')+']':u.cards.map(ct).join(' ')).join(grouped?' ':'  ');
     out.push('='.repeat(48),`${roundName(r)}　打 ${rankName(r.L)}（${r.lvlTeam===0?'我方':'对方'}的级）　${NAMES[r.leader]}先出　${r.at||''}`);
@@ -4531,8 +4583,54 @@ function testText(){
     for(const p of [0,1,2,3])if(hands[p].length&&r.result)out.push(`  剩牌：${NAMES[p]}　${shown(hands[p],0,false)}`);
     out.push('',r.result?'结果：'+r.result:'（这一局没打完）','');
   }
-  out.push('---- 下面一行是给程序读的数据（导入用），请不要改 ----',TDATA+JSON.stringify(TREC.rounds.map(recOut)));
+  out.push('---- 下面一行是给程序读的数据（导入用），请不要改 ----',TDATA+JSON.stringify(rounds.map(recOut)));
   return out.join('\r\n');
+}
+// 生成记录交给 Claude: the latest round with its comments. In the claude.ai viewer it goes into this page's own store
+// (collection "rounds", one document per round), where Claude reads it; anywhere else it is saved as a text file (on a
+// computer, into the Downloads folder, where Claude can read it too)
+async function testFinish(){
+  const r=curRec();
+  if(!r){testSay('还没有打过的局');return}
+  const n=Object.keys(r.notes).length,text=testText([r]);
+  const db=window.claude&&window.claude.use?await window.claude.use('db').catch(()=>null):null;
+  if(db){
+    try{
+      await db.collection('rounds').doc(r.uid).set({uid:r.uid,no:r.no,at:r.at||'',result:r.result||'',notes:n,saved:new Date().toLocaleString(),text,data:recOut(r)});
+      testSay(`第 ${r.no} 局（${n} 条评语）已经交给 Claude。告诉 Claude“读第 ${r.no} 局的记录”就行。`);
+    }catch(e){testSay('没能交给 Claude（'+((e&&e.code)||'出错')+'），请改用“复制”，把记录贴给 Claude。')}
+    return;
+  }
+  const d=new Date(),z=x=>String(x).padStart(2,'0');
+  const name=`掼蛋测试记录-第${r.no}局-${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.txt`;
+  try{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\ufeff'+text],{type:'text/plain;charset=utf-8'}));a.download=name;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),10000);
+    testSay(`第 ${r.no} 局（${n} 条评语）已保存为“${name}”，在下载文件夹里。告诉 Claude 这个文件名就行。`);
+  }catch(_){testCopy()}
+}
+// a short message in a panel, back to the game (or the result) when closed
+function testSay(t){
+  showPanel(`<h2>出牌记录</h2><p>${esc(t)}</p><div class="btns"><button class="btn primary" id="trecClose">知道了</button></div>`);
+  $('#trecClose').onclick=testBackToGame;
+}
+// in the claude.ai viewer the rounds handed over earlier (on this or another device) come back into the record
+async function testDbLoad(){
+  const db=window.claude&&window.claude.use?await window.claude.use('db').catch(()=>null):null;
+  if(!db)return;
+  try{
+    const snap=await db.collection('rounds').get(),have=new Set(TREC.rounds.map(r=>r.uid)),add=[];
+    for(const d of snap.docs){const o=d.data();if(o&&o.data&&!have.has(o.uid))try{add.push(recIn(o.data))}catch(_){}}
+    if(!add.length)return;
+    const live=curRec()&&curRec().live?TREC.rounds.pop():null,taken=new Set(TREC.rounds.map(r=>r.no));
+    let no=Math.max(0,...TREC.rounds.map(r=>r.no),...add.map(r=>r.no));
+    for(const r of add){if(taken.has(r.no))r.no=++no;taken.add(r.no)}
+    TREC.rounds=TREC.rounds.concat(add).sort((a,b)=>a.no-b.no);
+    if(live){if(taken.has(live.no))live.no=++no;TREC.rounds.push(live)}
+    testStore();testList();
+  }catch(_){}
 }
 const TDATA='#DATA ';
 function testSave(){
