@@ -4076,6 +4076,8 @@ function testText(){
   return out.join('\r\n');
 }
 function testSave(){
+  // the claude.ai viewer (window.claude) does not let a page hand over a file: the record is shown to copy instead
+  if(window.claude){testCopy();return}
   const d=new Date(),z=x=>String(x).padStart(2,'0');
   const name=`掼蛋测试记录-${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.txt`;
   try{
@@ -4104,7 +4106,7 @@ function testCopy(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1028-1048';
+const VERSION='1028-1049';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

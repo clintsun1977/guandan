@@ -4071,6 +4071,8 @@ function testText(){
   return out.join('\r\n');
 }
 function testSave(){
+  // the claude.ai viewer (window.claude) does not let a page hand over a file: the record is shown to copy instead
+  if(window.claude){testCopy();return}
   const d=new Date(),z=x=>String(x).padStart(2,'0');
   const name=`掼蛋测试记录-${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.txt`;
   try{
