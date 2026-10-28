@@ -527,6 +527,7 @@ body.test #fanBtn,body.test #rowsBtn{display:none}
 body.test #tsBtn{display:inline-flex}
 body.test #tsBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 body.test.fsok #fsBtn{display:inline-flex}
+body.test.fsok:not(.fs) #fsBtn{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 /* one card size for all four hands and the table (--tcw, worked out from the screen), with the side hands' columns as
    wide as the hands */
 body.test #hand,body.test .peek,body.test .tvmid{--cw:var(--tcw,40px)}
@@ -538,8 +539,19 @@ body.test #pile .pc,body.test #pile .ktag{visibility:hidden}
 body.test .emblem{visibility:hidden}
 body.test #lastPlay{display:none}
 #tplays{position:absolute;inset:0;z-index:1;pointer-events:none}
-.tpb{position:absolute;--cw:30px;border:2px solid var(--team);border-radius:10px;background:rgba(0,0,0,.16);padding:15px 6px 4px;
-  display:flex;flex-wrap:wrap;align-content:flex-start;gap:4px 7px;overflow:hidden}
+.tpb{position:absolute;--cw:30px;border-radius:10px;background:rgba(0,0,0,.16);padding:6px;
+  display:flex;flex-wrap:wrap;align-content:flex-start;align-items:flex-end;gap:calc(var(--cw)*.14) calc(var(--cw)*.16);overflow:hidden}
+/* one turn: who and its number above, the cards in that player's colour of frame */
+.tq{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;padding:2px 3px 3px;border:2px solid var(--pc);border-radius:6px;
+  background:rgba(0,0,0,.2);pointer-events:auto;cursor:pointer;opacity:.8}
+.tq>b{font-size:max(10px,calc(var(--cw)*.26));line-height:1.1;color:var(--pc);white-space:nowrap}
+.tq.cur{opacity:1}
+.tq:hover{outline:2px dashed var(--ink);outline-offset:2px}
+.tq.noted>b::after{content:" 评";color:#ffe08a}
+.tq.pass{border-style:dashed}
+.tq.rest{border-style:dashed;opacity:1}
+.tq.last{opacity:1;outline:4px solid #ff8a00;outline-offset:3px;animation:lastBlink .9s ease-in-out infinite}
+.tsep{align-self:stretch;width:2px;margin:0 calc(var(--cw)*.08);background:var(--line-strong);border-radius:1px}
 .tpb>b{position:absolute;left:8px;top:1px;font-size:11px;line-height:1.2;color:var(--team)}
 .tpl{display:inline-flex;flex-direction:column;align-items:flex-start;opacity:.85;pointer-events:auto;cursor:pointer;border-radius:4px}
 .tpl:hover{outline:2px dashed var(--ink);outline-offset:2px}
@@ -603,11 +615,15 @@ body.test .tview .tvmid{--cw:calc(var(--tcw,40px)*.72)}
 .tlist li.thead{color:var(--gold);font-weight:700;margin-top:6px}
 .tlist li.tnote{display:block;color:#ffe08a;font-size:13px;padding-left:3.2em;white-space:pre-wrap;cursor:pointer}
 .tlist li.tnote:hover{text-decoration:underline}
+.tlist li.tchg{display:block;color:#9ad7ff;font-size:13px;padding:2px 6px;cursor:pointer}
+
 .tlist .tedit{margin-left:auto;font:inherit;font-size:12px;color:var(--gold);background:none;border:1px solid var(--line-strong);border-radius:999px;padding:0 8px;cursor:pointer}
 /* writing a comment on one play: a small box over the table */
-.tnbox{position:fixed;z-index:140;left:50%;top:50%;translate:-50% -50%;width:min(520px,calc(100vw - 32px));display:flex;flex-direction:column;gap:8px;
+.tnbox{position:fixed;z-index:140;right:16px;bottom:16px;width:min(460px,calc(100vw - 32px));display:flex;flex-direction:column;gap:8px;
   padding:14px 16px;border-radius:12px;background:var(--felt-deep);border:1px solid var(--gold);box-shadow:0 12px 40px rgba(0,0,0,.6);color:var(--ink)}
-.tnbox h3{margin:0;font-size:16px}
+.tnbox h3{margin:0;font-size:16px;cursor:move;user-select:none;-webkit-user-select:none;touch-action:none;padding-bottom:4px;border-bottom:1px dashed var(--line-strong)}
+.tname{font-size:18px;font-weight:700;color:var(--gold);user-select:all;-webkit-user-select:all;background:rgba(0,0,0,.25);padding:6px 10px;border-radius:8px}
+.ttoast{position:fixed;z-index:150;left:50%;top:14px;translate:-50% 0;padding:6px 16px;border-radius:999px;background:var(--gold);color:var(--on-gold);font-weight:700;font-size:15px;pointer-events:none}
 .tnbox h3 .ct{font-size:14px;padding:0 4px}
 .tnbox textarea{font:inherit;font-size:16px;line-height:1.5;min-height:5.5em;background:rgba(0,0,0,.25);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:8px;resize:vertical}
 .tnbox textarea:focus{outline:none;border-color:var(--gold)}
@@ -3930,7 +3946,7 @@ $('#testPw').addEventListener('keydown',e=>{if(e.key==='Enter')$('#testGo').clic
 $('#testGo').onclick=()=>{
   if($('#testPw').value!==TEST_PW){lobbyStatus('测试版密码不对');$('#testPw').select();return}
   if(lobbyMode!=='solo')setMode('solo');
-  myNick=nickNow()||'测试';myDir=myDir||'S';
+  myNick=nickNow()||'测试';myDir='S';
   Sound.unlock();
   enterTest();
 };
@@ -3938,7 +3954,7 @@ function enterTest(){
   TEST=true;document.body.classList.add('test');
   TREC.started=new Date();TREC.rounds=testLoad();
   NET.mode='solo';NET.off=0;setHumans([0]);
-  $('#myName').textContent=myNick;
+  testNames();
   $('#lobby').hidden=true;
   for(const p of [1,2,3]){
     const e=document.createElement('div');
@@ -3973,19 +3989,19 @@ function enterTest(){
   $('#tsLoad').onclick=testImport;
   $('#tsClear').onclick=testClear;
   $('#tsList').onclick=e=>{
-    const ed=e.target.closest('.tedit,.tnote');
-    if(ed){testNoteEdit(+ed.closest('li').dataset.k);return}
+    const ed=e.target.closest('.tedit,.tnote,.tchg');
+    if(ed){testNoteEdit(+(ed.closest('li').dataset.k||0));return}
     const li=e.target.closest('li.tp');if(li)testView(TREC.rounds.length-1,+li.dataset.k,false);
   };
   $('#tsDone').onclick=testFinish;
   $('#tsClose').onclick=()=>{s.classList.remove('open');$('#tsBtn').classList.remove('on')};
   // a play in the middle of the table: tap it to write its comment
-  $('#table').addEventListener('click',e=>{const t=e.target.closest('#tplays .tpl[data-k]');if(t)testNoteEdit(+t.dataset.k)});
+  $('#table').addEventListener('click',e=>{const t=e.target.closest('#tplays .tq[data-k]');if(t)testNoteEdit(+t.dataset.k)});
   testDbLoad();
   $('#tsBtn').onclick=()=>{s.classList.toggle('open');$('#tsBtn').classList.toggle('on',s.classList.contains('open'));$('#tsList').dataset.k='';testList()};
   document.body.classList.toggle('fsok',!!(document.fullscreenEnabled||document.webkitFullscreenEnabled));
   $('#fsBtn').onclick=testFull;
-  testFull(true);
+  testFull(true);fsMark();
   testSize();
   // the boxes of plays follow the table when it changes size (the hand below it getting shorter, say)
   let t=0;
@@ -4002,7 +4018,8 @@ function testFull(on){
     else if(!fsOn()){const r=(d.requestFullscreen||d.webkitRequestFullscreen).call(d);if(r&&r.catch)r.catch(()=>{})}
   }catch(_){}
 }
-for(const ev of ['fullscreenchange','webkitfullscreenchange'])document.addEventListener(ev,()=>{$('#fsBtn').textContent=fsOn()?'退出全屏':'全屏'});
+const fsMark=()=>{$('#fsBtn').textContent=fsOn()?'退出全屏':'回到全屏';document.body.classList.toggle('fs',fsOn())};
+for(const ev of ['fullscreenchange','webkitfullscreenchange'])document.addEventListener(ev,fsMark);
 // the one card size for every hand: the side hands in five rows are about 5.5 cards wide (each further card shows 0.42 of
 // one), with the table about 6 between them; upright, your partner's and your three rows (about 3 cards high each), the
 // side hands' five (about 4.7) and the plates, buttons and margins (about 250px)
@@ -4016,6 +4033,15 @@ let testWH='';
 const testResize=()=>{const k=innerWidth+'x'+innerHeight;if(TEST&&k!==testWH){testWH=k;testSize();layoutHand();setTimeout(testPlays,200)}};
 addEventListener('resize',testResize);
 if(window.ResizeObserver)new ResizeObserver(testResize).observe(document.documentElement);
+// everyone by number: you are 1, then counterclockwise, the order of play, 2 (your next), 3 (your partner), 4; each has
+// its own colour on the table and in the record
+const SEATCOL={1:'#29b6f6',2:'#66bb6a',3:'#ec407a',4:'#ba68c8'};
+const pcol=p=>SEATCOL[p+1];
+function testNames(){
+  for(let p=0;p<4;p++)NAMES[p]=`${p+1}号`;
+  for(let q=1;q<4;q++){const e=$('#seat'+q+' .name');e.textContent=NAMES[q];e.style.color=pcol(q)}
+  $('#myName').textContent=NAMES[0];$('#myName').style.color=pcol(0);
+}
 const tierNum=pw=>pw>=AIP.tier1?1:pw>=AIP.tier2?2:pw>=AIP.tier3?3:4;
 const powerText=pw=>`牌力 ${pw}（第 ${tierNum(pw)} 档）`;
 const playName=e=>e.type==='bomb'?e.n+'张炸弹':TYPE_NAME[e.type];
@@ -4237,13 +4263,17 @@ function testRoundStart(){
   const mine=testGrouped()?G.fixed.map(gr=>gr.slice()):null;
   const power=G.hands.map(h=>rawPower(h,L)),ug={},up={};
   for(const p of [1,2,3])if(uaOf(p)){ug[p]=seatGroups(p);up[p]=handPower(G.hands[p],L)}
+  // the computer's own arrangement of each hand you changed (and of yours), to compare with
+  const raw={};
+  for(const p of [0,1,2,3])if(p?ug[p]:mine)raw[p]=armPlaysRaw(G.hands[p],L).map(u=>displayOrder(u,L).map(c=>c.id));
   TSEL.ids=new Set();
   TREC.rounds.push({uid:Date.now().toString(36)+Math.random().toString(36).slice(2,6),no:TREC.rounds.reduce((m,r)=>Math.max(m,r.no),0)+1,
     at:new Date().toLocaleString(),live:true,g:G.round,L,lvlTeam:G.lvlTeam,levels:G.levels.slice(),leader:G.turn,
-    hands:G.hands.map(h=>h.slice()),power,myGroups:mine,myPower:mine?scorePower(armScore(myUnits())):power[0],userGroups:ug,userPower:up,
+    hands:G.hands.map(h=>h.slice()),power,myGroups:mine,myPower:mine?scorePower(armScore(myUnits())):power[0],userGroups:ug,userPower:up,rawGroups:raw,
     trib:rp?rp.trib:(G.trib||[]).map(t=>`${NAMES[t.g]}进贡 ${cardText(t.tc)} 给${NAMES[t.r]}`+(t.rc?`，${NAMES[t.r]}还 ${cardText(t.rc)}`:'')),
     kang:rp?rp.kang:G.kang?kangHtml(true).replace(/<[^>]+>/g,''):'',
     log:G.log,result:'',notes:{},nk:'all',nv:0,replayOf:rp?rp.of:null});
+  recName(curRec());
   testStore();
 }
 function testRoundEnd(){
@@ -4257,7 +4287,7 @@ function testRoundEnd(){
 // kept in this browser (the last 200 rounds), cards by their number in the deck
 const TKEY='guandan-test-records',DECK=makeDeck();
 const recOut=r=>({uid:r.uid,no:r.no,at:r.at,L:r.L,lvlTeam:r.lvlTeam,levels:r.levels,leader:r.leader,hands:r.hands.map(h=>h.map(c=>c.id)),
-  power:r.power,myGroups:r.myGroups,myPower:r.myPower,userGroups:r.userGroups,userPower:r.userPower,trib:r.trib,kang:r.kang,result:r.result,notes:r.notes,nk:'all',replayOf:r.replayOf,
+  power:r.power,myGroups:r.myGroups,myPower:r.myPower,userGroups:r.userGroups,userPower:r.userPower,rawGroups:r.rawGroups,done:!!r.done,name:r.name,trib:r.trib,kang:r.kang,result:r.result,notes:r.notes,nk:'all',replayOf:r.replayOf,
   log:r.log.map(e=>({p:e.p,c:e.cards?e.cards.map(c=>c.id):null,lead:e.lead,type:e.type,value:e.value,n:e.n}))});
 // every turn has its number, a 过 as much as a play; records kept before then numbered the plays alone
 function notesIn(o){
@@ -4273,6 +4303,22 @@ let storeT=0;
 function testStore(){
   clearTimeout(storeT);
   storeT=setTimeout(()=>{try{localStorage.setItem(TKEY,JSON.stringify(TREC.rounds.slice(-200).map(recOut)))}catch(_){}},300);
+  testDbSoon();
+}
+// in the claude.ai viewer the round being played (with its comments) is kept in this page's own store a few seconds after
+// each change, so Claude can read it whenever asked, without anything to press; one write at a time
+let dbT=0,dbBusy=Promise.resolve();
+function testDbSoon(){
+  if(!window.claude||!window.claude.use)return;
+  clearTimeout(dbT);
+  dbT=setTimeout(()=>{const r=curRec();if(r)dbBusy=dbBusy.then(()=>testDbPut(r)).catch(()=>{})},4000);
+}
+async function testDbPut(r){
+  const db=await window.claude.use('db').catch(()=>null);
+  if(!db)return false;
+  await db.collection('rounds').doc(r.uid).set({uid:r.uid,no:r.no,name:recName(r),at:r.at||'',result:r.result||'',done:!!r.done,
+    notes:Object.keys(r.notes).length,saved:new Date().toLocaleString(),text:testText([r]),data:recOut(r)});
+  return true;
 }
 function testLoad(){try{return JSON.parse(localStorage.getItem(TKEY)||'[]').map(recIn)}catch(_){return[]}}
 // a hand as groups to show: the computer's arrangement (bombs first, then runs, then the rest, larger first, the way the
@@ -4367,37 +4413,31 @@ function testPlays(){
   let last=-1;
   for(let i=G.log.length-1;i>=0;i--)if(G.log[i].cards){last=i;break}
   const rec=curRec()&&curRec().live&&curRec().g===G.round?curRec():null;
-  // your partner's and your own boxes run the width of the table, across its top and bottom; the side players' share the
-  // middle between them
-  const W=g.right-g.left,H=g.near-g.top,band=Math.max(60,Math.round(H*.3)),cm=4,pad=6;
-  const Z={2:{x0:g.left+pad,x1:g.right-pad,y0:g.top+pad,y1:g.top+band},0:{x0:g.left+pad,x1:g.right-pad,y0:g.near-band,y1:g.near-pad},
-    3:{x0:g.left+pad,x1:g.cx-cm,y0:g.top+band+pad,y1:g.near-band-pad},1:{x0:g.cx+cm,x1:g.right-pad,y0:g.top+band+pad,y1:g.near-band-pad}};
-  box.innerHTML=[0,1,2,3].map(p=>{
-    const z=Z[p];
-    const rest=(G.rest||[]).find(r=>r.p===p);
-    const items=G.log.map((x,i)=>({x,i,k:i+1})).filter(({x})=>x.p===p).map(({x,i,k})=>
-      `<span class="tpl${x.cards?'':' pass'}${i>=from?' cur':''}${i===last?' last':''}${rec&&rec.notes[k]?' noted':''}" data-k="${k}" title="点一下写评语"><i>${k}</i>${
-        x.cards?`<span class="grp">${displayOrder(x,G.L).map(c=>cardHTML(c,G.L)).join('')}</span>`:'<span class="pchip">过</span>'}</span>`).join('')+
-      (rest?`<span class="tpl rest"><i>剩牌</i><span class="grp">${rest.cards.map(c=>cardHTML(c,G.L)).join('')}</span></span>`:'');
-    return`<div class="tpb ${isRedSeat(p)?'t-red':'t-blue'}" style="left:${z.x0}px;top:${z.y0}px;width:${Math.max(40,z.x1-z.x0)}px;height:${Math.max(30,z.y1-z.y0)}px"><b>${NAMES[p]}</b>${items}</div>`;
-  }).join('');
-  // the cards as large as will fit, the same size in all four boxes
-  const t=tcwNow();let w=Infinity;
-  for(const b of box.children)for(const k of [1.1,1,.9,.8,.7,.6,.52,.45,.38,.32,.27,.23]){
+  const item=(x,i)=>{
+    const k=i+1,sep=x.cards&&x.lead&&i?'<span class="tsep"></span>':'';
+    return`${sep}<span class="tq${x.cards?'':' pass'}${i>=from?' cur':''}${i===last?' last':''}${rec&&rec.notes[k]?' noted':''}" data-k="${k}" style="--pc:${pcol(x.p)}" title="点一下写评语"><b>${k} ${NAMES[x.p]}</b>${
+      x.cards?`<span class="grp">${displayOrder(x,G.L).map(c=>cardHTML(c,G.L)).join('')}</span>`:'<span class="pchip">过</span>'}</span>`;
+  };
+  const rest=(G.rest||[]).map(r=>`<span class="tq rest" style="--pc:${pcol(r.p)}"><b>${NAMES[r.p]} 剩牌</b><span class="grp">${r.cards.map(c=>cardHTML(c,G.L)).join('')}</span></span>`).join('');
+  // the whole middle of the table, between the four hands
+  const pad=6;
+  box.innerHTML=`<div class="tpb" style="left:${g.left+pad}px;top:${g.top+pad}px;width:${Math.max(60,g.right-g.left-2*pad)}px;height:${Math.max(40,g.near-g.top-2*pad)}px">${G.log.map(item).join('')}${rest}</div>`;
+  // the cards as large as will still fit
+  const b=box.firstElementChild,t=tcwNow();
+  for(const k of [1.3,1.2,1.1,1,.9,.8,.72,.64,.56,.5,.44,.38,.33,.28,.24,.2]){
     b.style.setProperty('--cw',Math.round(k*t)+'px');
-    if(k===.23||b.scrollHeight<=b.clientHeight+1&&b.scrollWidth<=b.clientWidth+1){w=Math.min(w,k);break}
+    if(b.scrollHeight<=b.clientHeight+1&&b.scrollWidth<=b.clientWidth+1)break;
   }
-  for(const b of box.children)b.style.setProperty('--cw',Math.round(w*t)+'px');
 }
 // a comment on the k-th play of the round being played (or just finished): written in a small box over the table, kept
 // with the record at once; the game waits meanwhile
 function testNoteEdit(k){
-  const rec=curRec();if(!rec||!k)return;
-  const e=rec.log[k-1];if(!e)return;
+  const rec=curRec();if(!rec)return;
+  const e=k?rec.log[k-1]:null;if(k&&!e)return;
   let b=$('#tnbox');
-  if(!b){b=document.createElement('div');b.id='tnbox';b.className='tnbox';document.body.appendChild(b)}
-  b.innerHTML=`<h3>第 ${k} 手：${turnHTML(rec,k)}</h3>
-    <textarea id="tnText" placeholder="${e.cards?'比如：这里应该出…，因为…':'比如：这里不该过，应该出…，因为…'}">${esc(rec.notes[k]||'')}</textarea>
+  if(!b){b=document.createElement('div');b.id='tnbox';b.className='tnbox';document.body.appendChild(b);testNoteMove(b)}
+  b.innerHTML=`<h3 class="tnh" title="拖这里可以移动">${k?`第 ${k} 手：${turnHTML(rec,k)}`:'开局（理牌）的评语'}</h3>
+    <textarea id="tnText" placeholder="${!k?'比如：这手牌应该这样理，因为…':e.cards?'比如：这里应该出…，因为…':'比如：这里不该过，应该出…，因为…'}">${esc(rec.notes[k]||'')}</textarea>
     <div class="btns">${rec.notes[k]?'<button class="btn" id="tnDel">删掉评语</button>':''}<button class="btn" id="tnNo">取消</button><button class="btn primary" id="tnOk">保存</button></div>`;
   b.hidden=false;TV.edit=true;
   const close=()=>{b.hidden=true;TV.edit=false};
@@ -4407,6 +4447,58 @@ function testNoteEdit(k){
   if($('#tnDel'))$('#tnDel').onclick=()=>put('');
   $('#tnText').onkeydown=ev=>{if(ev.key==='Escape')close();else if(ev.key==='Enter'&&(ev.ctrlKey||ev.metaKey))$('#tnOk').click()};
   $('#tnText').focus();
+}
+// the box opens where you last left it, at first in the bottom-right corner beside your hand, clear of the played cards;
+// dragging its title bar moves it
+function testNoteMove(b){
+  let at=null;
+  try{at=JSON.parse(localStorage.getItem('guandan-tnbox')||'null')}catch(_){}
+  const place=(x,y)=>{
+    x=Math.max(0,Math.min(innerWidth-b.offsetWidth,x));y=Math.max(0,Math.min(innerHeight-b.offsetHeight,y));
+    b.style.left=x+'px';b.style.top=y+'px';b.style.right=b.style.bottom='auto';
+  };
+  if(at)requestAnimationFrame(()=>place(at.x,at.y));
+  let d=null;
+  b.addEventListener('pointerdown',e=>{
+    if(!e.target.closest('.tnh'))return;
+    e.preventDefault();
+    const r=b.getBoundingClientRect();d={dx:e.clientX-r.left,dy:e.clientY-r.top};
+    try{b.setPointerCapture(e.pointerId)}catch(_){}
+  });
+  b.addEventListener('pointermove',e=>{if(d)place(e.clientX-d.dx,e.clientY-d.dy)});
+  const end=()=>{if(!d)return;d=null;const r=b.getBoundingClientRect();try{localStorage.setItem('guandan-tnbox',JSON.stringify({x:r.left,y:r.top}))}catch(_){}};
+  b.addEventListener('pointerup',end);b.addEventListener('pointercancel',end);
+}
+// a round's record has a short name, the same for its file and in the page's store: 掼蛋记录-1028-第3局
+function recName(r){
+  if(!r.name){const d=new Date(),z=x=>String(x).padStart(2,'0');r.name=`掼蛋记录-${z(d.getMonth()+1)}${z(d.getDate())}-第${r.no}局`}
+  return r.name;
+}
+// a name to the clipboard, with a word to say so
+function testCopy1(t){
+  const ok=()=>testToast(`已复制：${t}`),no=()=>testToast('没能复制，请手动选中');
+  try{navigator.clipboard.writeText(t).then(ok,no)}catch(_){no()}
+}
+function testToast(t){
+  let e=$('#ttoast');
+  if(!e){e=document.createElement('div');e.id='ttoast';e.className='ttoast';document.body.appendChild(e)}
+  e.textContent=t;e.hidden=false;clearTimeout(e._t);e._t=setTimeout(()=>{e.hidden=true},1800);
+}
+// what was changed in the sorting, seat by seat: the groups of the computer's own arrangement taken apart, the groups
+// made instead, and the 牌力 before and after
+function testChanges(rec){
+  const out=[];
+  for(const p of [0,1,2,3]){
+    const after=p?rec.userGroups&&rec.userGroups[p]:rec.myGroups,before=rec.rawGroups&&rec.rawGroups[p];
+    if(!after||!before)continue;
+    const by=new Map(rec.hands[p].map(c=>[c.id,c])),key=g=>g.slice().sort((a,b)=>a-b).join();
+    const A=new Set(after.map(key)),B=new Set(before.map(key));
+    const gone=before.filter(g=>!A.has(key(g))),made=after.filter(g=>!B.has(key(g)));
+    if(!gone.length&&!made.length)continue;
+    const desc=g=>{const cs=g.map(id=>by.get(id)).filter(Boolean),u=readGroup(cs,rec.L);return`[${u?playName(u):'散牌'} ${cs.map(c=>cardText(c)+(isWild(c,rec.L)?'*':'')).join(' ')}]`};
+    out.push(`${NAMES[p]}${p?'（你改了电脑的理牌）':'（你理的牌和电脑的配法不同）'}：拆掉 ${gone.map(desc).join('、')||'没有'}；新组成 ${made.map(desc).join('、')||'没有'}；牌力 ${p?`${rec.power[p]} → ${rec.userPower[p]}`:`电脑配法 ${rec.power[0]} → 你理的 ${rec.myPower}`}`);
+  }
+  return out;
 }
 // the k-th turn in words: who played what, or who passed on what
 function turnHTML(rec,k){
@@ -4423,13 +4515,14 @@ function recListHTML(rec,on){
   const out=[];let last=null;
   const note=k=>rec.notes[k]?`<li class="tnote" data-k="${k}">${k?'评语':'开局评语'}：${esc(rec.notes[k])}</li>`:'';
   if(rec.replayOf){const o=TREC.rounds.find(r=>r.no===rec.replayOf);out.push(`<li class="thead">重打第 ${rec.replayOf} 局${o&&o.result?`；原来：${o.result}`:''}</li>`)}
+  for(const t of testChanges(rec))out.push(`<li class="tchg" data-k="0">理牌改动：${esc(t)}</li>`);
   out.push(note(0));
   rec.log.forEach((e,i)=>{
     const k=i+1;
-    if(!e.cards){out.push(`<li class="tp pass${k===on?' on':''}" data-k="${k}"><span class="no">${k}</span><span class="tw">${NAMES[e.p]}</span><span class="lt">过</span><button class="tedit" title="写评语">评</button></li>`,note(k));return}
+    if(!e.cards){out.push(`<li class="tp pass${k===on?' on':''}" data-k="${k}"><span class="no">${k}</span><span class="tw" style="color:${pcol(e.p)}">${NAMES[e.p]}</span><span class="lt">过</span><button class="tedit" title="写评语">评</button></li>`,note(k));return}
     if(e.lead&&last!=null)out.push(`<li class="tend">—— ${trickEnd(last,e.p)}</li>`);
     last=e.p;
-    out.push(`<li class="tp${k===on?' on':''}" data-k="${k}"><span class="no">${k}</span><span class="tw">${NAMES[e.p]}</span><span class="lt">${e.lead?'领出':'跟'} ${playName(e)}</span><span class="tc">${displayOrder(e,rec.L).map(cardTag).join('')}</span><button class="tedit" title="写评语">评</button></li>`,note(k));
+    out.push(`<li class="tp${k===on?' on':''}" data-k="${k}"><span class="no">${k}</span><span class="tw" style="color:${pcol(e.p)}">${NAMES[e.p]}</span><span class="lt">${e.lead?'领出':'跟'} ${playName(e)}</span><span class="tc">${displayOrder(e,rec.L).map(cardTag).join('')}</span><button class="tedit" title="写评语">评</button></li>`,note(k));
   });
   if(rec.result)out.push(`<li class="thead">${rec.result}</li>`);
   return out.join('');
@@ -4443,7 +4536,7 @@ function testList(){
   if(!$('#tside').classList.contains('open')){el.dataset.k='';return}
   if(el.dataset.k===key)return;
   el.dataset.k=key;
-  $('#tsRound').textContent=rec?`${roundName(rec)} · 打 ${rankName(rec.L)}`:'';
+  $('#tsRound').textContent=rec?`${recName(rec)} · 打 ${rankName(rec.L)}`:'';
   el.innerHTML=rec?recListHTML(rec,-1):'<li class="tend">开始出牌后，每一手牌都记在这里</li>';
   el.scrollTop=el.scrollHeight;
 }
@@ -4577,11 +4670,12 @@ function testReplay(rec){
 function testText(rounds=TREC.rounds){
   const out=['掼蛋测试版出牌记录',`保存时间：${new Date().toLocaleString()}　页面版本：${VERSION}`,
     '你和对家一方，下家和上家一方。牌后带 * 的是逢人配（红桃级牌）。[ ] 里是配好的一组一组（电脑的是它的配牌，你的是你理好的牌）。',
-    '每一次轮到谁（出牌或者过）都算一手，按顺序编号。',''];
+    '每一次轮到谁（出牌或者过）都算一手，按顺序编号。',
+    '1号是你，逆时针（出牌的顺序）依次是 2号（你的下家）、3号（你的对家）、4号（你的上家）。',''];
   for(const r of rounds){
     const ct=c=>cardText(c)+(isWild(c,r.L)?'*':'');
     const shown=(cards,p,grouped)=>(grouped?recUnits(r,p,cards):handUnits(cards,r.L,false)).map(u=>grouped?'['+u.cards.map(ct).join(' ')+']':u.cards.map(ct).join(' ')).join(grouped?' ':'  ');
-    out.push('='.repeat(48),`${roundName(r)}　打 ${rankName(r.L)}（${r.lvlTeam===0?'我方':'对方'}的级）　${NAMES[r.leader]}先出　${r.at||''}`);
+    out.push('='.repeat(48),`${recName(r)}　${roundName(r)}　打 ${rankName(r.L)}（${r.lvlTeam===0?'我方':'对方'}的级）　${NAMES[r.leader]}先出　${r.at||''}`);
     for(const t of r.trib)out.push('  '+t);
     if(r.kang)out.push('  '+r.kang);
     out.push('','开局手牌（进贡、还贡之后）：');
@@ -4592,6 +4686,8 @@ function testText(rounds=TREC.rounds){
       if(ug)out.push('    电脑原来：'+handUnits(r.hands[p],r.L,true).map(u=>'['+u.cards.map(ct).join(' ')+']').join(' '),'    你改后：　'+shown(r.hands[p],p,true));
       else out.push('    '+shown(r.hands[p],p,p!==0||!!mine));
     }
+    const ch=testChanges(r);
+    if(ch.length)out.push('','理牌改动：',...ch.map(t=>'  '+t));
     if(r.notes[0])out.push(`  开局评语：${r.notes[0]}`);
     out.push('','出牌：');
     const hands=r.hands.map(h=>h.slice());
@@ -4627,25 +4723,28 @@ async function testFinish(){
   const n=Object.keys(r.notes).length,text=testText([r]);
   const db=window.claude&&window.claude.use?await window.claude.use('db').catch(()=>null):null;
   if(db){
+    r.done=true;
     try{
-      await db.collection('rounds').doc(r.uid).set({uid:r.uid,no:r.no,at:r.at||'',result:r.result||'',notes:n,saved:new Date().toLocaleString(),text,data:recOut(r)});
-      testSay(`第 ${r.no} 局（${n} 条评语）已经交给 Claude。告诉 Claude“读第 ${r.no} 局的记录”就行。`);
+      await (dbBusy=dbBusy.then(()=>testDbPut(r)));
+      testSay(`“${recName(r)}”（${n} 条评语）已经交给 Claude。把这个名字发给 Claude，或者说“去分析”就行。`,recName(r));
     }catch(e){testSay('没能交给 Claude（'+((e&&e.code)||'出错')+'），请改用“复制”，把记录贴给 Claude。')}
     return;
   }
   const d=new Date(),z=x=>String(x).padStart(2,'0');
-  const name=`掼蛋测试记录-第${r.no}局-${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.txt`;
+  const name=recName(r)+'.txt';
   try{
     const a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob(['\ufeff'+text],{type:'text/plain;charset=utf-8'}));a.download=name;
     document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(a.href),10000);
-    testSay(`第 ${r.no} 局（${n} 条评语）已保存为“${name}”，在下载文件夹里。告诉 Claude 这个文件名就行。`);
+    testSay(`已保存为“${name}”（${n} 条评语），在下载文件夹里。把这个文件名发给 Claude 就行。`,name);
   }catch(_){testCopy()}
 }
 // a short message in a panel, back to the game (or the result) when closed
-function testSay(t){
-  showPanel(`<h2>出牌记录</h2><p>${esc(t)}</p><div class="btns"><button class="btn primary" id="trecClose">知道了</button></div>`);
+function testSay(t,copy){
+  showPanel(`<h2>出牌记录</h2><p>${esc(t)}</p>${copy?`<p class="tname">${esc(copy)}</p>`:''}
+    <div class="btns">${copy?'<button class="btn primary" id="trecName">复制名字</button>':''}<button class="btn${copy?'':' primary'}" id="trecClose">知道了</button></div>`);
+  if(copy)$('#trecName').onclick=()=>testCopy1(copy);
   $('#trecClose').onclick=testBackToGame;
 }
 // in the claude.ai viewer the rounds handed over earlier (on this or another device) come back into the record
