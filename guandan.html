@@ -520,17 +520,23 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* the test version: every hand face up (the computer's in the groups it has arranged), and every play numbered in a
    record down the right-hand side, which can be stepped back through and replayed */
 .lobby-test{align-self:center;margin-top:4px}
-body.test{--tside-w:340px}
+body.test{--tside-w:300px}
 body.test #app{max-width:none;margin:0 var(--tside-w) 0 0}
 body.test #fanBtn,body.test #rowsBtn{display:none}
-#tsBtn{display:none}
-.peek{--cw:clamp(26px,2.4vw,36px);display:flex;flex-direction:column;gap:2px;pointer-events:auto}
+#tsBtn,#fsBtn{display:none}
+body.test.fsok #fsBtn{display:inline-flex}
+/* one card size for all four hands and the table (--tcw, worked out from the screen), with the side hands' columns as
+   wide as the hands */
+body.test #hand,body.test .peek,body.test .tvmid{--cw:var(--tcw,40px)}
+body.test #pile{--cw:calc(var(--tcw,40px)*.9)}
+body.test .table{grid-template-columns:auto minmax(0,1fr) auto}
+.peek{--cw:36px;display:flex;flex-direction:column;gap:2px;pointer-events:auto}
 #seat2 .peek{align-items:center}
 #seat1 .peek{align-items:flex-end}
 .peek .pw{font-size:13px;color:var(--muted);line-height:1.2}
 .peek .pw:empty{display:none}
 .prows{display:flex;flex-direction:column}
-.prow{display:flex;gap:calc(var(--cw)*.32)}
+.prow{display:flex;gap:calc(var(--cw)*.22)}
 .prow+.prow{margin-top:calc(var(--cw)*-.58)}
 .grp{display:flex;flex:none}
 .grp .card{position:relative}
@@ -567,7 +573,6 @@ body.test #fanBtn,body.test #rowsBtn{display:none}
 .tvt{flex:1;min-width:0;overflow:auto;padding:12px 16px;display:grid;gap:14px;
   grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"top top top" "left mid right" "me me me"}
 .tvs{display:flex;flex-direction:column;gap:4px}
-.tvs .peek{--cw:clamp(30px,2.8vw,42px)}
 .tvs[data-p="2"]{grid-area:top;align-items:center}
 .tvs[data-p="3"]{grid-area:left;justify-content:center}
 .tvs[data-p="1"]{grid-area:right;justify-content:center;align-items:flex-end}
@@ -576,7 +581,7 @@ body.test #fanBtn,body.test #rowsBtn{display:none}
 .tvs[data-p="0"] .peek,.tvs[data-p="2"] .peek{align-items:center}
 .tvn{font-size:16px;font-weight:700}
 .tvn small{font-weight:400;color:var(--muted);margin-left:6px}
-.tvmid{grid-area:mid;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;--cw:clamp(34px,3.4vw,50px)}
+.tvmid{grid-area:mid;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px}
 .tvp{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:10px;font-size:15px}
 .tvp .tw{min-width:5.5em;text-align:right;font-weight:700}
 .tvp small{white-space:nowrap}
@@ -586,10 +591,10 @@ body.test #fanBtn,body.test #rowsBtn{display:none}
 .tvnote{font-size:14px;color:var(--muted)}
 .tvl{width:var(--tside-w,340px);flex:none;display:flex;flex-direction:column;border-left:1px solid var(--line);padding:8px 10px}
 .trec textarea{width:100%;height:50vh;font:13px/1.5 ui-monospace,Consolas,monospace;background:var(--felt-deep);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:8px}
-/* made for a computer or an iPad: on an iPad held sideways the record column is narrower, held upright it folds away
-   behind the 记录 button */
-@media (max-width:1199px){body.test{--tside-w:280px}}
-@media (max-width:899px){
+/* made for a computer or an iPad: below 1280px (an iPad) the record column folds away behind the 记录 button, so the
+   cards get the whole width */
+@media (min-width:1600px){body.test{--tside-w:320px}}
+@media (max-width:1279px){
   body.test #app{margin:0}
   body.test #tsBtn{display:inline-flex}
   .tside{display:none;width:min(340px,92vw)}
@@ -603,7 +608,7 @@ body.test #fanBtn,body.test #rowsBtn{display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹"><span><span class="long">牌背：</span><span id="backName">大雁</span></span></button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">记录</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹"><span><span class="long">牌背：</span><span id="backName">大雁</span></span></button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -3868,8 +3873,37 @@ function enterTest(){
   $('#tsCopy').onclick=testCopy;
   $('#tsList').onclick=e=>{const li=e.target.closest('li[data-k]');if(li)testView(TREC.rounds.length-1,+li.dataset.k,false)};
   $('#tsBtn').onclick=()=>s.classList.toggle('open');
+  document.body.classList.toggle('fsok',!!(document.fullscreenEnabled||document.webkitFullscreenEnabled));
+  $('#fsBtn').onclick=testFull;
+  testFull(true);
+  testSize();
   newGame();
 }
+// full screen: asked for on the way in (the click on 进入 allows it) and toggled by the 全屏 button; where the page may
+// not take the screen (the claude.ai viewer, say) it simply stays in the window
+const fsOn=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+function testFull(on){
+  const d=document.documentElement;
+  try{
+    if(on!==true&&fsOn())(document.exitFullscreen||document.webkitExitFullscreen).call(document);
+    else if(!fsOn()){const r=(d.requestFullscreen||d.webkitRequestFullscreen).call(d);if(r&&r.catch)r.catch(()=>{})}
+  }catch(_){}
+}
+for(const ev of ['fullscreenchange','webkitfullscreenchange'])document.addEventListener(ev,()=>{$('#fsBtn').textContent=fsOn()?'退出全屏':'全屏'});
+// the one card size for every hand: a full hand in three rows is about 7 cards wide (each further card shows 0.42 of
+// one), a side hand on each side and the table about 5 between them; upright, three hands' rows (about 3 cards high
+// each) and the plates, buttons and margins (about 250px)
+function testSize(){
+  if(!TEST)return;
+  const s=$('#tside'),side=s&&matchMedia('(min-width:1280px)').matches?s.offsetWidth:0;
+  const w=(innerWidth-side-48)/19.5,h=(innerHeight-250)/9.4;
+  document.body.style.setProperty('--tcw',Math.round(Math.max(28,Math.min(w,h,100)))+'px');
+}
+// again whenever the window changes size (turning the iPad, going full screen)
+let testWH='';
+const testResize=()=>{const k=innerWidth+'x'+innerHeight;if(TEST&&k!==testWH){testWH=k;testSize();layoutHand()}};
+addEventListener('resize',testResize);
+if(window.ResizeObserver)new ResizeObserver(testResize).observe(document.documentElement);
 const tierNum=pw=>pw>=AIP.tier1?1:pw>=AIP.tier2?2:pw>=AIP.tier3?3:4;
 const powerText=pw=>`牌力 ${pw}（第 ${tierNum(pw)} 档）`;
 const playName=e=>e.type==='bomb'?e.n+'张炸弹':TYPE_NAME[e.type];
@@ -3906,9 +3940,9 @@ function handUnits(cards,L,grouped){
   return out;
 }
 // the groups in at most three rows, as even in length as the groups allow (lengths in card widths: each further card
-// shows 0.42 of a card, a gap of 0.32 between groups)
+// shows 0.42 of a card, a gap of 0.22 between groups)
 function rowsOf(units){
-  const W=units.map(u=>1.32+.42*(u.cards.length-1)),n=units.length;
+  const W=units.map(u=>1.22+.42*(u.cards.length-1)),n=units.length;
   const sum=(a,b)=>W.slice(a,b).reduce((s,x)=>s+x,0);
   let best=[n,n],bm=Infinity;
   for(let i=1;i<=n;i++)for(let j=i;j<=n;j++){const m=Math.max(sum(0,i),sum(i,j),sum(j,n));if(m<bm-1e-9){bm=m;best=[i,j]}}
