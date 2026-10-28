@@ -554,6 +554,9 @@ body.test .emblem .r{font-size:40px}
 .peek.edit .card{cursor:pointer}
 .peek .card.sel{transform:translateY(-16%);box-shadow:0 0 0 2.5px var(--latest),0 0 12px 2px var(--latest-glow)}
 .pwb{display:inline-flex;gap:4px;margin-left:8px;vertical-align:middle}
+.peek.edit{touch-action:none;user-select:none;-webkit-user-select:none}
+#hand .card.hot,.peek .card.hot{box-shadow:0 0 0 3px var(--gold),0 0 14px var(--gold)}
+.tghost{position:fixed;left:0;top:0;z-index:200;pointer-events:none;transform:translate(-50%,-60%) rotate(-3deg);filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
 .pwb .link{font-size:13px;padding:1px 9px}
 /* the look-back view also holds the comment strip: its hands a little smaller (all four still alike), the trick smaller still */
 body.test .tview .peek{--cw:calc(var(--tcw,40px)*.9)}
@@ -3498,7 +3501,7 @@ handEl.addEventListener('pointermove',e=>{
   // a press-and-sweep that starts on an unpicked card picks the cards it passes over; one that starts on a picked card
   // carries the picked cards (into the fixed zone, or to another place) - while sorting as much as while playing, so a
   // bomb or a run can be swept up and dragged into the fixed zone in one go
-  if(mv&&!mv.active&&!sel.has(mv.id)){
+  if(mv&&!mv.active&&!sel.has(mv.id)&&!testGrouped()){
     if(Math.hypot(e.clientX-mv.x0,e.clientY-mv.y0)<6)return;
     const id=mv.id,on=!sel.has(id);
     mv=null;lastDown=null;
@@ -3506,8 +3509,8 @@ handEl.addEventListener('pointermove',e=>{
     setSel(id,on);
     Sound.play('select');
   }
-  // the test version's groups are made with the 成组 button, not by dragging
-  if(mv){if(!testGrouped())moveCards(e);return}
+  // the test version's groups: dragged onto another group to join it, or onto a gap to make one of their own
+  if(mv){if(testGrouped())testDragMove(e);else moveCards(e);return}
   if(!sweep)return;
   const t=document.elementFromPoint(e.clientX,e.clientY);
   const el=t&&t.closest('#hand .card');if(!el)return;
@@ -3602,6 +3605,7 @@ function dropCards(){
     if(!m.cancel){setSel(m.id,!sel.has(m.id),true);Sound.play('select')}
     return;
   }
+  if(m.test){testDropMine(m);return}
   if(!m.cancel){
     if(m.t==='fix')fixCards(m.ids,m.row);
     else if(m.t!=null){
@@ -3928,8 +3932,8 @@ function enterTest(){
     e.onclick=ev=>{
       const b=ev.target.closest('button[data-a]');
       if(b){if(b.dataset.a==='grp')testCompGroup(p);else testCompReset(p);return}
-      const c=ev.target.closest('.card');if(c)testCompSel(p,+c.dataset.id);
     };
+    testPeekDrag(e,p);
     $('#seat'+p).appendChild(e);
   }
   $('#mebar .whorow').insertAdjacentHTML('beforeend','<span class="mypw" id="myPw"></span>');
@@ -4066,6 +4070,91 @@ function testCompGroup(p){
   G.ua.g[p]=sortGroups(gs,new Map(G.hands[p].map(c=>[c.id,c])),G.L);
   TSEL.ids=new Set();testPeeks();Sound.play('play');
 }
+// cards moved to another group (the one holding target), or to a group of their own (target null); the group they join
+// is laid out the way its combination reads
+function moveInto(groups,ids,target,hand){
+  const gs=groups.map(gr=>gr.filter(id=>!ids.includes(id))).filter(gr=>gr.length);
+  const g=target!=null&&gs.find(gr=>gr.includes(target));
+  if(g)gs[gs.indexOf(g)]=tidyIds(g.concat(ids),hand);else gs.push(tidyIds(ids,hand));
+  return gs;
+}
+const hotOff=root=>root.querySelectorAll('.card.hot').forEach(c=>c.classList.remove('hot'));
+// your own cards follow the pointer; the group under it lights up
+function testDragMove(e){
+  if(!mv.active){
+    if(Math.hypot(e.clientX-mv.x0,e.clientY-mv.y0)<6)return;
+    mv.ids=sel.has(mv.id)&&sel.size>1?orderedHand().filter(c=>sel.has(c.id)).map(c=>c.id):[mv.id];
+    mv.grab=mv.ids.indexOf(mv.id);
+    const L=handEl.getBoundingClientRect(),el=cardEl(mv.id);
+    mv.dx=mv.x0-L.left-parseFloat(el.style.left);mv.dy=mv.y0-L.top-parseFloat(el.style.top);
+    mv.ids.forEach((id,j)=>{const c=cardEl(id);c.classList.add('drag');c.style.zIndex=1000+j;c.style.pointerEvents='none'});
+    mv.active=true;mv.test=true;mv.tid=null;lastDown=null;
+  }
+  const L=handEl.getBoundingClientRect(),cw=cardEl(mv.id).offsetWidth;
+  const x=e.clientX-L.left-mv.dx,y=e.clientY-L.top-mv.dy;
+  mv.ids.forEach((id,j)=>{const c=cardEl(id);c.style.left=x+(j-mv.grab)*cw*.36+'px';c.style.top=y+'px'});
+  const t=document.elementFromPoint(e.clientX,e.clientY),tc=t&&t.closest('#hand .card');
+  const tid=tc&&!mv.ids.includes(+tc.dataset.id)?+tc.dataset.id:null;
+  mv.out=!t||!t.closest('.handwrap');
+  if(tid===mv.tid)return;
+  mv.tid=tid;hotOff(handEl);
+  if(tid!=null)for(const id of G.fixed.find(gr=>gr.includes(tid)))if(!mv.ids.includes(id))cardEl(id).classList.add('hot');
+}
+// dropped on a group: they join it; on a gap in your hand: a group of their own; anywhere else: back where they were
+function testDropMine(m){
+  hotOff(handEl);
+  for(const id of m.ids){const c=cardEl(id);if(c)c.style.pointerEvents=''}
+  if(!m.cancel&&!(m.out&&m.tid==null)){
+    G.fixed=moveInto(G.fixed,m.ids,m.tid,G.hands[0]);
+    G.tgAuto=false;testSortMine();
+    for(const id of m.ids)sel.delete(id);
+    Sound.play('play');
+  }
+  reflowHand();testMine();
+}
+// a computer's cards while sorting: a tap picks a card, a drag carries it (or the picked cards) the same way as yours
+function testPeekDrag(el,p){
+  let d=null;
+  el.addEventListener('pointerdown',e=>{
+    if(G.phase!=='prep')return;
+    const c=e.target.closest('.card');if(!c)return;
+    e.preventDefault();
+    d={id:+c.dataset.id,x0:e.clientX,y0:e.clientY,on:false,tid:null};
+    try{el.setPointerCapture(e.pointerId)}catch(_){}
+  });
+  el.addEventListener('pointermove',e=>{
+    if(!d)return;
+    if(!d.on){
+      if(Math.hypot(e.clientX-d.x0,e.clientY-d.y0)<6)return;
+      d.on=true;
+      d.ids=TSEL.p===p&&TSEL.ids.has(d.id)&&TSEL.ids.size>1?seatGroups(p).flat().filter(id=>TSEL.ids.has(id)):[d.id];
+      const g=document.createElement('div');
+      g.className='tghost';g.style.setProperty('--cw',el.querySelector('.card').offsetWidth+'px');
+      g.innerHTML=`<span class="grp">${d.ids.map(id=>cardHTML(G.hands[p].find(c=>c.id===id),G.L)).join('')}</span>`;
+      document.body.appendChild(g);d.ghost=g;
+      for(const id of d.ids){const c=el.querySelector(`.card[data-id="${id}"]`);if(c)c.style.opacity=.3}
+    }
+    d.ghost.style.left=e.clientX+'px';d.ghost.style.top=e.clientY+'px';
+    const t=document.elementFromPoint(e.clientX,e.clientY),tc=t&&el.contains(t)&&t.closest('.card');
+    const tid=tc&&!d.ids.includes(+tc.dataset.id)?+tc.dataset.id:null;
+    d.out=!t||!el.contains(t);
+    if(tid===d.tid)return;
+    d.tid=tid;hotOff(el);
+    if(tid!=null)for(const id of seatGroups(p).find(gr=>gr.includes(tid)))if(!d.ids.includes(id)){const c=el.querySelector(`.card[data-id="${id}"]`);if(c)c.classList.add('hot')}
+  });
+  const end=cancel=>{
+    if(!d)return;
+    const m=d;d=null;
+    if(m.ghost)m.ghost.remove();
+    if(!m.on){if(!cancel)testCompSel(p,m.id);return}
+    if(cancel||m.out&&m.tid==null){el.dataset.k='';testPeeks();return}
+    if(!G.ua||G.ua.r!==G.round)G.ua={r:G.round,g:{}};
+    G.ua.g[p]=sortGroups(moveInto(seatGroups(p),m.ids,m.tid,G.hands[p]),new Map(G.hands[p].map(c=>[c.id,c])),G.L);
+    TSEL.ids=new Set();testPeeks();Sound.play('play');
+  };
+  el.addEventListener('pointerup',()=>end(false));
+  el.addEventListener('pointercancel',()=>end(true));
+}
 function testCompReset(p){
   if(G.ua&&G.ua.r===G.round)delete G.ua.g[p];
   TSEL.ids=new Set();testPeeks();Sound.play('shuffle');
@@ -4112,7 +4201,7 @@ function testMine(){
   if(G.phase==='play'&&rec&&rec.live&&rec.g===G.round)t=`开局${powerText(rec.myPower)}`+(rec.myPower!==rec.power[0]?`　电脑配牌 ${rec.power[0]}`:'');
   else if(testGrouped()&&G.hands[0].length){
     const mine=scorePower(armScore(myUnits())),pc=handPower(G.hands[0],G.L);
-    t=powerText(mine)+(mine!==pc?`　电脑配牌 ${pc}`:'');
+    t=powerText(mine)+(mine!==pc?`　电脑配牌 ${pc}`:'')+(G.phase==='prep'?'　（拖动牌重新分组，电脑的牌也可以）':'');
   }
   if(el.textContent!==t)el.textContent=t;
 }
@@ -4521,7 +4610,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1028-1209';
+const VERSION='1028-1217';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
