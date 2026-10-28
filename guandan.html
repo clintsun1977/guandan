@@ -542,14 +542,22 @@ body.test #lastPlay{display:none}
   display:flex;flex-wrap:wrap;align-content:flex-start;gap:4px 7px;overflow:hidden}
 .tpb>b{position:absolute;left:8px;top:1px;font-size:11px;line-height:1.2;color:var(--team)}
 .tpl{display:inline-flex;flex-direction:column;align-items:flex-start;opacity:.85;pointer-events:auto;cursor:pointer;border-radius:4px}
-.tpl:hover{outline:2px solid var(--gold);outline-offset:2px}
+.tpl:hover{outline:2px dashed var(--ink);outline-offset:2px}
 .tpl.noted i::after{content:" 评";color:#ffe08a;font-weight:700}
 .tpl i{font-style:normal;font-size:10px;line-height:1.15;color:var(--muted)}
 .tpl.cur{opacity:1}
 .tpl.cur .card{box-shadow:0 0 0 1.5px var(--latest)}
 .tpl.last .card{box-shadow:0 0 0 2.5px var(--latest),0 0 10px var(--latest-glow)}
 .tpl.last i{color:var(--latest);font-weight:700}
+/* the latest play of all: a thick bright orange frame that blinks, so it is found at a glance */
+.tpl.last{outline:4px solid #ff8a00;outline-offset:3px;border-radius:6px;animation:lastBlink .9s ease-in-out infinite}
+.tpl.last i{color:#ffb347}
+@keyframes lastBlink{0%,100%{outline-color:#ff8a00;box-shadow:0 0 18px 4px rgba(255,138,0,.75)}50%{outline-color:rgba(255,138,0,.15);box-shadow:0 0 0 0 rgba(255,138,0,0)}}
 .tpl.rest .grp{outline:2px dashed var(--muted);outline-offset:2px;border-radius:4px}
+.pchip{display:inline-flex;align-items:center;justify-content:center;width:calc(var(--cw)*.8);height:calc(var(--cw)*1.4);
+  border:1.5px dashed var(--muted);border-radius:calc(var(--cw)*.1);font-size:calc(var(--cw)*.36);font-weight:700;color:var(--muted)}
+
+.tlist li.tp.pass .tw{font-weight:400;color:var(--muted)}
 /* a computer's hand can be rearranged while sorting: its cards are picked like yours */
 .peek.edit .card{cursor:pointer}
 .peek .card.sel{transform:translateY(-16%);box-shadow:0 0 0 2.5px var(--latest),0 0 12px 2px var(--latest-glow)}
@@ -1641,7 +1649,8 @@ function startTurn(){
   // a friend's turn: their clock runs here too, and their move arrives as an event
   if(isHumanSeat(p)){G.clock={who:p,left:PLAY_MS,total:PLAY_MS};renderClocks();return}
   // once you are out the computers stop pretending to think so long; only the host's computers actually move
-  const think=active(0)?AI_THINK_MIN+Math.random()*(AI_THINK_MAX-AI_THINK_MIN):400+Math.random()*300;
+  // the test version gives the computer more time, so each play can be followed
+  const think=TEST?(active(0)?1800+Math.random()*700:900+Math.random()*400):active(0)?AI_THINK_MIN+Math.random()*(AI_THINK_MAX-AI_THINK_MIN):400+Math.random()*300;
   G.clock={who:p,left:PLAY_MS,total:PLAY_MS,think:isHost()?think:undefined};
   renderClocks();
 }
@@ -4234,7 +4243,7 @@ function testRoundStart(){
     hands:G.hands.map(h=>h.slice()),power,myGroups:mine,myPower:mine?scorePower(armScore(myUnits())):power[0],userGroups:ug,userPower:up,
     trib:rp?rp.trib:(G.trib||[]).map(t=>`${NAMES[t.g]}进贡 ${cardText(t.tc)} 给${NAMES[t.r]}`+(t.rc?`，${NAMES[t.r]}还 ${cardText(t.rc)}`:'')),
     kang:rp?rp.kang:G.kang?kangHtml(true).replace(/<[^>]+>/g,''):'',
-    log:G.log,result:'',notes:{},nv:0,replayOf:rp?rp.of:null});
+    log:G.log,result:'',notes:{},nk:'all',nv:0,replayOf:rp?rp.of:null});
   testStore();
 }
 function testRoundEnd(){
@@ -4248,9 +4257,17 @@ function testRoundEnd(){
 // kept in this browser (the last 200 rounds), cards by their number in the deck
 const TKEY='guandan-test-records',DECK=makeDeck();
 const recOut=r=>({uid:r.uid,no:r.no,at:r.at,L:r.L,lvlTeam:r.lvlTeam,levels:r.levels,leader:r.leader,hands:r.hands.map(h=>h.map(c=>c.id)),
-  power:r.power,myGroups:r.myGroups,myPower:r.myPower,userGroups:r.userGroups,userPower:r.userPower,trib:r.trib,kang:r.kang,result:r.result,notes:r.notes,replayOf:r.replayOf,
+  power:r.power,myGroups:r.myGroups,myPower:r.myPower,userGroups:r.userGroups,userPower:r.userPower,trib:r.trib,kang:r.kang,result:r.result,notes:r.notes,nk:'all',replayOf:r.replayOf,
   log:r.log.map(e=>({p:e.p,c:e.cards?e.cards.map(c=>c.id):null,lead:e.lead,type:e.type,value:e.value,n:e.n}))});
-const recIn=o=>({...o,nv:0,notes:o.notes||{},userGroups:o.userGroups||{},userPower:o.userPower||{},hands:o.hands.map(h=>h.map(id=>DECK[id])),
+// every turn has its number, a 过 as much as a play; records kept before then numbered the plays alone
+function notesIn(o){
+  if(o.nk==='all'||!o.notes)return o.notes||{};
+  const m={};let c=0;
+  if(o.notes[0]!=null)m[0]=o.notes[0];
+  o.log.forEach((e,i)=>{if(e.c&&o.notes[++c]!=null)m[i+1]=o.notes[c]});
+  return m;
+}
+const recIn=o=>({...o,nv:0,notes:notesIn(o),nk:'all',userGroups:o.userGroups||{},userPower:o.userPower||{},hands:o.hands.map(h=>h.map(id=>DECK[id])),
   log:o.log.map(e=>({p:e.p,cards:e.c?e.c.map(id=>DECK[id]):null,lead:e.lead,type:e.type,value:e.value,n:e.n}))});
 let storeT=0;
 function testStore(){
@@ -4343,7 +4360,12 @@ function testPlays(){
   const key=[G.round,G.log.length,(G.trickPlays||[]).length,(G.rest||[]).length,G.out.length,g.L.width,g.L.height,g.top,g.bottom,g.left,g.near,curRec()?curRec().nv:0].map(Math.round).join('|');
   if(box.dataset.k===key)return;
   box.dataset.k=key;
-  const cur=new Set((G.trickPlays||[]).map(t=>t.play.cards)),plays=G.log.filter(x=>x.cards),last=plays[plays.length-1];
+  // the trick on the table now: from its lead on (none once it has been taken in)
+  let from=Infinity;
+  if((G.trickPlays||[]).length)for(let i=G.log.length-1;i>=0;i--)if(G.log[i].cards&&G.log[i].lead){from=i;break}
+  // the latest cards played (a pass after them does not take the frame away)
+  let last=-1;
+  for(let i=G.log.length-1;i>=0;i--)if(G.log[i].cards){last=i;break}
   const rec=curRec()&&curRec().live&&curRec().g===G.round?curRec():null;
   // your partner's and your own boxes run the width of the table, across its top and bottom; the side players' share the
   // middle between them
@@ -4353,8 +4375,9 @@ function testPlays(){
   box.innerHTML=[0,1,2,3].map(p=>{
     const z=Z[p];
     const rest=(G.rest||[]).find(r=>r.p===p);
-    const items=plays.map((x,i)=>({x,k:i+1})).filter(({x})=>x.p===p).map(({x,k})=>
-      `<span class="tpl${cur.has(x.cards)?' cur':''}${x===last?' last':''}${rec&&rec.notes[k]?' noted':''}" data-k="${k}" title="点一下写评语"><i>${k}</i><span class="grp">${displayOrder(x,G.L).map(c=>cardHTML(c,G.L)).join('')}</span></span>`).join('')+
+    const items=G.log.map((x,i)=>({x,i,k:i+1})).filter(({x})=>x.p===p).map(({x,i,k})=>
+      `<span class="tpl${x.cards?'':' pass'}${i>=from?' cur':''}${i===last?' last':''}${rec&&rec.notes[k]?' noted':''}" data-k="${k}" title="点一下写评语"><i>${k}</i>${
+        x.cards?`<span class="grp">${displayOrder(x,G.L).map(c=>cardHTML(c,G.L)).join('')}</span>`:'<span class="pchip">过</span>'}</span>`).join('')+
       (rest?`<span class="tpl rest"><i>剩牌</i><span class="grp">${rest.cards.map(c=>cardHTML(c,G.L)).join('')}</span></span>`:'');
     return`<div class="tpb ${isRedSeat(p)?'t-red':'t-blue'}" style="left:${z.x0}px;top:${z.y0}px;width:${Math.max(40,z.x1-z.x0)}px;height:${Math.max(30,z.y1-z.y0)}px"><b>${NAMES[p]}</b>${items}</div>`;
   }).join('');
@@ -4370,11 +4393,11 @@ function testPlays(){
 // with the record at once; the game waits meanwhile
 function testNoteEdit(k){
   const rec=curRec();if(!rec||!k)return;
-  const e=rec.log.filter(x=>x.cards)[k-1];if(!e)return;
+  const e=rec.log[k-1];if(!e)return;
   let b=$('#tnbox');
   if(!b){b=document.createElement('div');b.id='tnbox';b.className='tnbox';document.body.appendChild(b)}
-  b.innerHTML=`<h3>第 ${k} 手：${NAMES[e.p]}${e.lead?'领出':'跟'} ${playName(e)} ${displayOrder(e,rec.L).map(cardTag).join('')}</h3>
-    <textarea id="tnText" placeholder="比如：这里应该出…，因为…">${esc(rec.notes[k]||'')}</textarea>
+  b.innerHTML=`<h3>第 ${k} 手：${turnHTML(rec,k)}</h3>
+    <textarea id="tnText" placeholder="${e.cards?'比如：这里应该出…，因为…':'比如：这里不该过，应该出…，因为…'}">${esc(rec.notes[k]||'')}</textarea>
     <div class="btns">${rec.notes[k]?'<button class="btn" id="tnDel">删掉评语</button>':''}<button class="btn" id="tnNo">取消</button><button class="btn primary" id="tnOk">保存</button></div>`;
   b.hidden=false;TV.edit=true;
   const close=()=>{b.hidden=true;TV.edit=false};
@@ -4385,22 +4408,29 @@ function testNoteEdit(k){
   $('#tnText').onkeydown=ev=>{if(ev.key==='Escape')close();else if(ev.key==='Enter'&&(ev.ctrlKey||ev.metaKey))$('#tnOk').click()};
   $('#tnText').focus();
 }
+// the k-th turn in words: who played what, or who passed on what
+function turnHTML(rec,k){
+  const e=rec.log[k-1];
+  if(e.cards)return`${NAMES[e.p]}${e.lead?'领出':'跟'} ${playName(e)} ${displayOrder(e,rec.L).map(cardTag).join('')}`;
+  const t=passedOn(rec,k);
+  return`${NAMES[e.p]} 过${t?`（桌上是${NAMES[t.p]}的${playName(t)} ${displayOrder(t,rec.L).map(cardTag).join('')}）`:''}`;
+}
+// the play on the table when the k-th turn passed
+function passedOn(rec,k){for(let i=k-2;i>=0;i--)if(rec.log[i].cards)return rec.log[i];return null}
 // the record: each play numbered, who played it, leading or following, its comment; the passes and how each trick ended
 // in between; a replayed round starts with how it went the first time
 function recListHTML(rec,on){
-  const out=[];let k=0,last=null,pass=[];
+  const out=[];let last=null;
   const note=k=>rec.notes[k]?`<li class="tnote" data-k="${k}">${k?'评语':'开局评语'}：${esc(rec.notes[k])}</li>`:'';
-  const flush=()=>{if(pass.length)out.push(`<li class="tpass">过：${pass.join('、')}</li>`);pass=[]};
   if(rec.replayOf){const o=TREC.rounds.find(r=>r.no===rec.replayOf);out.push(`<li class="thead">重打第 ${rec.replayOf} 局${o&&o.result?`；原来：${o.result}`:''}</li>`)}
   out.push(note(0));
-  for(const e of rec.log){
-    if(!e.cards){pass.push(NAMES[e.p]);continue}
-    flush();
+  rec.log.forEach((e,i)=>{
+    const k=i+1;
+    if(!e.cards){out.push(`<li class="tp pass${k===on?' on':''}" data-k="${k}"><span class="no">${k}</span><span class="tw">${NAMES[e.p]}</span><span class="lt">过</span><button class="tedit" title="写评语">评</button></li>`,note(k));return}
     if(e.lead&&last!=null)out.push(`<li class="tend">—— ${trickEnd(last,e.p)}</li>`);
-    k++;last=e.p;
+    last=e.p;
     out.push(`<li class="tp${k===on?' on':''}" data-k="${k}"><span class="no">${k}</span><span class="tw">${NAMES[e.p]}</span><span class="lt">${e.lead?'领出':'跟'} ${playName(e)}</span><span class="tc">${displayOrder(e,rec.L).map(cardTag).join('')}</span><button class="tedit" title="写评语">评</button></li>`,note(k));
-  }
-  flush();
+  });
   if(rec.result)out.push(`<li class="thead">${rec.result}</li>`);
   return out.join('');
 }
@@ -4420,7 +4450,7 @@ function testList(){
 // 上一步: the table as it stood after the play before the latest one
 function testBack(){
   const rec=curRec();if(!rec)return;
-  testView(TREC.rounds.length-1,Math.max(0,rec.log.filter(e=>e.cards).length-1),false);
+  testView(TREC.rounds.length-1,Math.max(0,rec.log.length-1),false);
 }
 
 /* the look-back view, over the whole screen; the game waits while it is open */
@@ -4432,7 +4462,7 @@ function testView(ri,step,play){
 }
 function tvClose(){tvPlay(false);TV.open=false;$('#tview').hidden=true}
 const tvRec=()=>TREC.rounds[TV.ri];
-const tvCount=()=>tvRec().log.filter(e=>e.cards).length;
+const tvCount=()=>tvRec().log.length;
 function tvPlay(on){
   clearInterval(TV.timer);TV.play=on;
   if(on){
@@ -4484,9 +4514,7 @@ document.addEventListener('keydown',e=>{
 // the record beside it
 function tvDraw(){
   const rec=tvRec(),L=rec.L,n=tvCount(),k=TV.step=Math.min(TV.step,n);
-  let end=0;
-  for(let i=0,c=0;k&&i<rec.log.length;i++)if(rec.log[i].cards&&++c===k){end=i+1;break}
-  const done=rec.log.slice(0,end),plays=done.filter(e=>e.cards),cur=plays[k-1];
+  const end=k,done=rec.log.slice(0,end),plays=done.filter(e=>e.cards),cur=done[k-1];
   const gone=new Set(plays.flatMap(e=>e.cards.map(c=>c.id)));
   const hands=rec.hands.map(h=>h.filter(c=>!gone.has(c.id)));
   // who has gone out so far, in order
@@ -4504,14 +4532,14 @@ function tvDraw(){
     hands[p].length?`剩 ${hands[p].length} 张`:PLACE[outs.indexOf(p)]||''} · ${pw(p)}</small></div>
     <div class="peek"><div class="prows">${hands[p].length?rowsHTML(recUnits(rec,p,hands[p]),L):''}</div></div></div>`;
   const mid=`<div class="tvmid">${note?`<div class="tvnote">${note}</div>`:''}${trick.map(e=>e.cards?
-    `<div class="tvp${e===cur?' cur':''}"><span class="no">${plays.indexOf(e)+1}</span><span class="tw">${NAMES[e.p]} ${e.lead?'领出':'跟'}</span><span class="grp">${displayOrder(e,L).map(c=>cardHTML(c,L)).join('')}</span><small>${playName(e)}</small></div>`:
-    `<div class="tvp pass"><span class="tw">${NAMES[e.p]}</span>过</div>`).join('')}${
+    `<div class="tvp${e===cur?' cur':''}"><span class="no">${done.indexOf(e)+1}</span><span class="tw">${NAMES[e.p]} ${e.lead?'领出':'跟'}</span><span class="grp">${displayOrder(e,L).map(c=>cardHTML(c,L)).join('')}</span><small>${playName(e)}</small></div>`:
+    `<div class="tvp pass${e===cur?' cur':''}"><span class="no">${done.indexOf(e)+1}</span><span class="tw">${NAMES[e.p]}</span>过</div>`).join('')}${
     k?'':`<div class="tvnote">${NAMES[rec.leader]}先出</div>`}${k===n&&rec.result?`<div class="tvnote">${rec.result}</div>`:''}</div>`;
   const cm=`<div class="tvcm"><label for="tvNote">${k?`对第 ${k} 手的评语`:'对这一局开局（配牌）的评语'}</label>
-      <textarea id="tvNote" rows="2" placeholder="${k?'比如：这里应该出…，因为…':'比如：这手牌应该配成…'}">${esc(rec.notes[k]||'')}</textarea></div>`;
+      <textarea id="tvNote" rows="2" placeholder="${!k?'比如：这手牌应该配成…':cur.cards?'比如：这里应该出…，因为…':'比如：这里不该过，应该出…，因为…'}">${esc(rec.notes[k]||'')}</textarea></div>`;
   const v=$('#tview');
   v.innerHTML=`<div class="tvh">
-      <div class="tvi">${roundName(rec)} · 打 ${rankName(L)}<small>${k?`第 ${k} / ${n} 手：${NAMES[cur.p]}${cur.lead?'领出':'跟'} ${playName(cur)}`:`开局（共 ${n} 手）`}</small></div>
+      <div class="tvi">${roundName(rec)} · 打 ${rankName(L)}<small>${k?`第 ${k} / ${n} 手：${cur.cards?`${NAMES[cur.p]}${cur.lead?'领出':'跟'} ${playName(cur)}`:`${NAMES[cur.p]} 过`}`:`开局（共 ${n} 手）`}</small></div>
       <select id="tvRound" title="看哪一局">${TREC.rounds.map((r,i)=>`<option value="${i}"${i===TV.ri?' selected':''}>${roundName(r)}</option>`).join('')}</select>
       <button class="link" id="tvFirst">开头</button><button class="link" id="tvPrev">上一步</button><button class="link" id="tvNext">下一步</button><button class="link" id="tvLast">最后</button>
       <button class="link${TV.play?' on':''}" id="tvPlay">${TV.play?'暂停':'回放'}</button>
@@ -4548,7 +4576,8 @@ function testReplay(rec){
 // and the result; at the end the same rounds as data, for 导入
 function testText(rounds=TREC.rounds){
   const out=['掼蛋测试版出牌记录',`保存时间：${new Date().toLocaleString()}　页面版本：${VERSION}`,
-    '你和对家一方，下家和上家一方。牌后带 * 的是逢人配（红桃级牌）。[ ] 里是配好的一组一组（电脑的是它的配牌，你的是你理好的牌）。',''];
+    '你和对家一方，下家和上家一方。牌后带 * 的是逢人配（红桃级牌）。[ ] 里是配好的一组一组（电脑的是它的配牌，你的是你理好的牌）。',
+    '每一次轮到谁（出牌或者过）都算一手，按顺序编号。',''];
   for(const r of rounds){
     const ct=c=>cardText(c)+(isWild(c,r.L)?'*':'');
     const shown=(cards,p,grouped)=>(grouped?recUnits(r,p,cards):handUnits(cards,r.L,false)).map(u=>grouped?'['+u.cards.map(ct).join(' ')+']':u.cards.map(ct).join(' ')).join(grouped?' ':'  ');
@@ -4566,20 +4595,23 @@ function testText(rounds=TREC.rounds){
     if(r.notes[0])out.push(`  开局评语：${r.notes[0]}`);
     out.push('','出牌：');
     const hands=r.hands.map(h=>h.slice());
-    let k=0,last=null,pass=[];
-    const flush=()=>{if(pass.length)out.push(`         过：${pass.join('、')}`);pass=[]};
-    for(const e of r.log){
-      if(!e.cards){pass.push(NAMES[e.p]);continue}
-      flush();
-      if(e.lead&&last!=null)out.push(`         —— ${trickEnd(last,e.p)}`);
-      k++;last=e.p;
-      out.push(`  ${String(k).padStart(3)}. ${NAMES[e.p]} ${e.lead?'领出':'跟　'} ${playName(e)}：${displayOrder(e,r.L).map(ct).join(' ')}`);
-      if(e.p!==0)out.push(`         （出牌前的配牌：${shown(hands[e.p],e.p,true)}）`);
+    let last=null;
+    r.log.forEach((e,i)=>{
+      const k=i+1,no=`  ${String(k).padStart(3)}. `;
+      if(!e.cards){
+        const t=passedOn(r,k);
+        out.push(`${no}${NAMES[e.p]} 过${t?`（桌上是${NAMES[t.p]}的${playName(t)}：${displayOrder(t,r.L).map(ct).join(' ')}）`:''}`);
+        if(e.p!==0)out.push(`         （当时的配牌：${shown(hands[e.p],e.p,true)}）`);
+      }else{
+        if(e.lead&&last!=null)out.push(`         —— ${trickEnd(last,e.p)}`);
+        last=e.p;
+        out.push(`${no}${NAMES[e.p]} ${e.lead?'领出':'跟　'} ${playName(e)}：${displayOrder(e,r.L).map(ct).join(' ')}`);
+        if(e.p!==0)out.push(`         （出牌前的配牌：${shown(hands[e.p],e.p,true)}）`);
+        const ids=new Set(e.cards.map(c=>c.id));
+        hands[e.p]=hands[e.p].filter(c=>!ids.has(c.id));
+      }
       if(r.notes[k])out.push(`         【评语】${r.notes[k]}`);
-      const ids=new Set(e.cards.map(c=>c.id));
-      hands[e.p]=hands[e.p].filter(c=>!ids.has(c.id));
-    }
-    flush();
+    });
     for(const p of [0,1,2,3])if(hands[p].length&&r.result)out.push(`  剩牌：${NAMES[p]}　${shown(hands[p],0,false)}`);
     out.push('',r.result?'结果：'+r.result:'（这一局没打完）','');
   }
