@@ -529,10 +529,33 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   transition:transform .85s cubic-bezier(.45,0,.2,1),opacity .3s}
 .fx-canvas{position:fixed;inset:0;z-index:89;pointer-events:none}
 .fx-stamp.kang{font-size:46px;color:var(--gold);border-color:var(--gold);animation-duration:3.2s}
-/* the match is won: a large gold banner across the table */
-.fx-banner{font-family:var(--font-display);font-weight:900;font-size:clamp(40px,7vw,80px);letter-spacing:.16em;padding:10px 30px 10px 42px;color:var(--on-gold);
-  background:linear-gradient(180deg,#f3d27a,var(--gold));border-radius:16px;box-shadow:0 0 0 3px var(--felt-deep),0 0 0 6px var(--gold),0 0 60px var(--gold);animation:bannerIn 3.9s cubic-bezier(.2,.9,.3,1.2) forwards}
-@keyframes bannerIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-8deg)}12%{opacity:1;transform:translate(-50%,-50%) scale(1.12) rotate(2deg)}20%{transform:translate(-50%,-50%) scale(1) rotate(0)}88%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.04)}}
+/* the whole match is won (A passed): twelve seconds of celebration, three times a round's - light rays turning behind
+   a large gold banner that glows and pulses, fireworks all over the screen and confetti raining down */
+.fx-rays{position:fixed;inset:0;z-index:88;pointer-events:none;overflow:hidden;
+  background:radial-gradient(circle at 50% 42%,rgba(255,214,110,.3),rgba(8,22,17,.55) 70%);animation:raysFade 12s ease-in-out forwards}
+.fx-rays::before{content:"";position:absolute;left:50%;top:42%;width:240vmax;height:240vmax;margin:-120vmax 0 0 -120vmax;
+  background:repeating-conic-gradient(rgba(255,226,140,.24) 0deg 7deg,transparent 7deg 18deg);animation:raysTurn 30s linear infinite;
+  -webkit-mask:radial-gradient(circle,#000 0,transparent 40%);mask:radial-gradient(circle,#000 0,transparent 40%)}
+@keyframes raysTurn{to{transform:rotate(360deg)}}
+@keyframes raysFade{0%{opacity:0}6%{opacity:1}92%{opacity:1}100%{opacity:0}}
+.fx-champ{display:flex;flex-direction:column;align-items:center;gap:12px;animation:champIn 12s cubic-bezier(.2,.9,.3,1.2) forwards}
+.fx-champ b{font-family:var(--font-display);font-weight:900;font-size:clamp(34px,8.5vw,104px);letter-spacing:.16em;padding:10px 34px 10px 50px;color:var(--on-gold);
+  background:linear-gradient(180deg,#fbe7a6,var(--gold) 60%,#c99a3a);border-radius:18px;
+  box-shadow:0 0 0 3px var(--felt-deep),0 0 0 6px var(--gold),0 0 60px var(--gold);animation:champGlow 1.1s ease-in-out infinite}
+.fx-champ small{font-family:var(--font-display);font-weight:900;font-size:clamp(20px,2.8vw,32px);letter-spacing:.3em;padding-left:.3em;color:#ffe08a;
+  text-shadow:0 0 14px var(--gold),0 2px 6px rgba(0,0,0,.6)}
+.fx-champ i{font-style:normal;font-size:14px;letter-spacing:.1em;color:var(--ink);opacity:.7}
+@keyframes champIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-10deg)}5%{opacity:1;transform:translate(-50%,-50%) scale(1.15) rotate(3deg)}
+  9%{transform:translate(-50%,-50%) scale(1) rotate(0)}94%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)}}
+/* the whole match is lost: the same twelve seconds, gloomy - the table greys out under a dark sky and falling rain,
+   a grey banner drops in and sags, tears run by your and your partner's plates and the sad trombone plays */
+.fx-dusk{position:fixed;inset:0;z-index:88;pointer-events:none;background:linear-gradient(180deg,rgba(8,14,22,.8),rgba(18,28,38,.45));animation:raysFade 12s ease-in-out forwards}
+.fx-champ.lost{animation:lostIn 12s cubic-bezier(.3,1.3,.5,1) forwards}
+.fx-champ.lost b{color:#e8edf2;background:linear-gradient(180deg,#8796a3,#4d5965);box-shadow:0 0 0 3px var(--felt-deep),0 0 0 6px #8b98a5,0 12px 40px rgba(0,0,0,.6);animation:none}
+.fx-champ.lost small{color:#b9c6d2;text-shadow:0 2px 6px rgba(0,0,0,.7)}
+@keyframes lostIn{0%{opacity:0;transform:translate(-50%,-170%)}7%{opacity:1;transform:translate(-50%,-50%) rotate(0)}12%{transform:translate(-50%,-50%) rotate(0)}
+  18%{transform:translate(-50%,-50%) rotate(-4deg)}94%{opacity:1;transform:translate(-50%,-50%) rotate(-4deg)}100%{opacity:0;transform:translate(-50%,-38%) rotate(-6deg)}}
+@keyframes champGlow{50%{box-shadow:0 0 0 3px var(--felt-deep),0 0 0 6px #fff3c4,0 0 120px #ffd56e;filter:brightness(1.12)}}
 .gloom{filter:grayscale(1) brightness(.7);transition:filter .6s}
 /* on a computer the header gives its row back to the table: the name and the two sides' levels sit in the
    top-left corner and the sound / rules / new-game buttons in the top-right, both over the felt */
@@ -2151,7 +2174,7 @@ function finishRound(){
   // and whoever is caught with cards left lays them face up on the table for everyone to see
   for(let k=k0;k<4;k++)later(()=>{G.reveal=k+1;render();celebrate(G.out[k],k,dbl);showRest(G.out[k])},END_SHOW_MS+700+(k-k0)*500);
   later(()=>{
-    if(win){victory(team);later(showResult,4000)}
+    if(win)victory(team,showResult);
     else if(draw){Sound.play('ding');showResult()}
     else{Sound.play(team===0?'win':'lose');showResult()}
   },END_SHOW_MS+700+(4-k0)*500+1400);
@@ -2299,6 +2322,8 @@ function applyEvt(e){
       return true;
     }
     case'pause':
+      // only the player who paused can resume, and a game already paused is not paused again by someone else
+      if(G.paused&&G.pausedBy!==p)return true;
       setPaused(!!e.on,p);return true;
     case'humans':
       setHumans(e.list.map(toLocal),e.names);
@@ -2333,6 +2358,7 @@ function setHumans(list,names){
   if(names)for(const a in names){const l=toLocal(+a);if(l!==0&&NET.humans.has(l))NAMES[l]=names[a]}
   for(let q=1;q<4;q++)$('#seat'+q+' .name').textContent=NAMES[q];
   VC.prune();
+  if(G&&G.paused&&!NET.humans.has(G.pausedBy))setPaused(false);
   if(G)render();
 }
 
@@ -2674,7 +2700,7 @@ if(document.fonts)document.fonts.ready.then(()=>centerRank());
 // a seat's side colour, from the direction you sit at: north and south red, east and west blue
 const isRedSeat=p=>(DIRS.indexOf(myDir||'S')+p)%2===0;
 function render(){
-  $('#pauseBtn').textContent=G.paused?'继续':'暂停';$('#pauseBtn').classList.toggle('on',!!G.paused);
+  syncPauseBtn();
   for(let p=0;p<4;p++){const el=p===0?$('#mebar'):$('#seat'+p);el.classList.toggle('t-red',isRedSeat(p));el.classList.toggle('t-blue',!isRedSeat(p))}
   $('#lv0').textContent=rankName(G.levels[0]);
   $('#lv1').textContent=rankName(G.levels[1]);
@@ -3523,6 +3549,7 @@ function fxEl(cls,text,x,y){
   return e;
 }
 // a throwaway full-screen canvas running one particle effect
+let fxCut=0;
 function particles(spawn,step,ms){
   if(reduceMotion())return;
   const cv=document.createElement('canvas');
@@ -3530,6 +3557,7 @@ function particles(spawn,step,ms){
   document.body.appendChild(cv);
   const cx=cv.getContext('2d'),ps=[],t0=performance.now();
   const frame=t=>{
+    if(fxCut>t0){cv.remove();return}
     const age=t-t0;
     spawn(ps,age);
     cx.clearRect(0,0,cv.width,cv.height);
@@ -3555,15 +3583,15 @@ function confetti(x,y){
     return p.life>0&&p.y<innerHeight+20;
   },400);
 }
-// rockets rise from the bottom of the screen and burst over the given spots
-function fireworks(spots){
+// rockets rise from the bottom of the screen and burst over the given spots, one every gap ms or so for ms
+function fireworks(spots,ms=3000,gap=240){
   const css=getComputedStyle(document.documentElement);
   const cols=['--gold','--latest','--red','--card','--warn'].map(v=>css.getPropertyValue(v).trim());
   let all=null,next=0,n=0;
   particles((ps,age)=>{
     all=ps;
-    if(age>3000||age<next)return;
-    next=age+240+Math.random()*220;
+    if(age>ms||age<next)return;
+    next=age+gap+Math.random()*gap*.9;
     const s=spots[n++%spots.length];
     const x=Math.min(innerWidth-40,Math.max(40,s.x+(Math.random()-.5)*innerWidth*.4));
     const ty=Math.max(50,Math.min(s.y,innerHeight*.6)-80-Math.random()*innerHeight*.25);
@@ -3581,14 +3609,68 @@ function fireworks(spots){
     cx.globalAlpha=Math.max(0,p.life);cx.fillStyle=p.c;
     cx.beginPath();cx.arc(p.x,p.y,2.4,0,Math.PI*2);cx.fill();cx.globalAlpha=1;
     return p.life>0;
-  },3000);
+  },ms);
 }
-// the match is won: fireworks over the winning pair, a banner across the table and a victory tune
-function victory(team){
-  Sound.play('victory');
-  const m=$('#table').getBoundingClientRect();
-  fxEl('fx-banner',`${team===0?'我方':'对方'}赢得全场`,m.left+m.width/2,m.top+m.height*.42);
-  fireworks([team,team+2].map(seatPoint));
+// rain slanting down the whole screen, for ms
+function rain(ms){
+  particles((ps,age)=>{
+    if(age>ms)return;
+    for(let i=0;i<5;i++)ps.push({x:Math.random()*(innerWidth+200),y:-30,v:11+Math.random()*7,l:14+Math.random()*14,a:.25+Math.random()*.35})
+  },(cx,p)=>{
+    p.x-=p.v*.18;p.y+=p.v;
+    cx.strokeStyle=`rgba(160,195,230,${p.a})`;cx.lineWidth=1.4;
+    cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x+p.l*.18,p.y-p.l);cx.stroke();
+    return p.y<innerHeight+30;
+  },ms);
+}
+// confetti falling from the top of the screen, swaying, for ms
+function confettiRain(ms){
+  const css=getComputedStyle(document.documentElement);
+  const cols=['--gold','--latest','--red','--card','--warn'].map(v=>css.getPropertyValue(v).trim());
+  particles((ps,age)=>{
+    if(age>ms)return;
+    for(let i=0;i<3;i++)ps.push({x:Math.random()*innerWidth,y:-10,vx:(Math.random()-.5)*1.5,vy:1.5+Math.random()*2.5,r:Math.random()*6,vr:(Math.random()-.5)*.3,
+      w:6+Math.random()*6,h:4+Math.random()*5,c:cols[(Math.random()*cols.length)|0],ph:Math.random()*6})
+  },(cx,p,age)=>{
+    p.vy=Math.min(p.vy+.02,4.5);p.x+=p.vx+Math.sin(age/300+p.ph)*.8;p.y+=p.vy;p.r+=p.vr;
+    cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;
+    cx.fillRect(-p.w/2,-p.h/2,p.w,p.h*Math.abs(Math.cos(p.r*2)));cx.restore();
+    return p.y<innerHeight+20;
+  },ms);
+}
+// the match is over (A passed): twelve seconds, three times as long as a round's. The winners celebrate - light rays
+// turning behind a large gold banner, fireworks all over the screen, confetti raining down and the victory call three
+// times; the losers mourn - the table greys out under rain, a grey banner sags, tears run and the sad trombone plays.
+// A tap anywhere skips to the result; done (showing the result) runs once either way, unless the game has moved on
+const VICTORY_MS=12000;
+function victory(team,done){
+  const won=team===0,m=$('#table').getBoundingClientRect(),tok=G.tok;
+  const bg=document.createElement('div');bg.className=won?'fx-rays':'fx-dusk';document.body.appendChild(bg);
+  const b=document.createElement('div');b.className='fx fx-champ'+(won?'':' lost');
+  b.innerHTML=won?'<b>全场胜利</b><small>打 A 过关</small><i>点任意处看结果</i>':'<b>惜败</b><small>下一场再来</small><i>点任意处看结果</i>';
+  b.style.left=m.left+m.width/2+'px';b.style.top=m.top+m.height*.42+'px';document.body.appendChild(b);
+  let over=false;
+  const at=(ms,fn)=>setTimeout(()=>{if(!over)fn()},ms);
+  if(won){
+    Sound.play('victory');at(4000,()=>Sound.play('fanfare'));at(7500,()=>Sound.play('victory'));
+    const W=innerWidth,H=innerHeight;
+    fireworks([...[team,team+2].map(seatPoint),{x:W*.2,y:H*.3},{x:W*.5,y:H*.2},{x:W*.8,y:H*.3}],VICTORY_MS-1500,150);
+    confettiRain(VICTORY_MS-2000);
+  }else{
+    Sound.play('sad');at(4500,()=>Sound.play('lose'));at(8000,()=>Sound.play('sad'));
+    $('#app').classList.add('gloom');
+    rain(VICTORY_MS-1500);
+    at(700,()=>cryAt(0));at(1500,()=>cryAt(2));at(6000,()=>{cryAt(0);cryAt(2)});
+  }
+  const end=()=>{
+    if(over)return;over=true;
+    fxCut=performance.now();bg.remove();b.remove();$('#app').classList.remove('gloom');
+    removeEventListener('pointerdown',end,true);
+    if(G.tok===tok)done();
+  };
+  // the tap that finished the round is not taken as a skip
+  at(800,()=>addEventListener('pointerdown',end,true));
+  setTimeout(end,VICTORY_MS);
 }
 // a crying face pops up by the seat and sobs: tears stream down its cheeks and drip off, splashing where they land
 function tears(x,y,ground){
@@ -3684,11 +3766,17 @@ function placePoint(p){
   if(p===3){const a=R('#seat3 .whorow');return{x:a.right+48,y:a.top+a.height/2}}
   const a=R('#seat1 .whorow');return{x:a.left-48,y:a.top+a.height/2};
 }
+// a crying face by a seat: above the plate, or beside it for the player across the table (no room above)
+function cryAt(p){
+  const seat=p===0?$('.meinfo'):$('#seat'+p+' .who');
+  const sr=seat&&seat.getBoundingClientRect(),pt=sr?{x:sr.left+sr.width/2,y:sr.top+sr.height/2}:seatPoint(p);
+  if(p===2&&sr)tears(sr.right+52,sr.top+sr.height/2,sr.bottom+70);
+  else tears(pt.x,Math.max(56,pt.y-92),pt.y+28);
+}
 // the place label itself lands on the player's plate (see .place), so this adds only sound and effects
 // dbl: the round ended in a double-down, so third place is rained on as well as last
 function celebrate(p,place,dbl){
   const seat=p===0?$('.meinfo'):$('#seat'+p+' .who');
-  const sr=seat&&seat.getBoundingClientRect(),pt=sr?{x:sr.left+sr.width/2,y:sr.top+sr.height/2}:seatPoint(p);
   if(place===0){
     Sound.play('fanfare');
     const q=placePoint(p);
@@ -3698,9 +3786,7 @@ function celebrate(p,place,dbl){
   }else{
     // the sad trombone only when it hurts: your side was double-downed (the other side took first and second)
     if(place===3&&dbl&&p%2===0&&G.out[0]%2===1)Sound.play('sad');
-    // a crying face by the seat: above the plate, or beside it for the player across the table (no room above)
-    if(p===2&&sr)tears(sr.right+52,sr.top+sr.height/2,sr.bottom+70);
-    else tears(pt.x,Math.max(56,pt.y-92),pt.y+28);
+    cryAt(p);
     if(seat&&!reduceMotion()){
       seat.classList.add('gloom');
       setTimeout(()=>seat.classList.remove('gloom'),2600);
@@ -3780,28 +3866,35 @@ function showRules(){
   $('#closeBtn').focus();
 }
 // leaving the table, after a confirmation; the others are told and can carry on with the computer in that seat
-// pausing: the turn clocks, the computer players' thinking and the sorting minute all stop until someone resumes
+// pausing: the turn clocks, the computer players' thinking and the sorting minute all stop until the player who
+// paused resumes (G.pausedBy, a local seat); the others can only wait or leave the game
 function setPaused(on,by){
-  G.paused=on;
-  $('#pauseBtn').textContent=on?'继续':'暂停';
-  $('#pauseBtn').classList.toggle('on',on);
+  G.paused=on;G.pausedBy=on?by:null;
+  syncPauseBtn();
   if(on){
-    showPanel(`<h2>暂停中</h2><p class="muted">${by===0?'你':NAMES[by]}暂停了游戏，大家休息一下。</p>
-      <div class="btns"><button class="btn primary" id="resumeBtn">继续游戏</button></div>`);
+    const mine=by===0;
+    showPanel(`<h2>暂停中</h2><p class="muted">${mine?'你暂停了游戏，大家休息一下。':`${NAMES[by]}暂停了游戏，只有暂停的人能继续。你可以等一等，也可以退出游戏。`}</p>
+      <div class="btns">${mine?'<button class="btn primary" id="resumeBtn">继续游戏</button>':'<button class="btn" id="pauseQuit">退出游戏</button>'}</div>`);
     $('#panel').dataset.kind='pause';
-    $('#resumeBtn').onclick=()=>act({k:'pause',on:false,p:toAbs(0)});
-    $('#resumeBtn').focus();
+    if(mine){$('#resumeBtn').onclick=()=>act({k:'pause',on:false,p:toAbs(0)});$('#resumeBtn').focus()}
+    else $('#pauseQuit').onclick=askQuit;
   }else if(!$('#overlay').hidden&&$('#panel').dataset.kind==='pause'){
     hideOverlay();
     if(G.phase==='roundEnd'||G.phase==='over')showResult();
   }
 }
+// 暂停 / 继续: while someone else has paused, the button only says so and cannot be pressed
+function syncPauseBtn(){
+  const b=$('#pauseBtn'),other=!!G&&!!G.paused&&G.pausedBy!==0;
+  b.textContent=G&&G.paused?other?'暂停中':'继续':'暂停';
+  b.classList.toggle('on',!!G&&!!G.paused);b.disabled=other;
+}
 function askQuit(){
   const why=NET.mode==='host'?'你是房主，退出后其他玩家可以选择和电脑继续打。':NET.mode==='guest'?'你的座位会交给电脑接着打。':TEST?'出牌记录不会保存，要留着请先点“保存记录”。':'这一场的级数和牌都不会保存。';
   showPanel(`<h2>退出游戏？</h2><p class="muted">${why}</p>
-  <div class="btns"><button class="btn" id="stayBtn">继续打</button>${TEST?'<button class="btn" id="quitSave">保存记录</button>':''}<button class="btn primary" id="quitYes">退出</button></div>`);
+  <div class="btns"><button class="btn" id="stayBtn">${G&&G.paused?'返回':'继续打'}</button>${TEST?'<button class="btn" id="quitSave">保存记录</button>':''}<button class="btn primary" id="quitYes">退出</button></div>`);
   if(TEST)$('#quitSave').onclick=testSave;
-  $('#stayBtn').onclick=()=>{hideOverlay();if(G.phase==='roundEnd'||G.phase==='over')showResult()};
+  $('#stayBtn').onclick=()=>{hideOverlay();if(G.paused)setPaused(true,G.pausedBy);else if(G.phase==='roundEnd'||G.phase==='over')showResult()};
   $('#quitYes').onclick=quitGame;
   $('#stayBtn').focus();
 }
@@ -4117,7 +4210,7 @@ for(const ev of ['pointerdown','pointerup','touchend','click','keydown'])documen
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)Sound.wake()});
 $('#quitBtn').onclick=askQuit;
 $('#micBtn').onclick=()=>VC.toggle();
-$('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start')act({k:'pause',on:!G.paused,p:toAbs(0)})};
+$('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start'&&!(G.paused&&G.pausedBy!==0))act({k:'pause',on:!G.paused,p:toAbs(0)})};
 function clearPicked(){if(sel.size){sel=new Set();hintIdx=0;sfIdx=0;renderHand()}}
 $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;clearPicked()});
 // so does a tap on the empty space around your name and under the hand (the hand itself is handled on pointerdown,
@@ -5264,7 +5357,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1029-1431';
+const VERSION='1029-1513';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -5453,7 +5546,8 @@ function hostGuestAct(seat,e){
     case'next':if(e.p!==seat)return false;break;
     case'shuffle':if(G.shuffler!==seat)return false;break;
     case'cut':if(G.cutter!==seat)return false;break;
-    case'pass':case'return':case'ready':case'pause':if(e.p!==seat)return false;break;
+    case'pass':case'return':case'ready':if(e.p!==seat)return false;break;
+    case'pause':if(e.p!==seat||(G.paused&&G.pausedBy!==seat))return false;break;
     case'tribute':if(e.p!==seat||G.phase!=='tribPick'||!tribOptions(seat).some(c=>c.id===e.id))return false;break;
     case'play':{
       if(e.p!==seat||G.phase!=='play'||G.turn!==seat)return false;
