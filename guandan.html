@@ -525,6 +525,32 @@ body.test #app{max-width:none;margin:0}
 body.test #fanBtn,body.test #rowsBtn{display:none}
 #tsBtn,#fsBtn{display:none}
 body.test #tsBtn{display:inline-flex}
+.tcb{font:inherit;font-size:12px;font-weight:700;line-height:1;color:var(--gold);background:none;border:1px solid var(--gold);border-radius:999px;padding:3px 7px;cursor:pointer;white-space:nowrap}
+.tcb.on{color:var(--on-gold);background:var(--gold)}
+/* the card counter: a small table over the table, moved by its title bar */
+.tcount{position:fixed;z-index:35;left:16px;top:120px;width:min(520px,calc(100vw - 32px));max-height:70vh;overflow:auto;--cw:26px;padding:8px 10px;border-radius:10px;background:var(--felt-deep);
+  border:1px solid var(--line-strong);box-shadow:0 10px 30px rgba(0,0,0,.5);color:var(--ink);font-size:13px}
+.tcount h3{margin:0 0 6px;font-size:14px;cursor:move;user-select:none;-webkit-user-select:none;touch-action:none;display:flex;justify-content:space-between;gap:12px}
+.tcount h3 button{font:inherit;font-size:12px;color:var(--muted);background:none;border:1px solid var(--line-strong);border-radius:999px;padding:0 8px;cursor:pointer}
+.tcount table{border-collapse:collapse}
+.tcount th,.tcount td{border:1px solid var(--line);padding:2px 3px;text-align:center;line-height:1.25;font-size:12px}
+.tcount td{max-width:4.4em;word-break:break-all}
+.tcount th{white-space:nowrap}
+.tcount th{color:var(--gold);font-weight:700}
+.tcount td.nm{font-weight:700;text-align:left}
+.tcount td .r{color:var(--red)}
+.tcount tr.left td{background:rgba(221,176,80,.12);font-weight:700}
+.tcount tr.left td small{display:block;font-weight:400;font-size:10px;color:var(--muted);letter-spacing:-.05em}
+.tcount .tcv{display:flex;gap:6px;margin-bottom:6px}
+.tcount .tcv span{padding:1px 8px;border-radius:999px;border:1px solid var(--line-strong);color:var(--muted);font-size:12px}
+.tcount .tcv span.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
+.tcount .tcr{display:flex;align-items:flex-start;gap:8px;padding:4px 0;border-top:1px dashed var(--line)}
+.tcount .tcr>b{min-width:3.6em;color:var(--gold);font-size:13px;padding-top:4px}
+.tcount .tcr>div{display:flex;flex-wrap:wrap;gap:4px 8px}
+.tcount .tcr .tcp{display:inline-flex;flex-direction:column;align-items:flex-start}
+.tcount .tcr .tcp i{font-style:normal;font-size:10px;color:var(--muted);line-height:1.1}
+.tcount .tcr .cn{font-size:11px;color:var(--muted);align-self:flex-end}
+.tcount .tcsum{font-size:12px;color:var(--muted);margin-top:4px}
 body.test #tsBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 body.test.fsok #fsBtn{display:inline-flex}
 body.test.fsok:not(.fs) #fsBtn{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
@@ -574,6 +600,14 @@ body.test #lastPlay{display:none}
 .peek.edit .card{cursor:pointer}
 .peek .card.sel{transform:translateY(-16%);box-shadow:0 0 0 2.5px var(--latest),0 0 12px 2px var(--latest-glow)}
 .pwb{display:inline-flex;gap:4px;margin-left:8px;vertical-align:middle}
+/* the sorting buttons of all four hands, one size */
+.tgrp{display:inline-flex;flex-direction:column;gap:4px;margin-left:10px;align-self:center;flex:none;position:relative;z-index:200}
+.tgrp.low{align-self:flex-end;margin-bottom:-4px}
+.tgbtn,body.test #fixBtn{font:inherit;font-size:15px;font-weight:700;min-width:4.4em;padding:5px 12px;border-radius:999px;cursor:pointer;
+  color:var(--gold);background:var(--felt-deep);border:1.5px solid var(--gold);line-height:1.2;text-align:center}
+.tgbtn.on,body.test #fixBtn:not(:disabled){color:var(--on-gold);background:var(--gold);box-shadow:0 0 12px rgba(221,176,80,.5)}
+body.test #fixBtn:disabled{opacity:.45}
+body.test #fixBtn{position:absolute;margin:0;z-index:7}
 .peek.edit{touch-action:none;user-select:none;-webkit-user-select:none}
 #hand .card.hot,.peek .card.hot{box-shadow:0 0 0 3px var(--gold),0 0 14px var(--gold)}
 .tghost{position:fixed;left:0;top:0;z-index:200;pointer-events:none;transform:translate(-50%,-60%) rotate(-3deg);filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
@@ -1159,6 +1193,21 @@ function outside(p){
   const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
   const plays=genPlays(makeDeck().filter(c=>!gone.has(c.id)),G.L);
   return{plays,topBomb:plays.filter(isBomb).reduce((m,x)=>Math.max(m,power(x)),0)};
+}
+// the card counter: every card each player has played, rank by rank (the level card counted as its own rank, wild cards
+// among it), and what is still out; two decks, so 8 of each rank and 2 of each joker
+const TALLY_RANKS=L=>[17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2].filter(k=>k!==L);
+const tallyKey=(c,L)=>c.r>=16?c.r:c.r===L?15:c.r;
+function tallyPlayed(log,L){
+  const per=[{},{},{},{}];
+  for(const e of log)if(e.cards)for(const c of e.cards){const k=tallyKey(c,L);(per[e.p][k]||(per[e.p][k]=[])).push(c)}
+  return per;
+}
+// the cards of one rank still out (not played by anyone)
+function tallyLeft(log,L,k){
+  const gone=new Set();
+  for(const e of log)if(e.cards)for(const c of e.cards)gone.add(c.id);
+  return makeDeck().filter(c=>tallyKey(c,L)===k&&!gone.has(c.id));
 }
 // nobody can beat it: for a bomb, no bigger bomb is left; otherwise nothing but a bomb can
 const isTop=(pl,o)=>isBomb(pl)?power(pl)>o.topBomb:!o.plays.some(x=>!isBomb(x)&&beats(x,pl));
@@ -2790,11 +2839,13 @@ function drawFixZone(g){
   const on=!!g;
   z.hidden=t.hidden=$('#fixBtn').hidden=!on;
   if(!on)return;
-  // the test version's groups need no frame: its 成组 button stands at the hand's bottom left
+  // the test version's groups need no frame: its 成组 button stands just right of the first row of cards, like the
+  // computer's
   if(g.test){
     z.hidden=t.hidden=true;
     const b=$('#fixBtn'),tb=b.parentNode;
-    if(sideBtns()){b.style.left=handEl.offsetLeft-tb.offsetLeft+'px';b.style.top=handEl.offsetTop+handEl.offsetHeight-b.offsetHeight-tb.offsetTop+'px'}
+    b.style.left=handEl.offsetLeft+g.row1+10-tb.offsetLeft+'px';
+    b.style.top=handEl.offsetTop+g.lift+(g.ch-b.offsetHeight)/2-tb.offsetTop+'px';
     return;
   }
   const L=handEl.offsetLeft,T=handEl.offsetTop;
@@ -3559,7 +3610,7 @@ function showResult(){
   }
   showPanel(`<h2>${head}</h2>${body}
     ${waitHtml()}
-    ${TEST?'<p class="muted">点桌上的任意一手牌可以写评语；写完了点“生成记录交给 Claude”。</p>':''}
+    ${TEST?'<p class="muted">点桌上的任意一手牌，回到当时所有人的牌，可以接着写评语；写完了点“生成记录交给 Claude”。</p>':''}
     <div class="btns">${TEST?'<button class="btn" id="replayBtn">回放</button><button class="btn" id="doneBtn">生成记录交给 Claude</button>':''}${nextBtnHtml()}</div>`,true);
   $('#panel').dataset.kind='result';
   if(TEST){$('#replayBtn').onclick=()=>testView(TREC.rounds.length-1,0,true);$('#doneBtn').onclick=testFinish}
@@ -4142,8 +4193,19 @@ function enterTest(){
   $('#tsDone').onclick=testFinish;
   $('#tsClose').onclick=()=>{s.classList.remove('open');$('#tsBtn').classList.remove('on')};
   // a play in the middle of the table: tap it to write its comment
-  $('#table').addEventListener('click',e=>{const t=e.target.closest('#tplays .tq[data-k]');if(t)testNoteEdit(+t.dataset.k)});
+  // once the round is over: back to the table as it stood after that play, every hand as it was, to finish the comments
+  $('#table').addEventListener('click',e=>{
+    const t=e.target.closest('#tplays .tq[data-k]');if(!t)return;
+    if(['roundEnd','over'].includes(G.phase)&&TREC.rounds.length)testView(TREC.rounds.length-1,+t.dataset.k,false);
+    else testNoteEdit(+t.dataset.k);
+  });
   testDbLoad();
+  // a 记牌器 button beside each name
+  for(let q=0;q<4;q++){
+    const at=q?$('#seat'+q+' .name'):$('#myName');
+    at.insertAdjacentHTML('afterend',`<button class="tcb" data-p="${q}" title="点一下看他出的每一手，再点看他出过的所有牌，再点看他眼里外面还剩的牌">记牌器</button>`);
+  }
+  document.addEventListener('click',e=>{const b=e.target.closest('.tcb[data-p]');if(b){e.stopPropagation();testCounterNext(+b.dataset.p)}});
   $('#tsBtn').onclick=()=>{s.classList.toggle('open');$('#tsBtn').classList.toggle('on',s.classList.contains('open'));$('#tsList').dataset.k='';testList()};
   document.body.classList.toggle('fsok',!!(document.fullscreenEnabled||document.webkitFullscreenEnabled));
   $('#fsBtn').onclick=testFull;
@@ -4381,12 +4443,15 @@ function testGeo(){
   const el=$('#hand'),probe=el.firstElementChild,W=el.clientWidth,cw=probe.offsetWidth,ch=probe.offsetHeight;
   const rows=rowsOf(G.fixed.map(gr=>({cards:gr})));
   const off=cw*.42,gap=cw*.22,lift=Math.round(ch*.22),rowGap=Math.round(ch*ROW_STEP),fix=new Map();
+  let row1=0;
   rows.forEach((r,i)=>{
     const w=r.reduce((s,u)=>s+cw+off*(u.cards.length-1),0)+gap*(r.length-1);
     let x=Math.max(0,(W-w)/2);
     for(const u of r){u.cards.forEach((id,j)=>fix.set(id,{x:x+j*off,y:lift+i*rowGap,rot:0}));x+=cw+off*(u.cards.length-1)+gap}
+    if(!i)row1=x-gap;
   });
-  return{test:true,slots:[],fix,fixTags:[],fixW:0,fixH:0,cw,ch,counts:[0],fixEmpty:true,fixEdge:-1,height:lift+ch+Math.max(0,rows.length-1)*rowGap+4};
+  return{test:true,slots:[],fix,fixTags:[],fixW:0,fixH:0,cw,ch,counts:[0],fixEmpty:true,fixEdge:-1,row1,lift,
+    height:lift+ch+Math.max(0,rows.length-1)*rowGap+4};
 }
 // beside your name: the 牌力 of your groups (and of the computer's arrangement, when it differs); during play, as play began
 function testMine(){
@@ -4513,7 +4578,60 @@ const rowsHTML=(units,L,picked,k)=>rowsOf(units,k).map(r=>`<div class="prow">${
   r.map(u=>`<span class="grp"${u.name?` title="${u.name}"`:''}>${u.cards.map(c=>cardHTML(c,L,picked&&picked.has(c.id)?'sel':'')).join('')}</span>`).join('')}</div>`).join('');
 const handRowsHTML=(cards,L,grouped)=>rowsHTML(handUnits(cards,L,grouped),L);
 const curRec=()=>TREC.rounds[TREC.rounds.length-1];
-function testRender(){testPeeks();testMine();testList();testPlays()}
+function testRender(){testPeeks();testMine();testList();testPlays();testCounter()}
+// a player's card counter, in a window of its own that can be moved and closed; each press of the 记牌器 button beside
+// their name shows the next view: the plays they have made (kind by kind, in order), every card they have played (by
+// rank), and the cards still out as they see it (not played, not in their hand), by rank
+const TCV=['出过的每一手','出过的所有牌','他看到的外面剩余'];
+const TC={};
+const rankLabel=(k,L)=>k===17?'大王':k===16?'小王':k===15?`级牌${rankName(L)}`:rankName(k);
+function testCounterNext(p){
+  let w=$('#tc'+p);
+  if(!w){
+    w=document.createElement('div');w.id='tc'+p;w.className='tcount';w.hidden=true;
+    w.style.left=16+p*36+'px';w.style.top=90+p*36+'px';
+    document.body.appendChild(w);testDragBox(w,'guandan-tc'+p);
+    w.addEventListener('click',e=>{if(e.target.closest('.tcClose')){w.hidden=true;document.querySelector(`.tcb[data-p="${p}"]`).classList.remove('on')}});
+  }
+  TC[p]=w.hidden?0:((TC[p]||0)+1)%3;
+  w.hidden=false;document.querySelector(`.tcb[data-p="${p}"]`).classList.add('on');
+  w.dataset.k='';testCounter();
+}
+// cards in rank groups, largest first: each rank's label, its cards, how many
+function rankRows(cards,L){
+  const by={};
+  for(const c of cards)(by[tallyKey(c,L)]||(by[tallyKey(c,L)]=[])).push(c);
+  return TALLY_RANKS(L).filter(k=>by[k]).map(k=>`<div class="tcr"><b>${rankLabel(k,L)}</b><div><span class="grp">${
+    sortHand(by[k].slice(),L).map(c=>cardHTML(c,L)).join('')}</span><span class="cn">${by[k].length} 张</span></div></div>`).join('');
+}
+const KIND_ORDER=['single','pair','triple','full','straight','pairs3','trip2','bomb','sflush','jokers'];
+function testCounter(){
+  if(!TEST||!G)return;
+  const L=G.L;
+  for(let p=0;p<4;p++){
+    const w=$('#tc'+p);if(!w||w.hidden)continue;
+    const v=TC[p]||0,key=[G.round,L,G.log.length,v,G.hands[p].length].join('|');
+    if(w.dataset.k===key)continue;
+    w.dataset.k=key;
+    const mine=G.log.map((e,i)=>({e,k:i+1})).filter(x=>x.e.p===p),plays=mine.filter(x=>x.e.cards);
+    let body='';
+    if(v===0){
+      const kinds=KIND_ORDER.filter(t=>plays.some(x=>x.e.type===t));
+      body=kinds.map(t=>`<div class="tcr"><b>${t==='bomb'?'炸弹':TYPE_NAME[t]}</b><div>${plays.filter(x=>x.e.type===t).map(x=>
+        `<span class="tcp"><i>第 ${x.k} 手${x.e.lead?' 领出':''}</i><span class="grp">${displayOrder(x.e,L).map(c=>cardHTML(c,L)).join('')}</span></span>`).join('')}</div></div>`).join('')||'<div class="tcsum">还没出过牌</div>';
+      body+=`<div class="tcsum">出了 ${plays.length} 手，过了 ${mine.length-plays.length} 次，剩 ${G.hands[p].length} 张</div>`;
+    }else if(v===1){
+      const cs=plays.flatMap(x=>x.e.cards);
+      body=(rankRows(cs,L)||'<div class="tcsum">还没出过牌</div>')+`<div class="tcsum">一共出了 ${cs.length} 张</div>`;
+    }else{
+      const gone=new Set(G.log.filter(e=>e.cards).flatMap(e=>e.cards.map(c=>c.id)).concat(G.hands[p].map(c=>c.id)));
+      const out=makeDeck().filter(c=>!gone.has(c.id));
+      body=rankRows(out,L)+`<div class="tcsum">外面一共 ${out.length} 张（另外三家手里合起来）</div>`;
+    }
+    w.innerHTML=`<h3 class="tnh"><span style="color:${pcol(p)}">${NAMES[p]} 记牌器</span><button class="tcClose">关闭</button></h3>
+      <div class="tcv">${TCV.map((t,i)=>`<span${i===v?' class="on"':''}>${t}</span>`).join('')}</div>${body}`;
+  }
+}
 // the three computer hands, face up beside their plates; arranged once the cards are all dealt
 function testPeeks(){
   if(!TEST||!G)return;
@@ -4530,11 +4648,13 @@ function testPeeks(){
     let pw='';
     if(live)pw=powerText(rec.power[p])+(rec.userPower[p]!=null?`　你改后 ${powerText(rec.userPower[p])}`:'');
     else if(grouped&&h.length)pw=powerText(rawPower(h,G.L))+(ua?`　你改后 ${powerText(handPower(h,G.L))}`:'');
-    const btns=edit&&h.length?`<span class="pwb"><button class="link" data-a="grp">${compSelGroup(p)?'拆开':'成组'}</button>${ua?'<button class="link" data-a="reset">复原</button>':''}</span>`:'';
+    // the sorting buttons stand at the end of the first row: beside it for your partner, at its lower right for the sides
+    const btns=edit&&h.length?`<span class="tgrp${p===2?'':' low'}"><button class="tgbtn${picked.size?' on':''}" data-a="grp">${compSelGroup(p)?'拆开':'成组'}</button>${ua?'<button class="tgbtn" data-a="reset">复原</button>':''}</span>`:'';
     el.classList.toggle('edit',edit);
-    el.querySelector('.pw').innerHTML=esc(pw)+btns;
+    el.querySelector('.pw').textContent=pw;
     const units=ua?seatGroups(p).map(gr=>({cards:gr.map(id=>h.find(c=>c.id===id)),name:''})):handUnits(h,G.L,grouped);
     el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked,p===2?3:5):'';
+    if(btns)el.querySelector('.prow').insertAdjacentHTML('beforeend',btns);
   }
   if(moved&&pileGroups.length)pileRefit();
 }
@@ -4596,9 +4716,10 @@ function testNoteEdit(k){
 }
 // the box opens where you last left it, at first in the bottom-right corner beside your hand, clear of the played cards;
 // dragging its title bar moves it
-function testNoteMove(b){
+function testNoteMove(b){testDragBox(b,'guandan-tnbox')}
+function testDragBox(b,store){
   let at=null;
-  try{at=JSON.parse(localStorage.getItem('guandan-tnbox')||'null')}catch(_){}
+  try{at=JSON.parse(localStorage.getItem(store)||'null')}catch(_){}
   const place=(x,y)=>{
     x=Math.max(0,Math.min(innerWidth-b.offsetWidth,x));y=Math.max(0,Math.min(innerHeight-b.offsetHeight,y));
     b.style.left=x+'px';b.style.top=y+'px';b.style.right=b.style.bottom='auto';
@@ -4606,13 +4727,13 @@ function testNoteMove(b){
   if(at)requestAnimationFrame(()=>place(at.x,at.y));
   let d=null;
   b.addEventListener('pointerdown',e=>{
-    if(!e.target.closest('.tnh'))return;
+    if(!e.target.closest('.tnh')||e.target.closest('button'))return;
     e.preventDefault();
     const r=b.getBoundingClientRect();d={dx:e.clientX-r.left,dy:e.clientY-r.top};
     try{b.setPointerCapture(e.pointerId)}catch(_){}
   });
   b.addEventListener('pointermove',e=>{if(d)place(e.clientX-d.dx,e.clientY-d.dy)});
-  const end=()=>{if(!d)return;d=null;const r=b.getBoundingClientRect();try{localStorage.setItem('guandan-tnbox',JSON.stringify({x:r.left,y:r.top}))}catch(_){}};
+  const end=()=>{if(!d)return;d=null;const r=b.getBoundingClientRect();try{localStorage.setItem(store,JSON.stringify({x:r.left,y:r.top}))}catch(_){}};
   b.addEventListener('pointerup',end);b.addEventListener('pointercancel',end);
 }
 // a round's record has a short name, the same for its file and in the page's store: 掼蛋记录-1028-第3局
@@ -4855,6 +4976,11 @@ function testText(rounds=TREC.rounds){
       if(r.notes[k])out.push(`         【评语】${r.notes[k]}`);
     });
     for(const p of [0,1,2,3])if(hands[p].length&&r.result)out.push(`  剩牌：${NAMES[p]}　${shown(hands[p],0,false)}`);
+    // the card counter as the record stands: each player's played cards by rank, and what is still out
+    const ks=TALLY_RANKS(r.L),per=tallyPlayed(r.log,r.L),lab=k=>k===17?'大王':k===16?'小王':k===15?`级牌${rankName(r.L)}`:rankName(k);
+    out.push('','记牌器（已出的牌）：');
+    for(const p of [0,1,2,3])out.push(`  ${NAMES[p]}　`+ks.filter(k=>per[p][k]).map(k=>`${lab(k)}×${per[p][k].length}`).join(' '));
+    out.push('  剩余　'+ks.map(k=>`${lab(k)}×${tallyLeft(r.log,r.L,k).length}`).join(' '));
     out.push('',r.result?'结果：'+r.result:'（这一局没打完）','');
   }
   out.push('---- 下面一行是给程序读的数据（导入用），请不要改 ----',TDATA+JSON.stringify(rounds.map(recOut)));
