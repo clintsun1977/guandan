@@ -523,7 +523,10 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 }
 /* the test version: every hand face up (the computer's in the groups it has arranged), and every play numbered in a
    record down the right-hand side, which can be stepped back through and replayed */
-.lobby-test{align-self:center;margin-top:4px}
+.lobby-testbox{position:absolute;top:max(12px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.lobby-testbox .lobby-join{width:auto}
+.lobby-testbox .lobby-nick{width:150px;flex:none}
 body.test{--tside-w:340px}
 body.test #app{max-width:none;margin:0}
 body.test #fanBtn,body.test #rowsBtn{display:none}
@@ -532,7 +535,7 @@ body.test #tsBtn{display:inline-flex}
 .tcb{font:inherit;font-size:12px;font-weight:700;line-height:1;color:var(--gold);background:none;border:1px solid var(--gold);border-radius:999px;padding:3px 7px;cursor:pointer;white-space:nowrap}
 .tcb.on{color:var(--on-gold);background:var(--gold)}
 /* the card counter: a small table over the table, moved by its title bar */
-.tcount{position:fixed;z-index:35;left:16px;top:120px;width:min(520px,calc(100vw - 32px));max-height:70vh;overflow:auto;--cw:26px;padding:8px 10px;border-radius:10px;background:var(--felt-deep);
+.tcount{position:fixed;z-index:110;left:16px;top:120px;width:min(620px,calc(100vw - 32px));max-height:76vh;overflow:auto;--mcw:36px;padding:8px 10px;border-radius:10px;background:var(--felt-deep);
   border:1px solid var(--line-strong);box-shadow:0 10px 30px rgba(0,0,0,.5);color:var(--ink);font-size:13px}
 .tcount h3{margin:0 0 6px;font-size:14px;cursor:move;user-select:none;-webkit-user-select:none;touch-action:none;display:flex;justify-content:space-between;gap:12px}
 .tcount h3 button{font:inherit;font-size:12px;color:var(--muted);background:none;border:1px solid var(--line-strong);border-radius:999px;padding:0 8px;cursor:pointer}
@@ -546,14 +549,14 @@ body.test #tsBtn{display:inline-flex}
 .tcount tr.left td{background:rgba(221,176,80,.12);font-weight:700}
 .tcount tr.left td small{display:block;font-weight:400;font-size:10px;color:var(--muted);letter-spacing:-.05em}
 .tcount .tcv{display:flex;gap:6px;margin-bottom:6px}
-.tcount .tcv span{padding:1px 8px;border-radius:999px;border:1px solid var(--line-strong);color:var(--muted);font-size:12px}
+.tcount .tcv span{padding:2px 10px;border-radius:999px;border:1px solid var(--line-strong);color:var(--muted);font-size:13px;cursor:pointer}
 .tcount .tcv span.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 .tcount .tcr{display:flex;align-items:flex-start;gap:8px;padding:4px 0;border-top:1px dashed var(--line)}
-.tcount .tcr>b{min-width:3.6em;color:var(--gold);font-size:13px;padding-top:4px}
+.tcount .tcr>b{min-width:3.6em;color:var(--gold);font-size:15px;padding-top:8px}
 .tcount .tcr>div{display:flex;flex-wrap:wrap;gap:4px 8px}
 .tcount .tcr .tcp{display:inline-flex;flex-direction:column;align-items:flex-start}
-.tcount .tcr .tcp i{font-style:normal;font-size:10px;color:var(--muted);line-height:1.1}
-.tcount .tcr .cn{font-size:11px;color:var(--muted);align-self:flex-end}
+.tcount .tcr .tcp>i{font-style:normal;font-size:12px;color:var(--muted);line-height:1.2}
+.tcount .tcr .cn{font-size:13px;color:var(--muted);align-self:center}
 .tcount .tcsum{font-size:12px;color:var(--muted);margin-top:4px}
 body.test #tsBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 body.test.fsok #fsBtn{display:inline-flex}
@@ -569,19 +572,35 @@ body.test #pile .pc,body.test #pile .ktag{visibility:hidden}
 body.test .emblem{visibility:hidden}
 body.test #lastPlay{display:none}
 #tplays{position:absolute;inset:0;z-index:1;pointer-events:none}
-.tpb{position:absolute;--cw:30px;border-radius:10px;background:rgba(0,0,0,.16);padding:6px;
-  display:flex;flex-wrap:wrap;align-content:flex-start;align-items:flex-end;gap:calc(var(--cw)*.14) calc(var(--cw)*.16);overflow:hidden}
+.tpb{position:absolute;--mcw:30px;border-radius:10px;background:rgba(0,0,0,.16);padding:6px;
+  display:flex;flex-wrap:wrap;align-content:flex-start;align-items:flex-end;gap:calc(var(--mcw)*.2) calc(var(--mcw)*.22);overflow:hidden}
+/* a played card on the table: just its rank and suit, on a white tile */
+.mcs{display:flex;gap:calc(var(--mcw)*.06)}
+.mc{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:var(--mcw);height:calc(var(--mcw)*1.28);
+  border-radius:calc(var(--mcw)*.12);background:var(--card);border:1px solid var(--card-edge);color:var(--card-ink);
+  font-family:var(--font-display);font-weight:700;font-size:calc(var(--mcw)*.5);line-height:1.02;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.mc i{font-style:normal}
+.mc i.ten{letter-spacing:-.08em;font-size:.88em}
+.mc.red{color:var(--red)}
+.mc.jk{font-family:var(--font-ui);font-size:calc(var(--mcw)*.42)}
+.mc.wild{background:linear-gradient(160deg,var(--wild-face) 0%,var(--wild-face-b) 100%);border:2px solid var(--gold)}
+.mc.lvl{background:#ece0ff;border-color:#b48ae8}
 /* one turn: who and its number above, the cards in that player's colour of frame */
-.tq{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;padding:2px 3px 3px;border:2px solid var(--pc);border-radius:6px;
-  background:rgba(0,0,0,.2);pointer-events:auto;cursor:pointer;opacity:.8}
-.tq>b{font-size:max(10px,calc(var(--cw)*.26));line-height:1.1;color:var(--pc);white-space:nowrap}
+.tq{display:inline-flex;flex-direction:column;align-items:stretch;gap:2px;padding:2px 3px 3px;border:2px solid var(--pc);border-radius:6px;
+  background:rgba(0,0,0,.2);pointer-events:auto;cursor:pointer;opacity:.85}
+/* above the cards: the turn's number on the left, the player's number on the right */
+.tq>b{display:flex;justify-content:space-between;gap:calc(var(--mcw)*.35);font-size:max(11px,calc(var(--mcw)*.34));line-height:1.1;white-space:nowrap}
+.tq>b span{color:var(--ink)}
+.tq:not(.rest)>b span,.tlist .no{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:700}
+.tq:not(.rest)>b span{font-size:1.15em}
+.tq>b em{font-style:normal;color:var(--pc)}
 .tq.cur{opacity:1}
 .tq:hover{outline:2px dashed var(--ink);outline-offset:2px}
-.tq.noted>b::after{content:" 评";color:#ffe08a}
+.tq.noted>b span::after{content:" 评";color:#ffe08a}
 .tq.pass{border-style:dashed}
 .tq.rest{border-style:dashed;opacity:1}
 .tq.last{opacity:1;outline:4px solid #ff8a00;outline-offset:3px;animation:lastBlink .9s ease-in-out infinite}
-.tsep{align-self:stretch;width:2px;margin:0 calc(var(--cw)*.08);background:var(--line-strong);border-radius:1px}
+.tsep{align-self:stretch;width:2px;margin:0 calc(var(--mcw)*.06);background:var(--line-strong);border-radius:1px}
 .tpb>b{position:absolute;left:8px;top:1px;font-size:11px;line-height:1.2;color:var(--team)}
 .tpl{display:inline-flex;flex-direction:column;align-items:flex-start;opacity:.85;pointer-events:auto;cursor:pointer;border-radius:4px}
 .tpl:hover{outline:2px dashed var(--ink);outline-offset:2px}
@@ -596,8 +615,8 @@ body.test #lastPlay{display:none}
 .tpl.last i{color:#ffb347}
 @keyframes lastBlink{0%,100%{outline-color:#ff8a00;box-shadow:0 0 18px 4px rgba(255,138,0,.75)}50%{outline-color:rgba(255,138,0,.15);box-shadow:0 0 0 0 rgba(255,138,0,0)}}
 .tpl.rest .grp{outline:2px dashed var(--muted);outline-offset:2px;border-radius:4px}
-.pchip{display:inline-flex;align-items:center;justify-content:center;width:calc(var(--cw)*.8);height:calc(var(--cw)*1.4);
-  border:1.5px dashed var(--muted);border-radius:calc(var(--cw)*.1);font-size:calc(var(--cw)*.36);font-weight:700;color:var(--muted)}
+.pchip{display:inline-flex;align-items:center;justify-content:center;width:var(--mcw);height:calc(var(--mcw)*1.28);
+  border:1.5px dashed var(--muted);border-radius:calc(var(--mcw)*.12);font-size:calc(var(--mcw)*.42);font-weight:700;color:var(--muted)}
 
 .tlist li.tp.pass .tw{font-weight:400;color:var(--muted)}
 /* a computer's hand can be rearranged while sorting: its cards are picked like yours */
@@ -605,13 +624,17 @@ body.test #lastPlay{display:none}
 .peek .card.sel{transform:translateY(-16%);box-shadow:0 0 0 2.5px var(--latest),0 0 12px 2px var(--latest-glow)}
 .pwb{display:inline-flex;gap:4px;margin-left:8px;vertical-align:middle}
 /* the sorting buttons of all four hands, one size */
-.tgrp{display:inline-flex;flex-direction:column;gap:4px;margin-left:10px;align-self:center;flex:none;position:relative;z-index:200}
-.tgrp.low{align-self:flex-end;margin-bottom:-4px}
-.tgbtn,body.test #fixBtn{font:inherit;font-size:15px;font-weight:700;min-width:4.4em;padding:5px 12px;border-radius:999px;cursor:pointer;
+.pbody{display:flex;align-items:flex-start;gap:10px}
+.tgrp{display:flex;flex-direction:column;gap:5px;flex:none}
+.tgrp.low{margin-top:calc(var(--cw)*.9)}
+.tgbtn:disabled,body.test #splitBtn:disabled,body.test #sortBtn:disabled{opacity:.4;cursor:default;box-shadow:none;background:var(--felt-deep);color:var(--gold)}
+.tgbtn,body.test #fixBtn,body.test #splitBtn,body.test #sortBtn{font:inherit;font-size:15px;font-weight:700;min-width:4.4em;padding:5px 12px;border-radius:999px;cursor:pointer;
   color:var(--gold);background:var(--felt-deep);border:1.5px solid var(--gold);line-height:1.2;text-align:center}
-.tgbtn.on,body.test #fixBtn:not(:disabled){color:var(--on-gold);background:var(--gold);box-shadow:0 0 12px rgba(221,176,80,.5)}
-body.test #fixBtn:disabled{opacity:.45}
-body.test #fixBtn{position:absolute;margin:0;z-index:7}
+.tgbtn:not(:disabled),body.test #fixBtn:not(:disabled),body.test #splitBtn:not(:disabled),body.test #sortBtn:not(:disabled){color:var(--on-gold);background:var(--gold);box-shadow:0 0 12px rgba(221,176,80,.5)}
+body.test #fixBtn:disabled{opacity:.4}
+body.test #fixBtn,body.test #splitBtn,body.test #sortBtn{position:absolute;margin:0;z-index:7;pointer-events:auto}
+#splitBtn{display:none}
+body.test #splitBtn{display:inline-block}
 .peek.edit{touch-action:none;user-select:none;-webkit-user-select:none}
 #hand .card.hot,.peek .card.hot{box-shadow:0 0 0 3px var(--gold),0 0 14px var(--gold)}
 .tghost{position:fixed;left:0;top:0;z-index:200;pointer-events:none;transform:translate(-50%,-60%) rotate(-3deg);filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
@@ -791,12 +814,14 @@ body.test .tside:not(.open){display:none}
       <button class="seat-btn t-red" data-seat="S" style="grid-area:s"><b>南</b><span>空位</span></button>
     </div>
     <button class="btn primary lobby-go" id="sitBtn" disabled>坐下开始</button>
+    <div class="lobby-ver" id="verTag"></div>
+  </div>
+  <div class="lobby-testbox">
     <button class="link lobby-test" id="testBtn">测试版</button>
     <div class="lobby-join" id="testRow" hidden>
-      <input class="lobby-nick" id="testPw" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="测试版密码">
+      <input class="lobby-nick" id="testPw" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="密码">
       <button class="btn primary" id="testGo">进入</button>
     </div>
-    <div class="lobby-ver" id="verTag"></div>
   </div>
 </div>
 
@@ -1090,7 +1115,7 @@ const armUnit=(type,value,cards,wu=0)=>({type,value,n:cards.length,cards,wu});
 function armRest(by,jk,wild,L){
   const units=[],pairs=[],trips=[];
   if(jk.length===4)units.push(armUnit('jokers',99,jk));
-  else for(const r of [16,17]){const g=jk.filter(c=>c.r===r);if(g.length)units.push(armUnit(g.length===2?'pair':'single',r,g))}
+  else for(const c of jk)units.push(armUnit('single',c.r,[c])); // two jokers alike are kept as two singles, never a pair
   for(let r=2;r<=14;r++){
     const g=by[r];if(!g||!g.length)continue;
     const v=r===L?15:r;
@@ -1923,6 +1948,13 @@ function placePrepBig(){
   const s3=$('#seat3 .whorow').getBoundingClientRect(),s1=$('#seat1 .whorow').getBoundingClientRect();
   const cy=e.top+e.height/2-T.top;
   let lx=e.left-gap-lw,rx=e.right+gap,y=cy;
+  // the test version's face-up hands take the room around the disc: the two sit together in the middle of the open table
+  if(TEST){
+    const g=pileGeo(),w=lw+rw+12;
+    l.style.left=g.cx-w/2+'px';r.style.left=g.cx-w/2+lw+12+'px';
+    l.style.top=g.cy-l.offsetHeight/2+'px';r.style.top=g.cy-r.offsetHeight/2+'px';
+    return;
+  }
   if(lx<s3.right+10||rx+rw>s1.left-10){
     const h=Math.max(l.offsetHeight,r.offsetHeight),w=lw+rw+12;
     lx=e.left+e.width/2-w/2;rx=lx+lw+12;y=e.top-T.top-gap/2-h/2;
@@ -1978,7 +2010,7 @@ function sortHints(plays){
   const seen=new Set();
   return full.filter(pl=>pl.cards.length===hand.length).concat(
     zone(hand.filter(c=>!fixed.has(c.id))),
-    own.sort((a,b)=>isBomb(a)-isBomb(b)||(isBomb(a)?power(a)-power(b):0)),
+    own.sort((a,b)=>isBomb(a)-isBomb(b)||(isBomb(a)?power(a)-power(b):TEST?a.value-b.value:0)),
     fx.filter(pl=>whole(pl)&&!isBomb(pl)),fx.filter(pl=>!whole(pl)&&!isBomb(pl)),fx.filter(isBomb).sort((a,b)=>power(a)-power(b)),
     full.filter(pl=>nf(pl)>0&&nf(pl)<pl.cards.length&&!splits(pl))
   ).filter(pl=>{const k=key(pl);return!seen.has(k)&&seen.add(k)});
@@ -2690,7 +2722,12 @@ function renderControls(){
   $('#sfBtn').hidden=!['prep','play'].includes(G.phase)||!G.hands[0].length;
   const fb=$('#fixBtn'),fixedNow=new Set((G.fixed||[]).flat());
   fb.disabled=!picked||!G.hands[0].length;
-  fb.textContent=testGrouped()?(testSelGroup()?'拆开':'成组'):picked&&[...sel].every(id=>fixedNow.has(id))?'放回':'固定';
+  fb.textContent=testGrouped()?'成组':picked&&[...sel].every(id=>fixedNow.has(id))?'放回':'固定';
+  if(testGrouped()){
+    fb.disabled=sel.size<2;
+    const sp=$('#splitBtn');if(sp){sp.disabled=!picked;sp.hidden=false}
+    const rb=$('#sortBtn');rb.disabled=!(G.tgLock&&G.tgLock.length);
+  }
   const deckTurn=(G.phase==='shuffle'&&G.shuffler===0)||(G.phase==='cut'&&G.cutter===0);
   $('#deckBtn').hidden=!deckTurn||!!G.busy;
   $('#deckBtn').textContent=G.phase==='cut'?'切牌':'洗牌';
@@ -2817,9 +2854,10 @@ function handGeo(n,keys){
   const rows=(G&&G.fixed||[]).map(gr=>{const k=gr.length,off=k>1?Math.min(cw*.42,(Wall*.34-cw)/(k-1)):0;return{gr,off,w:cw+off*(k-1)}});
   // with no groups yet the zone is an empty frame: in the free room on the left on a computer or tablet (leaving the
   // button its strip), a narrow strip on a phone, where the button sits in the row under the hand
-  const bw=side?FIX_BTN:0;
-  const fw=rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:side?Math.max(70,Math.round(side-bw-FIX_GAP)):30;
-  const x0=Math.max(side,fw+bw+FIX_GAP),W=Wall-side-x0;
+  const bw=side&&!TEST?FIX_BTN:0;
+  const fw=TEST?0:rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:side?Math.max(70,Math.round(side-bw-FIX_GAP)):30;
+  // (the test version has no fixed zone: its groups are made with 成组 and 拆开)
+  const x0=TEST?side:Math.max(side,fw+bw+FIX_GAP),W=Wall-side-x0;
   const g=fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
   g.slots=g.slots.map(sl=>({...sl,x:sl.x+x0}));
   // the groups step down like flat rows (each still shows its row of corners), closer together if there are many
@@ -2844,13 +2882,19 @@ function drawFixZone(g){
   const on=!!g;
   z.hidden=t.hidden=$('#fixBtn').hidden=!on;
   if(!on)return;
-  // the test version's groups need no frame: its 成组 button stands just right of the first row of cards, like the
-  // computer's
+  if(TEST&&!g.test){z.hidden=t.hidden=true;for(const id of ['#fixBtn','#splitBtn','#sortBtn']){const b=$(id);if(b)b.hidden=true}return}
+  for(const id of ['#splitBtn','#sortBtn']){const b=$(id);if(b)b.hidden=false}
+  // the test version's groups need no frame: its 成组, 拆开 and 复原 stand in a column just right of the cards (clear
+  // of every row), like the computer's
   if(g.test){
     z.hidden=t.hidden=true;
-    const b=$('#fixBtn'),tb=b.parentNode;
-    b.style.left=handEl.offsetLeft+g.row1+10-tb.offsetLeft+'px';
-    b.style.top=handEl.offsetTop+g.lift+(g.ch-b.offsetHeight)/2-tb.offsetTop+'px';
+    const tb=$('#fixBtn').parentNode;
+    let y=handEl.offsetTop+g.lift-tb.offsetTop;
+    for(const id of ['#fixBtn','#splitBtn','#sortBtn']){
+      const b=$(id);if(!b)continue;
+      b.style.left=handEl.offsetLeft+g.right+14-tb.offsetLeft+'px';b.style.top=y+'px';
+      y+=b.offsetHeight+6;
+    }
     return;
   }
   const L=handEl.offsetLeft,T=handEl.offsetTop;
@@ -3915,12 +3959,12 @@ $('#rowsBtn').onclick=()=>{
 };
 syncHandBtns();
 // 复原 sorts the active cards back by rank; the fixed groups stay as they are
-$('#sortBtn').onclick=()=>{G.myOrder=[];if(TEST)G.tgRound=null;renderHand();Sound.play('shuffle')};
+$('#sortBtn').onclick=()=>{G.myOrder=[];if(TEST){G.tgLock=[];G.tgKey=''}renderHand();Sound.play('shuffle')};
 // 固定: the picked cards go to the fixed zone as one group; when every picked card is already there, 放回 puts them back
 $('#fixBtn').onclick=()=>{
   const have=new Set(G.hands[0].map(c=>c.id)),ids=[...sel].filter(id=>have.has(id));
   if(!ids.length)return;
-  if(testGrouped()){testRegroup(ids);return}
+  if(testGrouped()){testRegroup(ids,false);return}
   const fixed=new Set((G.fixed||[]).flat());
   if(ids.every(id=>fixed.has(id)))unfixCards(ids);else fixCards(ids,-1);
   sel=new Set();
@@ -4160,15 +4204,18 @@ function enterTest(){
   $('#lobby').hidden=true;
   for(const p of [1,2,3]){
     const e=document.createElement('div');
-    e.className='peek';e.id='peek'+p;e.innerHTML='<div class="pw"></div><div class="prows"></div>';
+    e.className='peek';e.id='peek'+p;e.innerHTML='<div class="pw"></div><div class="pbody"><div class="prows"></div></div>';
     e.onclick=ev=>{
       const b=ev.target.closest('button[data-a]');
-      if(b){if(b.dataset.a==='grp')testCompGroup(p);else testCompReset(p);return}
+      if(b){if(b.dataset.a==='reset')testCompReset(p);else testCompGroup(p,b.dataset.a==='split');return}
     };
     testPeekDrag(e,p);
     $('#seat'+p).appendChild(e);
   }
   $('#mebar .whorow').insertAdjacentHTML('beforeend','<span class="mypw" id="myPw"></span>');
+  $('#fixBtn').insertAdjacentHTML('afterend','<button class="link" id="splitBtn" title="选中的牌拆成单张">拆开</button>');
+  $('#splitBtn').onclick=()=>{const have=new Set(G.hands[0].map(c=>c.id));testRegroup([...sel].filter(id=>have.has(id)),true)};
+  $('#fixBtn').title='选中的牌组成一组';$('#sortBtn').title='改回电脑自己的配法';
   const s=document.createElement('aside');
   s.className='tside';s.id='tside';
   s.innerHTML=`<div class="tsh"><b>出牌记录</b><span id="tsRound"></span></div>
@@ -4248,8 +4295,7 @@ addEventListener('resize',testResize);
 if(window.ResizeObserver)new ResizeObserver(testResize).observe(document.documentElement);
 // everyone by number: you are 1, then counterclockwise, the order of play, 2 (your next), 3 (your partner), 4; each has
 // its own colour on the table and in the record
-const SEATCOL={1:'#29b6f6',2:'#66bb6a',3:'#ec407a',4:'#ba68c8'};
-const pcol=p=>SEATCOL[p+1];
+const pcol=p=>p%2?'var(--blue-team)':'var(--red-team)';
 function testNames(){
   for(let p=0;p<4;p++)NAMES[p]=`${p+1}号`;
   for(let q=1;q<4;q++){const e=$('#seat'+q+' .name');e.textContent=NAMES[q];e.style.color=pcol(q)}
@@ -4295,9 +4341,10 @@ function tidyIds(ids,hand){
   return(u?displayOrder(u,G.L):sortHand(cards.slice(),G.L)).map(c=>c.id);
 }
 
-/* a computer's hand rearranged by you while sorting: shown as you grouped it, with its 牌力 beside the computer's own, and
-   the computer plays from it (its groups read as plays, those that make none as their cards rank by rank) */
-const uaOf=p=>G&&G.ua&&G.ua.r===G.round?G.ua.g[p]:null;
+/* a computer's hand rearranged by you while sorting: the groups you set stay as you set them, every other card is arranged
+   again the computer's way; shown with its 牌力 beside the computer's own, and the computer plays from it (its groups read
+   as plays, those that make none as their cards rank by rank) */
+const uaOf=p=>G&&G.ua&&G.ua.r===G.round&&G.ua.lock[p]&&G.ua.lock[p].length?G.ua.lock[p]:null;
 const rawPower=(h,L)=>scorePower(armScore(armPlaysRaw(h,L)));
 function testArm(hand,L){
   if(!TEST||!G)return null;
@@ -4307,38 +4354,45 @@ function testArm(hand,L){
   }
   return null;
 }
-// a computer's groups now: yours (less the cards gone, any card come since on its own), or its own arrangement
-function seatGroups(p){
-  const h=G.hands[p],gs=uaOf(p);
-  if(!gs)return handUnits(h,G.L,true).map(u=>u.cards.map(c=>c.id));
-  const have=new Set(h.map(c=>c.id)),seen=new Set(gs.flat());
-  return gs.map(gr=>gr.filter(id=>have.has(id))).filter(gr=>gr.length).concat(h.filter(c=>!seen.has(c.id)).map(c=>[c.id]));
+// the groups you set that are still whole, and the rest of the hand arranged the computer's way, in the order shown
+function lockedAndRest(hand,locks,L){
+  const have=new Set(hand.map(c=>c.id));
+  const kept=locks.filter(gr=>gr.every(id=>have.has(id)));
+  const used=new Set(kept.flat()),free=hand.filter(c=>!used.has(c.id));
+  const auto=free.length?armPlaysRaw(free,L).map(u=>displayOrder(u,L).map(c=>c.id)):[];
+  return{kept,groups:sortGroups(kept.concat(auto),new Map(hand.map(c=>[c.id,c])),L)};
 }
+// a computer's groups now: yours plus its own arrangement of the rest, or all its own
+function seatGroups(p){
+  const h=G.hands[p],locks=uaOf(p);
+  if(!locks)return handUnits(h,G.L,true).map(u=>u.cards.map(c=>c.id));
+  return lockedAndRest(h,locks,G.L).groups;
+}
+// what a press of 成组 or 拆开 (or a drag) does to the groups you set: 成组 makes the picked cards one group of yours;
+// 拆开 makes each picked card a single of its own; a drag onto a group makes that whole group, with the cards, yours;
+// a group of yours that cards are taken out of (or played from) is yours no more: what is left of it goes back to the
+// computer's arranging
+const untouched=(locks,ids)=>locks.filter(gr=>!gr.some(id=>ids.includes(id)));
+function lockGroup(locks,ids,hand){return untouched(locks,ids).concat([tidyIds(ids,hand)])}
+function lockSingles(locks,ids){return untouched(locks,ids).concat(ids.map(id=>[id]))}
+function lockJoin(locks,groups,ids,target,hand){
+  const into=target!=null?groups.find(gr=>gr.includes(target)):null;
+  const join=into?into.filter(id=>!ids.includes(id)).concat(ids):ids;
+  return untouched(locks,join).concat([tidyIds(join,hand)]);
+}
+const setLocks=(p,locks)=>{if(!G.ua||G.ua.r!==G.round)G.ua={r:G.round,lock:{}};G.ua.lock[p]=locks};
 const TSEL={p:0,ids:new Set()};
-const compSelGroup=p=>TSEL.p===p&&seatGroups(p).find(gr=>gr.length>1&&gr.length===TSEL.ids.size&&gr.every(id=>TSEL.ids.has(id)));
 function testCompSel(p,id){
   if(G.phase!=='prep')return;
   if(TSEL.p!==p){TSEL.p=p;TSEL.ids=new Set()}
   if(TSEL.ids.has(id))TSEL.ids.delete(id);else TSEL.ids.add(id);
   testPeeks();Sound.play('select');
 }
-function testCompGroup(p){
-  if(G.phase!=='prep'||TSEL.p!==p||!TSEL.ids.size)return;
-  const ids=[...TSEL.ids],g=compSelGroup(p);
-  let gs=seatGroups(p);
-  if(g)gs=gs.filter(x=>x!==g).concat(g.map(id=>[id]));
-  else{gs=gs.map(gr=>gr.filter(id=>!TSEL.ids.has(id))).filter(gr=>gr.length);gs.push(tidyIds(ids,G.hands[p]))}
-  if(!G.ua||G.ua.r!==G.round)G.ua={r:G.round,g:{}};
-  G.ua.g[p]=sortGroups(gs,new Map(G.hands[p].map(c=>[c.id,c])),G.L);
+function testCompGroup(p,split){
+  if(G.phase!=='prep'||TSEL.p!==p||TSEL.ids.size<(split?1:2))return;
+  const ids=[...TSEL.ids],locks=uaOf(p)||[];
+  setLocks(p,split?lockSingles(locks,ids):lockGroup(locks,ids,G.hands[p]));
   TSEL.ids=new Set();testPeeks();Sound.play('play');
-}
-// cards moved to another group (the one holding target), or to a group of their own (target null); the group they join
-// is laid out the way its combination reads
-function moveInto(groups,ids,target,hand){
-  const gs=groups.map(gr=>gr.filter(id=>!ids.includes(id))).filter(gr=>gr.length);
-  const g=target!=null&&gs.find(gr=>gr.includes(target));
-  if(g)gs[gs.indexOf(g)]=tidyIds(g.concat(ids),hand);else gs.push(tidyIds(ids,hand));
-  return gs;
 }
 const hotOff=root=>root.querySelectorAll('.card.hot').forEach(c=>c.classList.remove('hot'));
 // your own cards follow the pointer; the group under it lights up
@@ -4367,12 +4421,11 @@ function testDropMine(m){
   hotOff(handEl);
   for(const id of m.ids){const c=cardEl(id);if(c)c.style.pointerEvents=''}
   if(!m.cancel&&!(m.out&&m.tid==null)){
-    G.fixed=moveInto(G.fixed,m.ids,m.tid,G.hands[0]);
-    G.tgAuto=false;testSortMine();
+    G.tgLock=lockJoin(G.tgLock,G.fixed,m.ids,m.tid,G.hands[0]);
     for(const id of m.ids)sel.delete(id);
     Sound.play('play');
   }
-  reflowHand();testMine();
+  renderHand();
 }
 // a computer's cards while sorting: a tap picks a card, a drag carries it (or the picked cards) the same way as yours
 function testPeekDrag(el,p){
@@ -4410,37 +4463,33 @@ function testPeekDrag(el,p){
     if(m.ghost)m.ghost.remove();
     if(!m.on){if(!cancel)testCompSel(p,m.id);return}
     if(cancel||m.out&&m.tid==null){el.dataset.k='';testPeeks();return}
-    if(!G.ua||G.ua.r!==G.round)G.ua={r:G.round,g:{}};
-    G.ua.g[p]=sortGroups(moveInto(seatGroups(p),m.ids,m.tid,G.hands[p]),new Map(G.hands[p].map(c=>[c.id,c])),G.L);
+    setLocks(p,lockJoin(uaOf(p)||[],seatGroups(p),m.ids,m.tid,G.hands[p]));
     TSEL.ids=new Set();testPeeks();Sound.play('play');
   };
   el.addEventListener('pointerup',()=>end(false));
   el.addEventListener('pointercancel',()=>end(true));
 }
 function testCompReset(p){
-  if(G.ua&&G.ua.r===G.round)delete G.ua.g[p];
+  if(G.ua&&G.ua.r===G.round)delete G.ua.lock[p];
   TSEL.ids=new Set();testPeeks();Sound.play('shuffle');
 }
+// your hand: the groups you set (G.tgLock) stay, the rest is arranged again the computer's way whenever the hand or your
+// groups change
 function testArrangeMine(){
   if(!G||['start','shuffle','cut','deal'].includes(G.phase)||!G.hands[0].length)return;
-  const key=G.hands[0].map(c=>c.id).sort((a,b)=>a-b).join();
-  if(G.tgRound===G.round&&(!G.tgAuto||G.tgKey===key||G.phase==='play'))return;
-  G.tgRound=G.round;G.tgAuto=true;G.tgKey=key;
-  G.fixed=armPlays(G.hands[0],G.L).map(u=>displayOrder(u,G.L).map(c=>c.id));
-  G.myOrder=[];
-  testSortMine();
+  if(G.tgRound!==G.round){G.tgRound=G.round;G.tgLock=[];G.tgKey=''}
+  const key=G.hands[0].map(c=>c.id).sort((a,b)=>a-b).join()+'|'+JSON.stringify(G.tgLock);
+  if(G.tgKey===key)return;
+  G.tgKey=key;
+  const r=lockedAndRest(G.hands[0],G.tgLock,G.L);
+  G.tgLock=r.kept;G.fixed=r.groups;G.myOrder=[];
 }
-// the picked cards are exactly one group of several cards (so 成组 becomes 拆开)
-const testSelGroup=()=>G.fixed.find(gr=>gr.length>1&&gr.length===sel.size&&gr.every(id=>sel.has(id)));
-function testRegroup(ids){
-  const g=testSelGroup();
-  if(g)G.fixed=G.fixed.filter(x=>x!==g).concat(g.map(id=>[id]));
-  else{G.fixed=G.fixed.map(gr=>gr.filter(id=>!ids.includes(id))).filter(gr=>gr.length);G.fixed.push(tidyGroup(ids))}
-  G.tgAuto=false;
-  testSortMine();
+// 成组 / 拆开 on your own cards
+function testRegroup(ids,split){
+  if(ids.length<(split?1:2))return;
+  G.tgLock=split?lockSingles(G.tgLock,ids):lockGroup(G.tgLock,ids,G.hands[0]);
   sel=new Set();
-  reflowHand();
-  testMine();
+  renderHand();
   Sound.play('play');
 }
 // your groups laid out like the computer's: in three rows, a small gap between groups
@@ -4448,14 +4497,14 @@ function testGeo(){
   const el=$('#hand'),probe=el.firstElementChild,W=el.clientWidth,cw=probe.offsetWidth,ch=probe.offsetHeight;
   const rows=rowsOf(G.fixed.map(gr=>({cards:gr})));
   const off=cw*.42,gap=cw*.22,lift=Math.round(ch*.22),rowGap=Math.round(ch*ROW_STEP),fix=new Map();
-  let row1=0;
+  let right=0;
   rows.forEach((r,i)=>{
     const w=r.reduce((s,u)=>s+cw+off*(u.cards.length-1),0)+gap*(r.length-1);
     let x=Math.max(0,(W-w)/2);
     for(const u of r){u.cards.forEach((id,j)=>fix.set(id,{x:x+j*off,y:lift+i*rowGap,rot:0}));x+=cw+off*(u.cards.length-1)+gap}
-    if(!i)row1=x-gap;
+    right=Math.max(right,x-gap);
   });
-  return{test:true,slots:[],fix,fixTags:[],fixW:0,fixH:0,cw,ch,counts:[0],fixEmpty:true,fixEdge:-1,row1,lift,
+  return{test:true,slots:[],fix,fixTags:[],fixW:0,fixH:0,cw,ch,counts:[0],fixEmpty:true,fixEdge:-1,right,lift,
     height:lift+ch+Math.max(0,rows.length-1)*rowGap+4};
 }
 // beside your name: the 牌力 of your groups (and of the computer's arrangement, when it differs); during play, as play began
@@ -4596,7 +4645,10 @@ function testCounterNext(p){
     w=document.createElement('div');w.id='tc'+p;w.className='tcount';w.hidden=true;
     w.style.left=16+p*36+'px';w.style.top=90+p*36+'px';
     document.body.appendChild(w);testDragBox(w,'guandan-tc'+p);
-    w.addEventListener('click',e=>{if(e.target.closest('.tcClose')){w.hidden=true;document.querySelector(`.tcb[data-p="${p}"]`).classList.remove('on')}});
+    w.addEventListener('click',e=>{
+      if(e.target.closest('.tcClose')){w.hidden=true;document.querySelector(`.tcb[data-p="${p}"]`).classList.remove('on');return}
+      const t=e.target.closest('.tcv [data-v]');if(t){TC[p]=+t.dataset.v;w.dataset.k='';testCounter()}
+    });
   }
   TC[p]=w.hidden?0:((TC[p]||0)+1)%3;
   w.hidden=false;document.querySelector(`.tcb[data-p="${p}"]`).classList.add('on');
@@ -4606,8 +4658,8 @@ function testCounterNext(p){
 function rankRows(cards,L){
   const by={};
   for(const c of cards)(by[tallyKey(c,L)]||(by[tallyKey(c,L)]=[])).push(c);
-  return TALLY_RANKS(L).filter(k=>by[k]).map(k=>`<div class="tcr"><b>${rankLabel(k,L)}</b><div><span class="grp">${
-    sortHand(by[k].slice(),L).map(c=>cardHTML(c,L)).join('')}</span><span class="cn">${by[k].length} 张</span></div></div>`).join('');
+  return TALLY_RANKS(L).filter(k=>by[k]).map(k=>`<div class="tcr"><b>${rankLabel(k,L)}</b><div><span class="mcs">${
+    sortHand(by[k].slice(),L).map(miniCard).join('')}</span><span class="cn">${by[k].length} 张</span></div></div>`).join('');
 }
 const KIND_ORDER=['single','pair','triple','full','straight','pairs3','trip2','bomb','sflush','jokers'];
 function testCounter(){
@@ -4623,7 +4675,7 @@ function testCounter(){
     if(v===0){
       const kinds=KIND_ORDER.filter(t=>plays.some(x=>x.e.type===t));
       body=kinds.map(t=>`<div class="tcr"><b>${t==='bomb'?'炸弹':TYPE_NAME[t]}</b><div>${plays.filter(x=>x.e.type===t).map(x=>
-        `<span class="tcp"><i>第 ${x.k} 手${x.e.lead?' 领出':''}</i><span class="grp">${displayOrder(x.e,L).map(c=>cardHTML(c,L)).join('')}</span></span>`).join('')}</div></div>`).join('')||'<div class="tcsum">还没出过牌</div>';
+        `<span class="tcp"><i>第 ${x.k} 手${x.e.lead?' 领出':''}</i><span class="mcs">${displayOrder(x.e,L).map(miniCard).join('')}</span></span>`).join('')}</div></div>`).join('')||'<div class="tcsum">还没出过牌</div>';
       body+=`<div class="tcsum">出了 ${plays.length} 手，过了 ${mine.length-plays.length} 次，剩 ${G.hands[p].length} 张</div>`;
     }else if(v===1){
       const cs=plays.flatMap(x=>x.e.cards);
@@ -4634,7 +4686,7 @@ function testCounter(){
       body=rankRows(out,L)+`<div class="tcsum">外面一共 ${out.length} 张（另外三家手里合起来）</div>`;
     }
     w.innerHTML=`<h3 class="tnh"><span style="color:${pcol(p)}">${NAMES[p]} 记牌器</span><button class="tcClose">关闭</button></h3>
-      <div class="tcv">${TCV.map((t,i)=>`<span${i===v?' class="on"':''}>${t}</span>`).join('')}</div>${body}`;
+      <div class="tcv">${TCV.map((t,i)=>`<span data-v="${i}"${i===v?' class="on"':''}>${t}</span>`).join('')}</div>${body}`;
   }
 }
 // the three computer hands, face up beside their plates; arranged once the cards are all dealt
@@ -4653,13 +4705,15 @@ function testPeeks(){
     let pw='';
     if(live)pw=powerText(rec.power[p])+(rec.userPower[p]!=null?`　你改后 ${powerText(rec.userPower[p])}`:'');
     else if(grouped&&h.length)pw=powerText(rawPower(h,G.L))+(ua?`　你改后 ${powerText(handPower(h,G.L))}`:'');
-    // the sorting buttons stand at the end of the first row: beside it for your partner, at its lower right for the sides
-    const btns=edit&&h.length?`<span class="tgrp${p===2?'':' low'}"><button class="tgbtn${picked.size?' on':''}" data-a="grp">${compSelGroup(p)?'拆开':'成组'}</button>${ua?'<button class="tgbtn" data-a="reset">复原</button>':''}</span>`:'';
+    // the sorting buttons: a column beside the rows (never on a card), level with the first row for your partner, a
+    // little lower for the sides
+    const btns=edit&&h.length?`<span class="tgrp${p===2?'':' low'}"><button class="tgbtn" data-a="grp"${picked.size>=2?'':' disabled'} title="选中的牌组成一组">成组</button><button class="tgbtn" data-a="split"${picked.size?'':' disabled'} title="选中的牌拆成单张">拆开</button><button class="tgbtn" data-a="reset"${ua?'':' disabled'} title="改回电脑自己的配法">复原</button></span>`:'';
     el.classList.toggle('edit',edit);
     el.querySelector('.pw').textContent=pw;
     const units=ua?seatGroups(p).map(gr=>({cards:gr.map(id=>h.find(c=>c.id===id)),name:''})):handUnits(h,G.L,grouped);
     el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked,p===2?3:5):'';
-    if(btns)el.querySelector('.prow').insertAdjacentHTML('beforeend',btns);
+    const old=el.querySelector('.tgrp');if(old)old.remove();
+    if(btns)el.querySelector('.pbody').insertAdjacentHTML('beforeend',btns);
   }
   if(moved&&pileGroups.length)pileRefit();
 }
@@ -4686,19 +4740,25 @@ function testPlays(){
   const rec=curRec()&&curRec().live&&curRec().g===G.round?curRec():null;
   const item=(x,i)=>{
     const k=i+1,sep=x.cards&&x.lead&&i?'<span class="tsep"></span>':'';
-    return`${sep}<span class="tq${x.cards?'':' pass'}${i>=from?' cur':''}${i===last?' last':''}${rec&&rec.notes[k]?' noted':''}" data-k="${k}" style="--pc:${pcol(x.p)}" title="点一下写评语"><b>${k} ${NAMES[x.p]}</b>${
-      x.cards?`<span class="grp">${displayOrder(x,G.L).map(c=>cardHTML(c,G.L)).join('')}</span>`:'<span class="pchip">过</span>'}</span>`;
+    return`${sep}<span class="tq${x.cards?'':' pass'}${i>=from?' cur':''}${i===last?' last':''}${rec&&rec.notes[k]?' noted':''}" data-k="${k}" style="--pc:${pcol(x.p)}" title="点一下写评语"><b><span>${k}</span><em>${NAMES[x.p]}</em></b>${
+      x.cards?`<span class="mcs">${displayOrder(x,G.L).map(miniCard).join('')}</span>`:'<span class="pchip">过</span>'}</span>`;
   };
-  const rest=(G.rest||[]).map(r=>`<span class="tq rest" style="--pc:${pcol(r.p)}"><b>${NAMES[r.p]} 剩牌</b><span class="grp">${r.cards.map(c=>cardHTML(c,G.L)).join('')}</span></span>`).join('');
+  const rest=(G.rest||[]).map(r=>`<span class="tq rest" style="--pc:${pcol(r.p)}"><b><span>剩牌</span><em>${NAMES[r.p]}</em></b><span class="mcs">${r.cards.map(miniCard).join('')}</span></span>`).join('');
   // the whole middle of the table, between the four hands
   const pad=6;
   box.innerHTML=`<div class="tpb" style="left:${g.left+pad}px;top:${g.top+pad}px;width:${Math.max(60,g.right-g.left-2*pad)}px;height:${Math.max(40,g.near-g.top-2*pad)}px">${G.log.map(item).join('')}${rest}</div>`;
   // the cards as large as will still fit
-  const b=box.firstElementChild,t=tcwNow();
-  for(const k of [1.3,1.2,1.1,1,.9,.8,.72,.64,.56,.5,.44,.38,.33,.28,.24,.2]){
-    b.style.setProperty('--cw',Math.round(k*t)+'px');
+  const b=box.firstElementChild;
+  for(let w=72;w>=12;w-=2){
+    b.style.setProperty('--mcw',w+'px');
     if(b.scrollHeight<=b.clientHeight+1&&b.scrollWidth<=b.clientWidth+1)break;
   }
+}
+// a played card as its rank over its suit, nothing more (wild cards gold, level cards marked, jokers 大王 / 小王)
+function miniCard(c){
+  if(c.r>=16)return`<span class="mc jk${c.r===17?' red':''}"><i>${c.r===17?'大':'小'}</i><i>王</i></span>`;
+  const red=c.s==='H'||c.s==='D',wild=isWild(c,G.L);
+  return`<span class="mc${red?' red':''}${wild?' wild':c.r===G.L?' lvl':''}"><i${c.r===10?' class="ten"':''}>${rankName(c.r)}</i><i>${SUIT_CH[c.s]}</i></span>`;
 }
 // a comment on the k-th play of the round being played (or just finished): written in a small box over the table, kept
 // with the record at once; the game waits meanwhile
@@ -5111,7 +5171,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1028-2312';
+const VERSION='1029-1142';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
