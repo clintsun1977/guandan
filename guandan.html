@@ -77,6 +77,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   background:var(--felt-deep);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .optmenu[hidden]{display:none}
 #optBtn[aria-expanded="true"]{color:var(--ink);border-color:var(--gold)}
+/* while it is open the header rises above the play buttons, which on a short screen reach up beside it */
+.bar:has(.optmenu:not([hidden])){z-index:30}
 #pauseBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 /* voice (online only): 开麦 lit gold while your microphone is on; beside each person's name a bouncing speaker while
    they talk, or a grey 闭麦 while their microphone is off */
@@ -141,7 +143,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* the table's cards are the ones everyone needs to read, so they get the larger size; your hand is a little smaller */
 #pile{position:absolute;inset:0;z-index:1;pointer-events:none;--cw:clamp(54px,7.2vw,90px)}
 #pile .probe{position:absolute;visibility:hidden;width:var(--cw)}
-.pc{position:absolute;left:0;top:0;width:var(--cw);height:calc(var(--cw)*1.4);margin:calc(var(--cw)*-.7) 0 0 calc(var(--cw)*-.5);
+.pc{position:absolute;left:0;top:0;width:var(--cw);height:calc(var(--cw)*var(--cr,1.4));margin:calc(var(--cw)*var(--cr,1.4)*-.5) 0 0 calc(var(--cw)*-.5);
   transform-style:preserve-3d;transition:transform .5s cubic-bezier(.25,.75,.3,1)}
 .pc .card,.pc .bk{position:absolute;left:0;top:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .pc .bk{width:100%;height:100%;border-radius:calc(var(--cw)*.1);border:2px solid var(--card);transform:rotateY(180deg);
@@ -261,7 +263,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 @keyframes readyFlash{50%{filter:brightness(1.3);box-shadow:0 0 0 6px rgba(221,176,80,.35),0 0 26px var(--gold)}}
 @keyframes pulse{50%{opacity:.25}}
 
-.played{--cw:clamp(32px,4.2vw,48px);display:flex;flex-direction:column;gap:3px;min-height:calc(var(--cw)*1.4 + 16px);justify-content:center}
+.played{--cw:clamp(32px,4.2vw,48px);display:flex;flex-direction:column;gap:3px;min-height:calc(var(--cw)*var(--cr,1.4) + 16px);justify-content:center}
 #seat3 .played{align-items:flex-start}
 #seat1 .played{align-items:flex-end}
 #seat2 .played,#seat0 .played{align-items:center}
@@ -321,7 +323,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 
 /* hand */
 /* z-index:0 keeps the cards' own stacking order inside the hand, below panels and flying cards */
-#hand{--cw:clamp(48px,min(7.6vw,12.5vh),86px);position:relative;z-index:0;flex:none;touch-action:none;user-select:none;-webkit-user-select:none;min-height:calc(var(--cw)*1.4 + 20px)}
+#hand{--cw:clamp(48px,min(7.6vw,12.5vh),86px);position:relative;z-index:0;flex:none;touch-action:none;user-select:none;-webkit-user-select:none;min-height:calc(var(--cw)*var(--cr,1.4) + 20px)}
 #hand .card{position:absolute;cursor:pointer;transition:transform .12s ease,left .2s ease,top .2s ease;
   transform:rotate(var(--rot,0deg));transform-origin:50% 50%}
 #hand.fan{--cw:clamp(44px,min(6.4vw,10.5vh),74px)}
@@ -376,9 +378,18 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   to{translate:0 -16%;box-shadow:0 0 0 4px #fff,0 0 26px var(--latest);filter:brightness(1.12)}}
 
 /* card face */
-.card{width:var(--cw);height:calc(var(--cw)*1.4);background:var(--card);border:1px solid var(--card-edge);border-radius:calc(var(--cw)*.1);
+.card{width:var(--cw);height:calc(var(--cw)*var(--cr,1.4));background:var(--card);border:1px solid var(--card-edge);border-radius:calc(var(--cw)*.1);
   box-shadow:0 1px 3px rgba(0,0,0,.35);color:var(--card-ink);font-family:var(--font-display);font-weight:600;flex:none;overflow:hidden}
 .card.red{color:var(--red)}
+/* a phone: every card face, in the hand and on the table, is cut down to its corner (rank over suit) so the cards
+   take less room; the jokers read 大王 / 小王 there, and the hand is always laid out flat (no 手持) */
+html.phone body:not(.test){--cr:.86}
+html.phone body:not(.test) .card .pip,html.phone body:not(.test) .card .tag.crown{display:none}
+html.phone body:not(.test) .card.joker .idx{display:none}
+.card .jw{display:none}
+html.phone body:not(.test) .card.joker .jw{display:flex;flex-direction:column;align-items:center;position:absolute;left:calc(var(--cw)*.05);top:calc(var(--cw)*.08);
+  width:calc(var(--cw)*.36);font-family:var(--font-display);font-weight:900;font-size:calc(var(--cw)*.3);line-height:1.08}
+html.phone #fanBtn{display:none}
 .card .idx{position:absolute;left:calc(var(--cw)*.05);top:calc(var(--cw)*.06);width:calc(var(--cw)*.36);display:flex;flex-direction:column;align-items:center;line-height:1;font-size:calc(var(--cw)*.34)}
 .card .idx .rk.ten{letter-spacing:-.08em;font-size:.9em}
 .card .idx .su{font-size:.82em;margin-top:.08em}
@@ -2366,7 +2377,7 @@ const CROWN='<svg viewBox="0 0 24 20" aria-hidden="true"><path d="M2 17h20v2.4H2
 function cardHTML(c,L,extra=''){
   if(c.r>=16){
     const big=c.r===17;
-    return `<div class="card joker ${big?'red':''} ${extra}" data-id="${c.id}"><span class="idx">${[...'JOKER'].map(ch=>`<span>${ch}</span>`).join('')}</span><span class="pip">${big?'★':'☆'}</span></div>`;
+    return `<div class="card joker ${big?'red':''} ${extra}" data-id="${c.id}"><span class="idx">${[...'JOKER'].map(ch=>`<span>${ch}</span>`).join('')}</span><span class="pip">${big?'★':'☆'}</span><span class="jw"><span>${big?'大':'小'}</span><span>王</span></span></div>`;
   }
   const red=c.s==='H'||c.s==='D',wild=isWild(c,L),lvl=!wild&&c.r===L;
   return `<div class="card ${red?'red':''} ${wild?'wild':''} ${lvl?'lvl':''} ${extra}" data-id="${c.id}"><span class="idx"><span class="rk ${c.r===10?'ten':''}">${rankName(c.r)}</span><span class="su">${SUIT_CH[c.s]}</span>${wild?'<span class="tag crown" title="百搭">'+CROWN+'</span>':''}</span><span class="pip">${SUIT_CH[c.s]}</span></div>`;
@@ -2425,7 +2436,7 @@ function pileGeo(){
   // the action column, where it reaches up over the table on the right
   const b=$('#btns'),br=sideBtns()&&!b.hidden&&b.offsetHeight?b.getBoundingClientRect():null;
   const col=br?{left:br.left-L.left,top:br.top-L.top}:null;
-  return{L,top,bottom,left,right,cx:L.width/2,cy:(top+bottom)/2,hy:e.top+e.height/2-L.top,sideY:{1:mid('#seat1 .who'),3:mid('#seat3 .who')},cw,ch:cw*1.4,col,
+  return{L,top,bottom,left,right,cx:L.width/2,cy:(top+bottom)/2,hy:e.top+e.height/2-L.top,sideY:{1:mid('#seat1 .who'),3:mid('#seat3 .who')},cw,ch:cw*CR,col,
     ...(r=>r.height?{lp:r.bottom-L.top,lpBox:{l:r.left-L.left,r:r.right-L.left,t:r.top-L.top}}:{lp:0,lpBox:{l:0,r:0,t:0}})(R('#lastPlay')),
     near:nearBottom()-L.top};
 }
@@ -2481,7 +2492,7 @@ let TS=1;
 const MIN_TS=.55;
 function groupDims(gr,g,sc,tag){
   const cw=g.cw*TS,off=cw*.42,span=cw+off*(gr.n-1);
-  return{off,cw,ch:cw*1.4,w:span*sc+8,h:cw*1.4*sc+(tag?26:6)};
+  return{off,cw,ch:cw*CR,w:span*sc+8,h:cw*CR*sc+(tag?26:6)};
 }
 // lay out one player's plays; with apply=false it only reports whether they fit in the player's zone
 function layoutPlayer(p,g,apply){
@@ -2640,7 +2651,7 @@ function restLayout(p,cards,origins,animate){
   // the largest size at which the rows fit the player's part of the table
   let s,cw,ch,off,counts;
   for(s of [1.2,1.1,1,.9,.8,.7,.6,.5,.45,.4]){
-    cw=g.cw*s;ch=cw*1.4;off=cw*.42;
+    cw=g.cw*s;ch=cw*CR;off=cw*.42;
     // rows of about equal length
     const rows=Math.ceil(n/Math.max(1,Math.floor((W-cw)/off)+1)),per=Math.ceil(n/rows);
     counts=Array.from({length:rows},(_,r)=>Math.min(per,n-r*per));
@@ -2763,7 +2774,7 @@ function placeLastPlay(){
   // disc's lower edge (below the figure) to give some back
   const cw=$('#pile .probe').offsetWidth||48;
   let y=e.bottom+6-T.top;
-  const short=cw*1.4*.75-(nearBottom()-T.top-(y+el.offsetHeight)-2*PASS_Y);
+  const short=cw*CR*.75-(nearBottom()-T.top-(y+el.offsetHeight)-2*PASS_Y);
   if(short>0)y=Math.max(e.top+e.height*.74-T.top,y-short);
   const top=y+'px';
   el.style.left=e.left+e.width/2-T.left+'px';
@@ -2897,7 +2908,7 @@ try{
   flatRows=+localStorage.getItem('guandan-flatrows')||1;
 }catch(_){}
 // the test version always lays the hand out flat, in three rows
-const fanMode=()=>!TEST&&handView==='fan';
+const fanMode=()=>!TEST&&!isPhone()&&handView==='fan';
 // cards that just arrived in your hand, with when they came: they flash until ARRIVE_MS has passed
 const arrivals=new Map(),ARRIVE_MS=4000;
 function renderHand(){
@@ -3009,8 +3020,18 @@ function drawFixZone(g){
     return`<span class="fzt${!a?' loose':isBomb(a)?' boom':''}" style="left:${r.x}px;top:${r.y+3}px">${name}</span>`;
   }).join('');
 }
-// a card's corner index (rank over suit) takes about half its height
-const ROW_STEP=.58;
+// a card's corner index (rank over suit) takes about half its height, so rows of cards step down by a little more
+// than that; a phone's cut-down cards are almost all index, so its rows hardly overlap
+let ROW_STEP=.58,CR=1.4;
+const PHONE_MQ=matchMedia('(max-width:560px), (max-height:500px)');
+const isPhone=()=>PHONE_MQ.matches&&!TEST;
+function syncPhone(){
+  const on=isPhone();
+  document.documentElement.classList.toggle('phone',on);
+  CR=on?.86:1.4;ROW_STEP=on?.92:.58;
+}
+syncPhone();
+PHONE_MQ.addEventListener('change',()=>{syncPhone();if(G){renderHand();render()}});
 // flat rows of about equal length, the player's choice of one to three; a single row too cramped to read becomes two
 function flatGeo(n,W,cw,ch,keys){
   let rows=Math.max(1,Math.min(TEST?3:flatRows,Math.ceil(n/5)));
@@ -4197,7 +4218,14 @@ $('#confirmBtn').onclick=()=>{
   if(cfm){cfm=null;if(G)renderControls()}
 };
 // the options drop down on a tap of 选项 and fold away on a tap anywhere outside them
-$('#optBtn').onclick=()=>{const m=$('#optMenu');m.hidden=!m.hidden;$('#optBtn').setAttribute('aria-expanded',!m.hidden)};
+// it hangs from the button's right edge; where the button sits near the left of the screen (a phone held upright) it
+// hangs from the left edge instead, so it never runs off the screen
+$('#optBtn').onclick=()=>{
+  const m=$('#optMenu');m.hidden=!m.hidden;$('#optBtn').setAttribute('aria-expanded',!m.hidden);
+  if(m.hidden)return;
+  m.style.left=m.style.right='';
+  if(m.getBoundingClientRect().left<8){m.style.right='auto';m.style.left='0'}
+};
 document.addEventListener('click',e=>{if(!$('#optMenu').hidden&&!e.target.closest('.optwrap')){$('#optMenu').hidden=true;$('#optBtn').setAttribute('aria-expanded','false')}});
 syncAudioBtns();
 // browsers only allow audio after the first tap or key press; Safari on an iPad counts only the end of a tap (not
@@ -4380,7 +4408,7 @@ $('#testGo').onclick=()=>{
   enterTest();
 };
 function enterTest(){
-  TEST=true;document.body.classList.add('test');
+  TEST=true;document.body.classList.add('test');syncPhone();
   TREC.started=new Date();TREC.rounds=testLoad();
   NET.mode='solo';NET.off=0;setHumans([0]);
   testNames();
