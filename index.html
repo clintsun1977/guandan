@@ -394,6 +394,23 @@ html.phone body:not(.test) .card.joker .idx{display:none}
 html.phone body:not(.test) .card.joker .jw{display:flex;flex-direction:column;align-items:center;position:absolute;left:calc(var(--cw)*.05);top:calc(var(--cw)*.08);
   width:calc(var(--cw)*.36);font-family:var(--font-display);font-weight:900;font-size:calc(var(--cw)*.3);line-height:1.08}
 html.phone #fanBtn{display:none}
+/* a phone keeps the table as clear as it can: the shuffle / cut and done-sorting buttons, the sorting sign and the
+   clocks at about half size; no card back by the names, no level disc in the middle (the level is in the corner) and
+   no line saying who played what; the cards on the table as large as they fit */
+html.phone body:not(.test) #deckBtn,html.phone body:not(.test) #readyBtn{--d:46px!important;font-size:13px!important}
+html.phone body:not(.test) .stack,html.phone body:not(.test) .flick{width:calc(var(--cw)*.5);height:calc(var(--cw)*.7);margin:calc(var(--cw)*-.35) 0 0 calc(var(--cw)*-.25)}
+html.phone body:not(.test) .prepbig #prepL{font-size:clamp(17px,3vh,28px);padding:4px 11px 4px 13px;border-radius:10px}
+html.phone body:not(.test) .prepbig .bigclock{font-size:clamp(15px,2.7vh,23px)}
+html.phone body:not(.test) .clock{font-size:10px}
+html.phone body:not(.test) #myClock{font-size:11px}
+html.phone body:not(.test) .who .back{display:none}
+html.phone body:not(.test) .fx-act{font-size:13px}
+html.phone body:not(.test) .emblem{visibility:hidden}
+html.phone body:not(.test) #lastPlay{display:none}
+html.phone body:not(.test) #pile{--cw:clamp(54px,min(18vw,15vh),88px)}
+/* the tribute line, folded into a button ten seconds into the play (a tap opens it, another folds it again) */
+.tribinfo .tribbtn{font-size:13px;padding:2px 10px}
+html.phone .tribinfo.open{cursor:pointer}
 .card .idx{position:absolute;left:calc(var(--cw)*.05);top:calc(var(--cw)*.06);width:calc(var(--cw)*.36);display:flex;flex-direction:column;align-items:center;line-height:1;font-size:calc(var(--cw)*.34)}
 .card .idx .rk.ten{letter-spacing:-.08em;font-size:.9em}
 .card .idx .su{font-size:.82em;margin-top:.08em}
@@ -2469,6 +2486,7 @@ const GAP=10;   // space between two plays of the same player
 // neat line centred on their own seat: across the table for you and your partner, down the table for the
 // players at the sides. A line that runs out of room wraps into a second line closer to the middle.
 function zoneFor(p,g){
+  if(phoneRows())return phoneZone(p,g);
   const side=(g.right-g.left)*.27,mx0=g.left+side,mx1=g.right-side;
   const z=p===3?{x0:g.left+PASS_X,x1:mx0,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y}
     :p===1?{x0:mx1,x1:g.right-PASS_X,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y}
@@ -2488,6 +2506,23 @@ function zoneFor(p,g){
   }
   return z;
 }
+// a phone held upright: the table is cut into four rows, one per player, each as wide as the table - your partner's
+// at the top, yours at the bottom, and the left-hand player's (cards starting from the left) just above the two side
+// plates and the right-hand player's (cards ending at the right) just below them - so that even a long play fits at a
+// size everyone can read. A phone on its side keeps the usual layout, which has the width for it
+const phoneRows=()=>isPhone()&&innerHeight>innerWidth;
+function phoneZone(p,g){
+  const R=q=>$(q).getBoundingClientRect(),a=R('#seat3 .whorow'),c=R('#seat1 .whorow');
+  // the side plates, with the 已出牌 / 过 tags above them
+  const pt=Math.min(a.top,c.top)-g.L.top-26,pb=Math.max(a.bottom,c.bottom)-g.L.top;
+  const t=g.top+PASS_Y,b=g.near-PASS_Y,h=(b-t)*.25,x0=PASS_X,x1=g.L.width-PASS_X;
+  const z=p===2?{x0,x1,y0:t,y1:t+h}
+    :p===0?{x0,x1,y0:b-h,y1:b}
+    :p===3?{x0,x1,y0:t+h,y1:Math.max(t+h+20,pt-PASS_Y)}
+    :{x0,x1,y0:Math.min(b-h-20,pb+PASS_Y),y1:b-h};
+  if(g.col&&g.col.left<z.x1&&g.col.top<z.y1)z.x1=Math.max(z.x0+g.cw,g.col.left-PASS_X);
+  return z;
+}
 const pileT=(x,y,rot,flip,sc=1)=>`perspective(800px) translate(${x}px,${y}px) rotate(${rot}deg) rotateY(${flip}deg) scale(${sc})`;
 function relPoint(pt,g){return{x:pt.x-g.L.left,y:pt.y-g.L.top}}
 // the plays of the current trick, oldest first, each remembering its cards' elements and its own little jitter
@@ -2503,7 +2538,8 @@ function groupDims(gr,g,sc,tag){
 function layoutPlayer(p,g,apply){
   const groups=pileGroups.filter(gr=>gr.p===p);
   if(!groups.length)return true;
-  const z=zoneFor(p,g),across=p===0||p===2;
+  // on a phone held upright every player's plays run across their row (see phoneZone)
+  const z=zoneFor(p,g),across=p===0||p===2||phoneRows();
   const len=across?z.x1-z.x0:z.y1-z.y0,room=across?z.y1-z.y0:z.x1-z.x0;
   const items=groups.map(gr=>{
     // only a bomb gets a tag, and it sits on the cards' lower edge, so it takes no room of its own
@@ -2521,9 +2557,9 @@ function layoutPlayer(p,g,apply){
   const fits=depth<=room&&lines.every(l=>l.reduce((s,it)=>s+it.along,0)+GAP*(l.length-1)<=len);
   if(!apply)return fits;
   // the first line sits right in front of the player; any further line steps in towards the middle
-  const centre=across?(z.x0+z.x1)/2:g.sideY[p];
-  let edge=p===2?z.y0:p===0?z.y1:p===3?z.x0:z.x1;
-  const dir=p===2||p===3?1:-1;
+  const centre=!across?g.sideY[p]:p===3&&phoneRows()?-1e9:p===1&&phoneRows()?1e9:(z.x0+z.x1)/2;
+  let edge=p===0?z.y1:p===2||across?z.y0:p===3?z.x0:z.x1;
+  const dir=p===0||(p===1&&!across)?-1:1;
   pileEl().querySelectorAll('.ktag[data-p="'+p+'"]').forEach(e=>e.remove());
   for(const l of lines){
     const deep=Math.max(...l.map(it=>it.deep));
@@ -2562,7 +2598,8 @@ function pileThrow(p,play,origins,animate){
   }
   const cards=displayOrder(play,G.L),n=cards.length,base=(Math.random()-.5)*8;
   const gr={p,play,n,els:[],latest:true,sc:BIG,rot:cards.map(()=>base+(Math.random()-.5)*4),dy:cards.map(()=>(Math.random()-.5)*4)};
-  const anim=animate&&!reduceMotion();
+  // a phone shows the cards straight away in their places, without the flight and the turn
+  const anim=animate&&!reduceMotion()&&!isPhone();
   const seat=relPoint(seatPoint(p),g);
   cards.forEach((c,i)=>{
     const el=document.createElement('div');
@@ -2578,7 +2615,7 @@ function pileThrow(p,play,origins,animate){
       el.getBoundingClientRect();
       el.style.transition='';
       el.style.transitionDelay=i*30+'ms';
-    }else layer.appendChild(el);
+    }else{el.style.transition='none';layer.appendChild(el)}
     gr.els.push(el);
   });
   pileGroups.push(gr);
@@ -2591,6 +2628,8 @@ function pileThrow(p,play,origins,animate){
     TS=Math.max(MIN_TS,TS*.9);
   }
   for(let q=0;q<4;q++)layoutPlayer(q,g,true);
+  // cards put down without the flight appear right in their places, and only later moves slide
+  if(!anim)gr.els.forEach(el=>{el.getBoundingClientRect();el.style.transition=''});
 }
 // the face-down heap stays a small, tight pile in the middle
 const HEAP_R=26,HEAP_SC=.7;
@@ -2602,6 +2641,8 @@ function pileSweep(){
   const layer=pileEl(),g=pileGeo();
   pileGroups=[];TS=1;
   layer.querySelectorAll('.ktag').forEach(e=>e.remove());
+  // a phone keeps no heap: the finished trick simply goes
+  if(isPhone()){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return}
   layer.querySelectorAll('.pc.cur,.pc.old').forEach(el=>{
     el.classList.remove('cur','old');
     el.style.transitionDelay=(Math.random()*120|0)+'ms';
@@ -2614,7 +2655,7 @@ function pileRebuild(){
   const layer=pileEl(),g=pileGeo();
   layer.querySelectorAll('.pc,.ktag').forEach(e=>e.remove());
   pileZ=1000;heapZ=1;pileGroups=[];TS=1;
-  for(let i=0;i<(G.heapN||0);i++){
+  for(let i=0;i<(isPhone()?0:G.heapN||0);i++){
     const el=document.createElement('div');
     el.className='pc';el.innerHTML='<div class="bk"></div>';
     el.style.zIndex=++heapZ;el.style.transform=heapSpot(g);
@@ -2666,7 +2707,7 @@ function restLayout(p,cards,origins,animate){
   // right in front of the player: against the near edge of their part of the table
   const cx=p===3?z.x0+widest/2:p===1?z.x1-widest/2:(z.x0+z.x1)/2;
   const top=p===2||under?z.y0:p===0?z.y1-h:Math.max(z.y0,Math.min(z.y1-h,g.sideY[p]-h/2));
-  const seat=relPoint(seatPoint(p),g),anim=animate&&!reduceMotion();
+  const seat=relPoint(seatPoint(p),g),anim=animate&&!reduceMotion()&&!isPhone();
   let i=0;
   counts.forEach((k,r)=>{
     for(let j=0;j<k;j++,i++){
@@ -2863,8 +2904,20 @@ function renderMsg(){
   }
   m.innerHTML=t;
   const ti=$('#tribInfo'),showTi=['play','roundEnd','over'].includes(G.phase);
-  ti.innerHTML=showTi?tribHtml('tl')+kangHtml(true):'';
+  let html=showTi?tribHtml('tl')+kangHtml(true):'',folded=false;
+  // on a phone the line folds into a button ten seconds into the play: a tap opens it, another tap folds it again
+  if(html&&isPhone()&&G.phase==='play'){
+    if(TRIB.round!==G.round){TRIB.round=G.round;TRIB.at=Date.now();TRIB.open=false;setTimeout(()=>{if(G)renderMsg()},10100)}
+    if(Date.now()-TRIB.at>10000){folded=!TRIB.open;if(folded)html=`<button class="link tribbtn">${G.trib&&G.trib.length?'进贡':'抗贡'}</button>`}
+  }
+  ti.innerHTML=html;
+  ti.classList.toggle('open',!folded&&html!==''&&isPhone()&&G.phase==='play'&&Date.now()-TRIB.at>10000);
 }
+const TRIB={round:null,at:0,open:false};
+$('#tribInfo').addEventListener('click',e=>{
+  if(!G||!isPhone()||G.phase!=='play'||Date.now()-TRIB.at<=10000)return;
+  e.stopPropagation();TRIB.open=!TRIB.open;renderMsg();
+});
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
 // 抗贡: just whose big jokers they are (short: the line kept in the corner while the round is played)
@@ -5393,7 +5446,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1029-1534';
+const VERSION='1029-1601';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
