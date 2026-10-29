@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap">
+<!-- the lobby's 掼蛋 in brush calligraphy: only those two characters are fetched -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&text=%E6%8E%BC%E8%9B%8B&display=swap">
 <style>
 /* Layout: one-screen felt table. Partner on top, opponents left and right, your hand along the bottom edge. */
 :root{
@@ -72,6 +74,13 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .score>span.playing b{color:#fff;font-size:25px;margin-left:2px}
 .score>span.playing .lvx{color:#ffe08a}
 .bar .acts{display:flex;gap:6px}
+/* 选项: sound, music, card back and 出牌需确认 drop down under one button */
+.optwrap{position:relative;display:inline-flex}
+.optwrap>.link{width:100%;justify-content:center}
+.optmenu{position:absolute;z-index:60;top:calc(100% + 6px);right:0;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:8px;
+  background:var(--felt-deep);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.optmenu[hidden]{display:none}
+#optBtn[aria-expanded="true"]{color:var(--ink);border-color:var(--gold)}
 #pauseBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 /* who paid whom and what came back, kept in the corner while the round is played */
 .tribinfo{display:flex;flex-direction:column;gap:3px;font-size:16px;color:var(--ink);line-height:1.5}
@@ -311,6 +320,15 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   transform:rotate(var(--rot,0deg));transform-origin:50% 50%}
 #hand.fan{--cw:clamp(44px,min(6.4vw,10.5vh),74px)}
 #hand .card.sel{transform:rotate(var(--rot,0deg)) translateY(-20%)}
+/* 出牌需确认: the picked cards are shown side by side at 1.5 times their size in the middle of the table, and 确认 flashes,
+   until it is pressed */
+#cfmShow{position:fixed;z-index:40;transform:translate(-50%,-50%);display:flex;padding:calc(var(--cw)*.12) calc(var(--cw)*.14);border-radius:14px;
+  background:rgba(8,32,24,.85);border:2px solid var(--gold);box-shadow:0 0 30px rgba(221,176,80,.55),0 12px 40px rgba(0,0,0,.5);pointer-events:none;animation:placeIn .18s ease-out}
+#cfmShow[hidden]{display:none}
+#cfmShow .card{position:relative;flex:none;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+#cfmShow .card+.card{margin-left:var(--step)}
+#playBtn.cfm{animation:cfmBlink .7s ease-in-out infinite}
+@keyframes cfmBlink{50%{background:#fff3c4;box-shadow:0 0 0 7px rgba(221,176,80,.5),0 0 32px var(--gold)}}
 #hand.fan .card{cursor:grab}
 /* while dragging: an outline where the cards will land, behind the hand, showing through the gap the others open */
 .land{position:absolute;z-index:0;pointer-events:none;border:3px dashed var(--gold);border-radius:8px;background:rgba(221,176,80,.18);
@@ -405,7 +423,11 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px}
 /* everything fits on one screen, a laptop or a phone, without scrolling */
 .lobby-box{width:min(440px,100%);display:flex;flex-direction:column;align-items:stretch;gap:8px;text-align:center;margin:auto 0}
-.lobby-title{margin:0;line-height:1.1;font-family:var(--font-display);font-weight:900;font-size:38px;letter-spacing:.24em;padding-left:.24em;color:var(--ink)}
+/* the name in large gold brush strokes, with a small signature under it */
+.lobby-title{margin:0;line-height:1;font-family:"Ma Shan Zheng",var(--font-display);font-weight:400;font-size:68px;letter-spacing:.12em;padding-left:.12em;
+  color:var(--gold);background:linear-gradient(180deg,#fbe7a6 0%,var(--gold) 55%,#b8862e 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+.lobby-by{margin:-4px 0 4px;font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:14px;letter-spacing:.12em;color:var(--muted)}
 .lobby-name{display:flex;align-items:center;gap:10px}
 .lobby-name .lobby-nick{flex:1;min-width:0}
 .lobby-label{font-size:18px;color:var(--muted);text-align:left;white-space:nowrap}
@@ -513,7 +535,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   .tribinfo{grid-area:trib}
   .brand{grid-area:brand;line-height:1}
   .score{grid-area:score;flex-direction:column;align-items:flex-start;gap:4px}
-  /* the sound, music, card-back, rules, pause and leave buttons sit together in the top-right corner as a small
+  /* the options, rules, pause and leave buttons sit together in the top-right corner as a small
      block of two columns, well clear of the player across the table */
   .bar .acts{position:absolute;top:0;right:0;display:grid;grid-template-columns:repeat(2,auto);gap:6px}
   .bar .acts .link{text-align:center}
@@ -738,7 +760,7 @@ body.test .tside:not(.open){display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹"><span><span class="long">牌背：</span><span id="backName">大雁</span></span></button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button></span></span><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -789,7 +811,8 @@ body.test .tside:not(.open){display:none}
 <div class="lobby" id="lobby" hidden>
   <div class="lobby-box">
     <h1 class="lobby-title">掼蛋</h1>
-    <div class="lobby-name"><label class="lobby-label" for="nick">昵称</label><input class="lobby-nick" id="nick" maxlength="8" autocomplete="off" placeholder="输入你的昵称"></div>
+    <div class="lobby-by">made by Clint</div>
+    <div class="lobby-name"><label class="lobby-label" for="nick">玩家昵称</label><input class="lobby-nick" id="nick" maxlength="8" autocomplete="off" placeholder="输入你的昵称"></div>
     <div class="lobby-modes">
       <button class="mode-btn on" data-mode="solo">单人</button>
       <button class="mode-btn" data-mode="host">开房间</button>
@@ -2133,6 +2156,7 @@ function onPlay(){
   // you lead next but the finished trick is still on show: the play goes out the moment your turn starts
   if(G.phase==='play'&&G.turn===-1&&G.nextLeader===0){
     if(!selectedCards().length){setMsg('先选几张牌',true);return}
+    if(askConfirm())return;
     G.queuedPlay=true;setMsg('这一轮的牌收起后马上出');return;
   }
   if(G.phase!=='play')return;
@@ -2145,8 +2169,34 @@ function onPlay(){
   const ok=reads.filter(r=>beats(r,cur)).sort((a,b)=>strength(b)-strength(a));
   if(!ok.length){setMsg(`管不上${cur?TYPE_NAME[cur.type]:''}`,true);return}
   if(waitingHost())return;
+  if(askConfirm())return;
   act(playEvt(0,{...ok[0],cards}));
 }
+// 出牌需确认 (an option): the first press only shows the picked cards large and turns 出牌 into 确认; pressing it again
+// with the same cards still picked plays them, and any change to the picked cards or the turn calls it off
+let confirmPlay=false,cfm=null;
+try{confirmPlay=localStorage.getItem('guandan-confirm')==='1'}catch(_){}
+const selKey=()=>[...sel].sort((a,b)=>a-b).join(',');
+function askConfirm(){
+  if(!confirmPlay||cfm===selKey())return false;
+  cfm=selKey();renderControls();return true;
+}
+// the cards waiting for 确认, in the order the play reads, 1.5 times the size of the hand's cards and side by side in the
+// middle of the table; a long play keeps every card's corner in view by overlapping, and shrinks only if it must
+function syncCfmShow(){
+  let box=$('#cfmShow');
+  if(!cfm){if(box)box.hidden=true;return}
+  if(!box){box=document.createElement('div');box.id='cfmShow';document.body.appendChild(box)}
+  const cards=selectedCards(),r=analyze(cards,G.L)[0],shown=r?displayOrder({...r,cards},G.L):cards,n=shown.length;
+  const t=$('#table').getBoundingClientRect(),hc=$('#hand .card'),maxW=t.width*.9;
+  const cw=Math.min((hc?hc.offsetWidth:60)*1.5,t.height*.5/1.4,maxW/(1+.45*(n-1)));
+  const step=n>1?Math.min(cw*1.08,(maxW-cw)/(n-1)):cw;
+  box.style.setProperty('--cw',cw+'px');box.style.setProperty('--step',step-cw+'px');
+  box.innerHTML=shown.map(c=>cardHTML(c,G.L)).join('');
+  box.style.left=t.left+t.width/2+'px';box.style.top=t.top+t.height/2+'px';
+  box.hidden=false;
+}
+addEventListener('resize',()=>{if(cfm)syncCfmShow()});
 function onPass(){
   if(G.phase!=='play'||G.turn!==0||!G.trick||waitingHost())return;
   sel=new Set();
@@ -2717,6 +2767,10 @@ function renderControls(){
   const picked=sel.size>0,cur=my&&G.trick?G.trick.play:null;
   const playable=(my||soon)&&picked&&analyze(selectedCards(),G.L).some(r=>beats(r,cur));
   const can={playBtn:playable,hintBtn:my,passBtn:my&&!!G.trick,clearBtn:picked};
+  if(cfm&&(!playable||cfm!==selKey()))cfm=null;
+  $('#playBtn').textContent=cfm?'确认':'出牌';
+  $('#playBtn').classList.toggle('cfm',!!cfm);
+  syncCfmShow();
   for(const id in can){const b=$('#'+id);b.disabled=!can[id];b.classList.toggle('primary',can[id])}
   // 同花顺 beside your name while you sort your cards and while you play them
   $('#sfBtn').hidden=!['prep','play'].includes(G.phase)||!G.hands[0].length;
@@ -2842,6 +2896,7 @@ const actionInset=w=>Math.min(150,Math.max(colW/2+16,w*.12));
 // tags (fixTags), the zone's size (fixW, fixH) and the line a dragged card crosses to land in the zone (fixEdge).
 // FIX_BTN: on a computer or tablet the 固定 button stands just right of the frame's bottom corner, in a strip of its own
 const FIX_GAP=14,FIX_TAG=46,FIX_BTN=66;
+let fixPeak={k:'',w:0,h:0};
 function handGeo(n,keys){
   if(testGrouped())return testGeo();
   const el=$('#hand'),probe=el.firstElementChild,Wall=el.clientWidth;
@@ -2852,10 +2907,15 @@ function handGeo(n,keys){
   const cw=probe.offsetWidth,ch=probe.offsetHeight;
   // each group in one row, overlapping just enough to show every card's corner; a long group closes up
   const rows=(G&&G.fixed||[]).map(gr=>{const k=gr.length,off=k>1?Math.min(cw*.42,(Wall*.34-cw)/(k-1)):0;return{gr,off,w:cw+off*(k-1)}});
-  // with no groups yet the zone is an empty frame: in the free room on the left on a computer or tablet (leaving the
-  // button its strip), a narrow strip on a phone, where the button sits in the row under the hand
+  // with no groups yet the zone is an empty frame: on a computer or tablet at least as wide as a group of three with
+  // its tag (wider if the free room on the left allows, leaving the button its strip), a narrow strip on a phone,
+  // where the button sits in the row under the hand
   const bw=side&&!TEST?FIX_BTN:0;
-  const fw=TEST?0:rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:side?Math.max(70,Math.round(side-bw-FIX_GAP)):30;
+  // while a round is played the zone only ever grows: it keeps the largest width and height it has had until the next
+  // deal (or until the window or the cards change size), so it never shrinks as groups are played out
+  const pk=`${G&&G.round}|${Wall}|${cw}`;
+  if(TEST||!G||['start','shuffle','cut','deal'].includes(G.phase)||fixPeak.k!==pk)fixPeak={k:pk,w:0,h:0};
+  const fw=fixPeak.w=TEST?0:Math.max(fixPeak.w,rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:side?Math.max(Math.round(cw*1.84+FIX_TAG),Math.round(side-bw-FIX_GAP)):30);
   // (the test version has no fixed zone: its groups are made with 成组 and 拆开)
   const x0=TEST?side:Math.max(side,fw+bw+FIX_GAP),W=Wall-side-x0;
   const g=fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
@@ -2866,9 +2926,11 @@ function handGeo(n,keys){
   if(rows.length>1)gap=Math.max(ch*.3,Math.min(gap,(Math.max(base,ch*2.4)-lift-ch-pad)/(rows.length-1)));
   g.fix=new Map();g.fixTags=[];
   rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:r.w+5,y,gr:r.gr})});
-  g.fixW=fw;g.fixH=rows.length?lift+ch+(rows.length-1)*gap+6:0;g.cw=cw;g.ch=ch;g.fixEmpty=!rows.length;
+  // an empty frame stands as tall as the hand (never less than one card and its margin)
+  g.fixH=fixPeak.h=TEST?0:Math.max(fixPeak.h,rows.length?lift+ch+(rows.length-1)*gap+6:Math.max(base,ch+20));
+  g.fixW=fw;g.cw=cw;g.ch=ch;g.fixEmpty=!rows.length;
   g.fixEdge=fw+bw/2+FIX_GAP/2;
-  g.height=Math.max(base,rows.length?g.fixH+pad:0);
+  g.height=Math.max(base,g.fixH+(rows.length?pad:0));
   return g;
 }
 // the fixed zone's outline (behind the cards) and, beside each group, what kind of play it makes (over them);
@@ -3757,7 +3819,8 @@ function setSel(id,on,lazy){
 }
 handEl.addEventListener('pointerdown',e=>{
   if(G.phase!=='play'&&G.phase!=='return'&&G.phase!=='prep'&&G.phase!=='tribPick')return;
-  const el=e.target.closest('.card');if(!el)return;
+  // a tap on the hand's empty felt, beside or between the cards, puts every picked card back
+  const el=e.target.closest('.card');if(!el){if(e.target===handEl)clearPicked();return}
   e.preventDefault();
   const id=+el.dataset.id,t=performance.now();
   if(lastDown&&lastDown.id===id&&t-lastDown.t<350){
@@ -4021,6 +4084,16 @@ function startNextIfReady(){
 }
 $('#sfxBtn').onclick=()=>{Sound.toggle('sfx');syncAudioBtns()};
 $('#musicBtn').onclick=()=>{Sound.toggle('music');syncAudioBtns()};
+$('#confirmBtn').setAttribute('aria-pressed',confirmPlay);
+$('#confirmBtn').onclick=()=>{
+  confirmPlay=!confirmPlay;
+  try{localStorage.setItem('guandan-confirm',confirmPlay?'1':'0')}catch(_){}
+  $('#confirmBtn').setAttribute('aria-pressed',confirmPlay);
+  if(cfm){cfm=null;if(G)renderControls()}
+};
+// the options drop down on a tap of 选项 and fold away on a tap anywhere outside them
+$('#optBtn').onclick=()=>{const m=$('#optMenu');m.hidden=!m.hidden;$('#optBtn').setAttribute('aria-expanded',!m.hidden)};
+document.addEventListener('click',e=>{if(!$('#optMenu').hidden&&!e.target.closest('.optwrap')){$('#optMenu').hidden=true;$('#optBtn').setAttribute('aria-expanded','false')}});
 syncAudioBtns();
 // browsers only allow audio after the first tap or key press; Safari on an iPad counts only the end of a tap (not
 // the touch going down), so every kind of tap event tries, and each later tap tries again until the sound is on
@@ -4029,7 +4102,11 @@ for(const ev of ['pointerdown','pointerup','touchend','click','keydown'])documen
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)Sound.wake()});
 $('#quitBtn').onclick=askQuit;
 $('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start')act({k:'pause',on:!G.paused,p:toAbs(0)})};
-$('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;if(sel.size){sel=new Set();hintIdx=0;sfIdx=0;renderHand()}});
+function clearPicked(){if(sel.size){sel=new Set();hintIdx=0;sfIdx=0;renderHand()}}
+$('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;clearPicked()});
+// so does a tap on the empty space around your name and under the hand (the hand itself is handled on pointerdown,
+// since a drag or a sweep of the cards also ends in a click there)
+for(const z of ['#mebar','.handwrap'])$(z).addEventListener('click',e=>{if(e.target.closest('#hand,button,input,textarea,.meinfo'))return;clearPicked()});
 document.addEventListener('keydown',e=>{
   if(TV.open||TV.edit||!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input,textarea'))return;
   if(TEST&&e.key==='ArrowLeft'){e.preventDefault();testBack();return}
@@ -5171,7 +5248,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1029-1142';
+const VERSION='1029-1402';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
