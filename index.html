@@ -615,6 +615,8 @@ body.test #tsBtn{display:inline-flex}
 .tcount .tcsum{font-size:12px;color:var(--muted);margin-top:4px}
 body.test #tsBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 body.test.fsok #fsBtn{display:inline-flex}
+/* the test version has its own 全屏 button in the header, so the one in 选项 stays out of the way */
+body.test #fsOptBtn{display:none}
 body.test.fsok:not(.fs) #fsBtn{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
 /* one card size for all four hands and the table (--tcw, worked out from the screen), with the side hands' columns as
    wide as the hands */
@@ -793,7 +795,7 @@ body.test .tside:not(.open){display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -4464,7 +4466,13 @@ function testFull(on){
     else if(!fsOn()){const r=(d.requestFullscreen||d.webkitRequestFullscreen).call(d);if(r&&r.catch)r.catch(()=>{})}
   }catch(_){}
 }
-const fsMark=()=>{$('#fsBtn').textContent=fsOn()?'退出全屏':'回到全屏';document.body.classList.toggle('fs',fsOn())};
+const fsMark=()=>{
+  $('#fsBtn').textContent=fsOn()?'退出全屏':'回到全屏';document.body.classList.toggle('fs',fsOn());
+  $('#fsOptBtn').textContent=fsOn()?'退出全屏':'全屏';$('#fsOptBtn').setAttribute('aria-pressed',fsOn());
+};
+// 全屏 in 选项: only where the page may take the whole screen (not the claude.ai viewer, not an iPhone)
+$('#fsOptBtn').hidden=!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
+$('#fsOptBtn').onclick=()=>testFull();
 for(const ev of ['fullscreenchange','webkitfullscreenchange'])document.addEventListener(ev,fsMark);
 // the one card size for every hand: the side hands in five rows are about 5.5 cards wide (each further card shows 0.42 of
 // one), with the table about 6 between them; upright, your partner's and your three rows (about 3 cards high each), the
@@ -5357,7 +5365,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1029-1513';
+const VERSION='1029-1519';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
