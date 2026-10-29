@@ -82,6 +82,16 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .optmenu[hidden]{display:none}
 #optBtn[aria-expanded="true"]{color:var(--ink);border-color:var(--gold)}
 #pauseBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
+/* voice (online only): 开麦 lit gold while your microphone is on; beside each person's name a bouncing speaker while
+   they talk, or a grey 闭麦 while their microphone is off */
+#micBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700;opacity:1}
+#micBtn.on::before{background:var(--on-gold)}
+.vc{display:none;align-items:center;flex:none}
+.vc.talk,.vc.mute{display:inline-flex}
+.vc svg{width:1.05em;height:1.05em;fill:var(--gold);display:none}
+.vc.talk svg{display:block;animation:vcTalk .45s ease-in-out infinite alternate}
+.vc.mute::after{content:"闭麦";font-size:11px;font-weight:400;line-height:1;padding:2px 5px;border-radius:999px;color:var(--muted);border:1px solid var(--line-strong)}
+@keyframes vcTalk{from{transform:scale(.8);opacity:.6}to{transform:scale(1.15);opacity:1}}
 /* who paid whom and what came back, kept in the corner while the round is played */
 .tribinfo{display:flex;flex-direction:column;gap:3px;font-size:16px;color:var(--ink);line-height:1.5}
 .tribinfo:empty{display:none}
@@ -760,15 +770,15 @@ body.test .tside:not(.open){display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button></span></span><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
     <section class="seat" id="seat2">
-      <div class="whorow"><div class="who"><span class="back"></span><span class="name">对家</span><span class="place"></span><span class="stat"></span><span class="clock"></span></div><span class="cnt"></span></div>
+      <div class="whorow"><div class="who"><span class="back"></span><span class="name">对家</span><span class="vc"></span><span class="place"></span><span class="stat"></span><span class="clock"></span></div><span class="cnt"></span></div>
     </section>
     <section class="seat" id="seat3">
-      <div class="whorow"><div class="who"><span class="back"></span><span class="name">上家</span><span class="place"></span><span class="stat"></span><span class="clock"></span></div><span class="cnt"></span></div>
+      <div class="whorow"><div class="who"><span class="back"></span><span class="name">上家</span><span class="vc"></span><span class="place"></span><span class="stat"></span><span class="clock"></span></div><span class="cnt"></span></div>
     </section>
     <div class="mid">
       <div class="emblem t-red" title="本局打的级"><span class="r" id="curLv">2</span></div>
@@ -777,7 +787,7 @@ body.test .tside:not(.open){display:none}
     <div class="lastplay" id="lastPlay"></div>
     <div class="prepbig" id="prepBig" hidden><b id="prepL">理牌</b><span class="clock bigclock" id="prepR"><b><span id="prepBigNum">90</span></b></span></div>
     <section class="seat" id="seat1">
-      <div class="whorow"><span class="cnt"></span><div class="who"><span class="clock"></span><span class="stat"></span><span class="place"></span><span class="name">下家</span><span class="back"></span></div></div>
+      <div class="whorow"><span class="cnt"></span><div class="who"><span class="clock"></span><span class="stat"></span><span class="place"></span><span class="vc"></span><span class="name">下家</span><span class="back"></span></div></div>
     </section>
     <section class="seat" id="seat0">
       <span class="place" id="myPlace"></span>
@@ -789,7 +799,7 @@ body.test .tside:not(.open){display:none}
 
   <div class="mebar" id="mebar">
     <div class="left">
-      <div class="whorow"><div class="meinfo"><span id="myName">你</span><span class="stat"></span><span class="clock" id="myClock"></span></div><span class="cnt" id="myCnt"></span></div>
+      <div class="whorow"><div class="meinfo"><span id="myName">你</span><span class="vc" id="myVc"></span><span class="stat"></span><span class="clock" id="myClock"></span></div><span class="cnt" id="myCnt"></span></div>
       <button class="link" id="sfBtn" title="依次选出手里所有能组成的同花顺（包括用百搭）">同花顺</button>
     </div>
   </div>
@@ -1606,7 +1616,7 @@ const TV={open:false};
 // Who sits where. Seat 0 is always you: every player's view is turned so they sit at the bottom.
 // Online, the host decides everything (deals, computer moves, timeouts) and sends each step as an event;
 // events name seats in the host's numbering, and NET.off turns those into your own.
-const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),lobby:{S:null,E:null,N:null,W:null}};
+const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),lobby:{S:null,E:null,N:null,W:null},mics:{}};
 const isHost=()=>NET.mode!=='guest';
 // table rules, chosen in the lobby (online, by the host): tribute on or off, and what happens after three failed tries at A
 const RULES={trib:true,aFail:'draw'};
@@ -2322,6 +2332,7 @@ function setHumans(list,names){
   NAMES=BASE_NAMES.slice();
   if(names)for(const a in names){const l=toLocal(+a);if(l!==0&&NET.humans.has(l))NAMES[l]=names[a]}
   for(let q=1;q<4;q++)$('#seat'+q+' .name').textContent=NAMES[q];
+  VC.prune();
   if(G)render();
 }
 
@@ -3473,10 +3484,14 @@ const Sound=(()=>{
     if(!ctx||timer)return;
     next=ctx.currentTime+.1;
     musicBus.gain.cancelScheduledValues(ctx.currentTime);
-    musicBus.gain.setTargetAtTime(.55,ctx.currentTime,.4);
+    musicBus.gain.setTargetAtTime(musicLevel(),ctx.currentTime,.4);
     timer=setInterval(scheduleMusic,120);
     scheduleMusic();
   }
+  // while your microphone is on, the music plays at half its volume
+  let ducked=false;
+  const musicLevel=()=>ducked?.27:.55;
+  function duck(on){ducked=!!on;if(ctx&&timer)musicBus.gain.setTargetAtTime(musicLevel(),ctx.currentTime,.3)}
   function stopMusic(){
     if(!ctx||!timer)return;
     clearInterval(timer);timer=0;
@@ -3490,7 +3505,7 @@ const Sound=(()=>{
     return prefs[kind];
   }
   const wake=()=>{if(ctx&&ctx.state!=='running')try{const r=ctx.resume();if(r&&r.catch)r.catch(()=>{})}catch(_){}};
-  return {unlock,wake,play,toggle,prefs};
+  return {unlock,wake,play,toggle,duck,prefs};
 })();
 function syncAudioBtns(){
   $('#sfxBtn').setAttribute('aria-pressed',Sound.prefs.sfx);
@@ -4097,10 +4112,11 @@ document.addEventListener('click',e=>{if(!$('#optMenu').hidden&&!e.target.closes
 syncAudioBtns();
 // browsers only allow audio after the first tap or key press; Safari on an iPad counts only the end of a tap (not
 // the touch going down), so every kind of tap event tries, and each later tap tries again until the sound is on
-for(const ev of ['pointerdown','pointerup','touchend','click','keydown'])document.addEventListener(ev,()=>Sound.unlock(),{capture:true,passive:true});
+for(const ev of ['pointerdown','pointerup','touchend','click','keydown'])document.addEventListener(ev,()=>{Sound.unlock();VC.wake()},{capture:true,passive:true});
 // coming back to the page (after switching apps or unlocking the iPad) wakes the sound up again where allowed
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)Sound.wake()});
 $('#quitBtn').onclick=askQuit;
+$('#micBtn').onclick=()=>VC.toggle();
 $('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start')act({k:'pause',on:!G.paused,p:toAbs(0)})};
 function clearPicked(){if(sel.size){sel=new Set();hintIdx=0;sfIdx=0;renderHand()}}
 $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return;clearPicked()});
@@ -5248,12 +5264,137 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1029-1416';
+const VERSION='1029-1431';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
 const peerReady=()=>{if(window.Peer&&!window.claude)return true;lobbyStatus('联机需要在 clintsun1977.github.io/guandan 打开');return false};
+/* ---------- voice: the people at an online table talk to each other as on a conference call ---------- */
+// every two people have their own audio line (the lower seat, in the host's numbering, calls the higher), so no voice
+// goes through the host. A line starts with a silent track; turning the microphone on puts the real one in its place,
+// and turning it off only silences it, so the lines stay up. Whose microphone is on goes round through the host
+// (NET.mics, host's seat numbers); who is talking is measured on each page from the sound itself.
+const VC=(()=>{
+  const SPK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
+  document.querySelectorAll('.vc').forEach(e=>e.innerHTML=SPK);
+  let active=false,peers={},ac=null,blank=null,mic=null,on=false,timer=0;
+  const lines=new Map(),meters=new Map(),heard=new Map(),talking=new Set(),waiting=[],buf=new Uint8Array(512);
+  const me=()=>toAbs(0);
+  const ctx=()=>{if(!ac){const AC=window.AudioContext||window.webkitAudioContext;if(AC)ac=new AC()}return ac};
+  const track=()=>mic||blank||(blank=ctx()?ac.createMediaStreamDestination().stream.getAudioTracks()[0]:null);
+  const here=a=>active&&!!peers[a]&&isHumanSeat(toLocal(a));
+  function meter(a,stream){
+    try{const c=ctx(),an=c.createAnalyser();an.fftSize=512;c.createMediaStreamSource(stream).connect(an);meters.set(a,an)}catch(_){}
+  }
+  function drop(a){
+    const ln=lines.get(a);if(!ln)return;
+    lines.delete(a);meters.delete(a);talking.delete(a);
+    try{ln.call.close()}catch(_){}
+    if(ln.audio){ln.audio.srcObject=null;ln.audio.remove()}
+  }
+  function wire(call,a){
+    if(lines.has(a))drop(a);
+    const ln={call,audio:null,got:false};lines.set(a,ln);
+    call.on('stream',st=>{
+      if(lines.get(a)!==ln)return;
+      ln.got=true;
+      if(!ln.audio){ln.audio=document.createElement('audio');ln.audio.autoplay=true;ln.audio.setAttribute('playsinline','');ln.audio.hidden=true;document.body.appendChild(ln.audio)}
+      ln.audio.srcObject=st;ln.audio.play().catch(()=>{});
+      meter(a,st);
+    });
+    // the line broke while both are still at the table: the caller calls again
+    const broke=()=>{if(lines.get(a)!==ln)return;drop(a);if(me()<a)setTimeout(()=>{if(here(a)&&!lines.has(a))dial(a)},3000)};
+    call.on('close',broke);call.on('error',broke);
+  }
+  function dial(a){
+    const t=track();if(!t||!NET.peer||!here(a))return;
+    const call=NET.peer.call(peers[a],new MediaStream([t]),{metadata:{seat:me()}});
+    if(!call)return;
+    wire(call,a);
+    // no answer in ten seconds (the other page may not have been ready): try again
+    setTimeout(()=>{const ln=lines.get(a);if(ln&&ln.call===call&&!ln.got){drop(a);dial(a)}},10000);
+  }
+  function answer(call){
+    const a=call.metadata&&call.metadata.seat,t=track();
+    if(typeof a!=='number'||peers[a]!==call.peer||!here(a)||!t){try{call.close()}catch(_){}return}
+    call.answer(new MediaStream([t]));wire(call,a);
+  }
+  // a call can arrive before this page has learnt who sits where: it waits until then
+  function incoming(call){if(active)answer(call);else waiting.push(call)}
+  function start(p){
+    if(window.claude||!window.Peer||!NET.peer||!p)return;
+    peers=p;active=Object.keys(peers).length>1;
+    if(!active)return;
+    for(const c of waiting.splice(0))answer(c);
+    for(const a in peers)if(+a>me()&&!lines.has(+a))dial(+a);
+    if(!timer)timer=setInterval(listen,150);
+    paint();
+  }
+  function stop(){
+    if(!active&&!mic)return;
+    active=false;waiting.length=0;
+    for(const a of [...lines.keys()])drop(a);
+    if(mic){mic.stop();mic=null}
+    on=false;meters.clear();talking.clear();clearInterval(timer);timer=0;
+    Sound.duck(false);paint();
+  }
+  // someone left the table: their line goes; once nobody else is left, voice ends
+  function prune(){
+    if(!active)return;
+    for(const a of [...lines.keys()])if(!here(a))drop(a);
+    if(NET.humans.size<2)stop();else paint();
+  }
+  function swap(call,t){try{const sd=call.peerConnection&&call.peerConnection.getSenders().find(x=>!x.track||x.track.kind==='audio');if(sd)sd.replaceTrack(t)}catch(_){}}
+  async function toggle(){
+    if(!active)return;
+    if(!mic){
+      try{
+        // an iPad plays the page like a media app; to listen to the microphone it has to switch to a call
+        try{if(navigator.audioSession)navigator.audioSession.type='play-and-record'}catch(_){}
+        const st=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+        if(!active){st.getTracks().forEach(t=>t.stop());return}
+        mic=st.getAudioTracks()[0];
+        for(const ln of lines.values())swap(ln.call,mic);
+        meter(me(),st);
+      }catch(_){setMsg('麦克风没有打开，请在浏览器设置里允许这个网页使用麦克风',true);return}
+      on=true;
+    }else on=!on;
+    mic.enabled=on;
+    Sound.duck(on);
+    if(isHost()){NET.mics[me()]=on;broadcast({t:'mics',m:NET.mics})}
+    else if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'mic',on});
+    paint();
+  }
+  // a speaker shows while the sound on someone's line (or your own microphone) is loud enough, and for a moment after
+  function listen(){
+    const now=Date.now();let changed=false;
+    for(const [a,an] of meters){
+      an.getByteTimeDomainData(buf);
+      let sum=0;for(let i=0;i<buf.length;i++){const v=(buf[i]-128)/128;sum+=v*v}
+      if(Math.sqrt(sum/buf.length)>.035)heard.set(a,now);
+      const t=now-(heard.get(a)||0)<400&&(a===me()?on:!!NET.mics[a]);
+      if(t!==talking.has(a)){t?talking.add(a):talking.delete(a);changed=true}
+    }
+    if(changed)paint();
+  }
+  function paint(){
+    const b=$('#micBtn');
+    b.hidden=!active;b.classList.toggle('on',on);b.textContent=on?'开麦':'闭麦';b.setAttribute('aria-pressed',on);
+    for(let q=0;q<4;q++){
+      const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
+      const a=toAbs(q),mine=q===0?on:!!NET.mics[a];
+      el.className='vc'+(!active||!isHumanSeat(q)?'':talking.has(a)?' talk':mine?'':' mute');
+    }
+  }
+  // browsers hold sound back until the page is touched: every tap wakes the listening and the lines up again
+  function wake(){
+    if(ac&&ac.state!=='running')try{ac.resume().catch(()=>{})}catch(_){}
+    for(const ln of lines.values())if(ln.audio&&ln.audio.paused)ln.audio.play().catch(()=>{});
+  }
+  return {start,stop,prune,incoming,toggle,wake,paint};
+})();
 function leaveNet(){
+  VC.stop();
   try{NET.peer&&NET.peer.destroy()}catch(_){}
   NET.peer=null;NET.peerOpen=false;NET.hostConn=null;NET.refused=false;NET.conns=new Map();NET.inbox=[];
 }
@@ -5276,6 +5417,7 @@ function openRoom(){
     if(err.type==='unavailable-id'){peer.destroy();openRoom();return}
     lobbyStatus('开房间失败，请检查网络后重试');
   });
+  peer.on('call',c=>VC.incoming(c));
   peer.on('connection',conn=>{
     conn.on('open',()=>{
       if(NET.started){conn.send({t:'full'});setTimeout(()=>conn.close(),500);return}
@@ -5292,6 +5434,7 @@ function hostOnData(conn,d){
   const info=NET.conns.get(conn.peer);if(!info||!d)return;
   info.seen=Date.now();
   if(d.t==='bye'){hostOnClose(conn,'quit');try{conn.close()}catch(_){}return}
+  if(d.t==='mic'){if(NET.started&&info.dir){NET.mics[absOf(info.dir,NET.hostDir)]=!!d.on;broadcast({t:'mics',m:NET.mics});VC.paint()}return}
   if(d.t==='sit'&&!NET.started){
     if(!DIRS.includes(d.dir)||(NET.lobby[d.dir]&&info.dir!==d.dir))return;
     if(info.dir)NET.lobby[info.dir]=null;
@@ -5350,9 +5493,13 @@ function startOnline(){
   const names={};
   for(const d of DIRS)if(NET.lobby[d])names[absOf(d,myDir)]=NET.lobby[d];
   NET.names=names;
-  broadcast({t:'start',hostDir:myDir,names,rules:RULES});
+  // each person's connection name, so the people at the table can call each other for voice
+  const peers={0:NET.peer.id};
+  for(const v of NET.conns.values())if(v.dir&&NET.lobby[v.dir])peers[absOf(v.dir,myDir)]=v.conn.peer;
+  broadcast({t:'start',hostDir:myDir,names,rules:RULES,peers});
   enterOnline('host',myDir,names);
   newGame();
+  VC.start(peers);
 }
 function enterOnline(mode,hostDir,names){
   NET.mode=mode;NET.off=absOf(myDir,hostDir);
@@ -5367,6 +5514,7 @@ function joinRoom(code){
   lobbyStatus('正在连接…');
   const peer=new Peer();
   NET.peer=peer;
+  peer.on('call',c=>VC.incoming(c));
   peer.on('open',()=>{
     if(NET.peer!==peer)return;
     const conn=peer.connect(ROOM_PREFIX+code,{reliable:true});
@@ -5386,6 +5534,7 @@ function guestOnData(d){
   NET.hostSeen=Date.now();
   if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
   if(d.t==='bye'){hostGone();return}
+  if(d.t==='mics'){NET.mics=d.m||{};VC.paint();return}
   // the host turned a move down: stop waiting for it and let the player try again
   if(d.t==='nope'){NET.pending=false;if(['play','pass','return','tribute'].includes(d.k))setMsg('这一步没有成功，请再试一次',true);render();return}
   if(d.t==='lobby'){
@@ -5402,12 +5551,14 @@ function guestOnData(d){
     if(d.rules)Object.assign(RULES,d.rules);
     enterOnline('guest',d.hostDir,d.names);
     resetGame();render();
+    VC.start(d.peers);
   }else if(d.t==='evt'){
     NET.inbox.push(d.e);
   }
 }
 function hostGone(){
   if(NET.gone)return;
+  VC.stop();
   if(NET.mode==='guest'){
     NET.gone=true;
     showPanel(`<h2>房主退出了游戏</h2><p class="muted">可以和电脑继续打完这一场，也可以退出。</p>
@@ -5421,6 +5572,7 @@ function hostGone(){
 }
 // the host left: this table carries on alone from wherever the game stood, the computer taking every other seat
 function goSolo(){
+  VC.stop();
   try{NET.peer&&NET.peer.destroy()}catch(_){}
   NET.peer=null;NET.hostConn=null;NET.inbox=[];NET.pending=false;
   NET.mode='solo';NET.off=0;
