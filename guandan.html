@@ -316,7 +316,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
   transform:rotate(var(--rot,0deg));transform-origin:50% 50%}
 #hand.fan{--cw:clamp(44px,min(6.4vw,10.5vh),74px)}
 #hand .card.sel{transform:rotate(var(--rot,0deg)) translateY(-20%)}
-/* 出牌需确认: the picked cards are shown side by side at 1.5 times their size in the middle of the table, and 确认 flashes,
+/* 出牌需确认: the picked cards are shown side by side at 1.8 times their size in the middle of the table, and 确认 flashes,
    until it is pressed */
 #cfmShow{position:fixed;z-index:40;transform:translate(-50%,-50%);display:flex;padding:calc(var(--cw)*.12) calc(var(--cw)*.14);border-radius:14px;
   background:rgba(8,32,24,.85);border:2px solid var(--gold);box-shadow:0 0 30px rgba(221,176,80,.55),0 12px 40px rgba(0,0,0,.5);pointer-events:none;animation:placeIn .18s ease-out}
@@ -2176,7 +2176,7 @@ function askConfirm(){
   if(!confirmPlay||cfm===selKey())return false;
   cfm=selKey();renderControls();return true;
 }
-// the cards waiting for 确认, in the order the play reads, 1.5 times the size of the hand's cards and side by side in the
+// the cards waiting for 确认, in the order the play reads, 1.8 times the size of the hand's cards and side by side in the
 // middle of the table; a long play keeps every card's corner in view by overlapping, and shrinks only if it must
 function syncCfmShow(){
   let box=$('#cfmShow');
@@ -2184,7 +2184,7 @@ function syncCfmShow(){
   if(!box){box=document.createElement('div');box.id='cfmShow';document.body.appendChild(box)}
   const cards=selectedCards(),r=analyze(cards,G.L)[0],shown=r?displayOrder({...r,cards},G.L):cards,n=shown.length;
   const t=$('#table').getBoundingClientRect(),hc=$('#hand .card'),maxW=t.width*.9;
-  const cw=Math.min((hc?hc.offsetWidth:60)*1.5,t.height*.5/1.4,maxW/(1+.45*(n-1)));
+  const cw=Math.min((hc?hc.offsetWidth:60)*1.8,t.height*.5/1.4,maxW/(1+.45*(n-1)));
   const step=n>1?Math.min(cw*1.08,(maxW-cw)/(n-1)):cw;
   box.style.setProperty('--cw',cw+'px');box.style.setProperty('--step',step-cw+'px');
   box.innerHTML=shown.map(c=>cardHTML(c,G.L)).join('');
