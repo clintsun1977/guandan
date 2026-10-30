@@ -2,6 +2,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>掼蛋</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<!-- added to a phone's home screen, the page opens full screen, without the browser's bars (the way an iPhone gets it) -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;900&display=swap">
@@ -404,9 +408,27 @@ html.phone body:not(.test) .fx-act{font-size:13px}
 html.phone body:not(.test) .emblem{visibility:hidden}
 html.phone body:not(.test) #lastPlay{display:none}
 html.phone body:not(.test) #pile{--cw:clamp(54px,min(18vw,15vh),88px)}
-/* the tribute line, folded into a button ten seconds into the play (a tap opens it, another folds it again) */
-.tribinfo .tribbtn{font-size:13px;padding:2px 10px}
-html.phone .tribinfo.open{cursor:pointer}
+/* the score: a red box and a blue box holding each side's level, the side being played filled with its colour */
+html.phone body:not(.test) .score .tn{display:none}
+html.phone body:not(.test) .score>span{border-color:var(--team);min-width:2.4em}
+html.phone body:not(.test) .score>span b,html.phone body:not(.test) .score>span.playing b{margin-left:0}
+html.phone body:not(.test) .score{flex-direction:row!important;gap:6px}
+/* on its side the tribute line stands to the right of the score, clear of the left-hand player's plate */
+html.phone.side body:not(.test) .tribinfo{position:absolute;grid-area:auto;left:120px;top:34px;font-size:13px;white-space:nowrap}
+html.phone.side body:not(.test) .tribinfo .ct{font-size:13px}
+/* the play buttons at half size; upright they stand in one row over 复原 (the hand keeps its last row clear of
+   them), on its side two by two over 两排 / 复原 (placed by placeActionBtns) */
+html.phone body:not(.test) #btns{--d:32px!important;gap:6px}
+html.phone body:not(.test) #btns .btn{font-size:12px}
+html.phone.rows body:not(.test) #btns{position:absolute;right:0;margin:0;z-index:6;flex-wrap:nowrap;justify-content:flex-end}
+html.phone.side body:not(.test) #btns{display:grid;grid-template-columns:repeat(2,auto)}
+html.phone.rows body:not(.test) #hand{--cw:clamp(48px,15vw,64px)}
+/* upright, the hand takes as many rows as its cards need, so the rows button has nothing to offer */
+html.phone.rows body:not(.test) #rowsBtn{display:none}
+/* the finishing places at half size; your partner's beside the plate rather than under it, where their cards lie */
+html.phone body:not(.test) .place{font-size:14px;padding:3px 7px 3px 9px;border-radius:7px}
+html.phone body:not(.test) #seat2 .place{top:50%;left:100%;transform:translateY(-50%);margin:0 0 0 8px}
+html.phone body:not(.test) #myPlace{margin-bottom:2px}
 .card .idx{position:absolute;left:calc(var(--cw)*.05);top:calc(var(--cw)*.06);width:calc(var(--cw)*.36);display:flex;flex-direction:column;align-items:center;line-height:1;font-size:calc(var(--cw)*.34)}
 .card .idx .rk.ten{letter-spacing:-.08em;font-size:.9em}
 .card .idx .su{font-size:.82em;margin-top:.08em}
@@ -2446,7 +2468,8 @@ function pileGeo(){
   const top=P(2).bottom-L.top;
   const bottom=R('#seat0').top-L.top;
   // the same margin on both sides (a ticking clock widens one plate, which must not push one player's cards in)
-  const side=Math.max(P(3).right-L.left,L.right-P(1).left);
+  // (on a phone the plates are small and grow by a count badge or a clock while the cards lie there: room is kept for it)
+  const side=Math.max(P(3).right-L.left,L.right-P(1).left)+(isPhone()?34:0);
   const left=side,right=L.width-side;
   const cw=$('#pile .probe').offsetWidth||48;
   const e=R('.emblem'),mid=q=>{const r=R(q);return r.top+r.height/2-L.top};
@@ -2462,7 +2485,7 @@ function pileGeo(){
 function pileRefit(){
   const g=pileGeo(),last=pileGroups[pileGroups.length-1];
   // as when a play is thrown: the newest play's player must fit, and the right-hand player beside the column
-  while([1,last&&last.p].some(q=>q!=null&&!layoutPlayer(q,g,false))&&TS>MIN_TS)TS=Math.max(MIN_TS,TS*.9);
+  while([1,last&&last.p].some(q=>q!=null&&!layoutPlayer(q,g,false))&&TS>minTS())TS=Math.max(minTS(),TS*.9);
   for(let q=0;q<4;q++)layoutPlayer(q,g,true);
 }
 // how far down your own cards on the table may reach: to your name plate (or your place label once you are out); the
@@ -2491,6 +2514,11 @@ function zoneFor(p,g){
   if((p===1||p===3)&&g.lpBox.r>z.x0&&g.lpBox.l<z.x1&&g.lpBox.t-PASS_Y-z.y0>g.ch)z.y1=Math.min(z.y1,g.lpBox.t-PASS_Y);
   // the right-hand player's cards stop above the action column, so they never lie under the buttons
   if(g.col&&p===1&&g.col.left<z.x1)z.y1=Math.max(z.y0+20,Math.min(z.y1,g.col.top-PASS_Y));
+  // a phone on its side shows the tribute line under the score until the first trick is in: your partner's cards
+  // keep below it
+  const ti=isPhone()&&p===2?$('#tribInfo'):null;
+  if(ti&&ti.textContent){const r=ti.getBoundingClientRect(),x0=r.left-g.L.left,x1=r.right-g.L.left;
+    if(x0<z.x1&&x1>z.x0)z.y0=Math.max(z.y0,r.bottom-g.L.top+PASS_Y)}
   // a place label already on the plate (someone just went out) keeps its own room, clear of their last cards
   const lab=p!==0&&G.out.includes(p)?$('#seat'+p+' .place'):null;
   if(lab&&lab.offsetWidth){
@@ -2505,7 +2533,6 @@ function zoneFor(p,g){
 // at the top, yours at the bottom, and the left-hand player's (cards starting from the left) just above the two side
 // plates and the right-hand player's (cards ending at the right) just below them - so that even a long play fits at a
 // size everyone can read. A phone on its side keeps the usual layout, which has the width for it
-const phoneRows=()=>isPhone()&&innerHeight>innerWidth;
 function phoneZone(p,g){
   const R=q=>$(q).getBoundingClientRect(),a=R('#seat3 .whorow'),c=R('#seat1 .whorow');
   // the side plates, with the 已出牌 / 过 tags above them
@@ -2524,7 +2551,8 @@ function relPoint(pt,g){return{x:pt.x-g.L.left,y:pt.y-g.L.top}}
 let pileGroups=[];
 // table scale for this trick: starts at full size and steps down only when a trick no longer fits
 let TS=1;
-const MIN_TS=.55;
+// a phone keeps each play at its size, so a busy trick may have to step down further before it fits
+const MIN_TS_PC=.55,minTS=()=>isPhone()?.3:MIN_TS_PC;
 function groupDims(gr,g,sc,tag){
   const cw=g.cw*TS,off=cw*.42,span=cw+off*(gr.n-1);
   return{off,cw,ch:cw*CR,w:span*sc+8,h:cw*CR*sc+(tag?26:6)};
@@ -2538,7 +2566,8 @@ function layoutPlayer(p,g,apply){
   const len=across?z.x1-z.x0:z.y1-z.y0,room=across?z.y1-z.y0:z.x1-z.x0;
   const items=groups.map(gr=>{
     // only a bomb gets a tag, and it sits on the cards' lower edge, so it takes no room of its own
-    const tag=gr.latest&&isBomb(gr.play),sc=gr.latest?gr.sc:OLD,d=groupDims(gr,g,sc,false);
+    // a phone keeps every play at the size it came down at (the whole trick steps down only when it no longer fits)
+    const tag=gr.latest&&isBomb(gr.play),sc=gr.latest||isPhone()?gr.sc:OLD,d=groupDims(gr,g,sc,false);
     return{gr,sc,d,tag,along:across?d.w:d.h,deep:across?d.h:d.w};
   });
   const lines=[];
@@ -2619,8 +2648,8 @@ function pileThrow(p,play,origins,animate){
   for(;;){
     let ok=false;
     for(const sc of [BIG,1.4,1.3,1.2,1.1,1]){gr.sc=sc;if(layoutPlayer(p,g,false)){ok=true;break}}
-    if(ok||TS<=MIN_TS)break;
-    TS=Math.max(MIN_TS,TS*.9);
+    if(ok||TS<=minTS())break;
+    TS=Math.max(minTS(),TS*.9);
   }
   for(let q=0;q<4;q++)layoutPlayer(q,g,true);
   // cards put down without the flight appear right in their places, and only later moves slide
@@ -2899,20 +2928,9 @@ function renderMsg(){
   }
   m.innerHTML=t;
   const ti=$('#tribInfo'),showTi=['play','roundEnd','over'].includes(G.phase);
-  let html=showTi?tribHtml('tl')+kangHtml(true):'',folded=false;
-  // on a phone the line folds into a button ten seconds into the play: a tap opens it, another tap folds it again
-  if(html&&isPhone()&&G.phase==='play'){
-    if(TRIB.round!==G.round){TRIB.round=G.round;TRIB.at=Date.now();TRIB.open=false;setTimeout(()=>{if(G)renderMsg()},10100)}
-    if(Date.now()-TRIB.at>10000){folded=!TRIB.open;if(folded)html=`<button class="link tribbtn">${G.trib&&G.trib.length?'进贡':'抗贡'}</button>`}
-  }
-  ti.innerHTML=html;
-  ti.classList.toggle('open',!folded&&html!==''&&isPhone()&&G.phase==='play'&&Date.now()-TRIB.at>10000);
+  // a phone shows who paid whom only until the first trick of the play has been taken in
+  ti.innerHTML=showTi&&!(isPhone()&&G.phase==='play'&&G.heapN>0)?tribHtml('tl')+kangHtml(true):'';
 }
-const TRIB={round:null,at:0,open:false};
-$('#tribInfo').addEventListener('click',e=>{
-  if(!G||!isPhone()||G.phase!=='play'||Date.now()-TRIB.at<=10000)return;
-  e.stopPropagation();TRIB.open=!TRIB.open;renderMsg();
-});
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
 // 抗贡: just whose big jokers they are (short: the line kept in the corner while the round is played)
@@ -3001,7 +3019,7 @@ function handGeo(n,keys){
   // the active cards stay centred under your name, with the action column's room kept free on both sides,
   // as long as the fixed zone fits in the free room on the left; a wider zone pushes them right
   if(sideBtns()&&$('#btns').offsetWidth)colW=$('#btns').offsetWidth;
-  const side=sideBtns()?actionInset(Wall)+colW/2+BTN_GAP:0;
+  const side=sideBtns()?isPhone()?colW+BTN_GAP:actionInset(Wall)+colW/2+BTN_GAP:0;
   const cw=probe.offsetWidth,ch=probe.offsetHeight;
   // each group in one row, overlapping just enough to show every card's corner; a long group closes up
   const rows=(G&&G.fixed||[]).map(gr=>{const k=gr.length,off=k>1?Math.min(cw*.42,(Wall*.34-cw)/(k-1)):0;return{gr,off,w:cw+off*(k-1)}});
@@ -3016,7 +3034,9 @@ function handGeo(n,keys){
   const fw=fixPeak.w=TEST?0:Math.max(fixPeak.w,rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:side?Math.max(Math.round(cw*1.84+FIX_TAG),Math.round(side-bw-FIX_GAP)):30);
   // (the test version has no fixed zone: its groups are made with 成组 and 拆开)
   const x0=TEST?side:Math.max(side,fw+bw+FIX_GAP),W=Wall-side-x0;
-  const g=fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
+  // an upright phone's play buttons stand over the right end of the hand's last row, which keeps clear of them
+  const reserve=phoneRows()&&!$('#btns').hidden?$('#btns').offsetWidth+8:0;
+  const g=fanMode()?fanGeo(n,W,cw,ch,keys):phoneRows()?phoneFlat(n,W,cw,ch,keys,reserve):flatGeo(n,W,cw,ch,keys);
   g.slots=g.slots.map(sl=>({...sl,x:sl.x+x0}));
   // the groups step down like flat rows (each still shows its row of corners), closer together if there are many
   const lift=ch*.22,pad=4,base=n?g.height:0;
@@ -3078,14 +3098,38 @@ function drawFixZone(g){
 let ROW_STEP=.58,CR=1.4;
 const PHONE_MQ=matchMedia('(max-width:560px), (max-height:500px)');
 const isPhone=()=>PHONE_MQ.matches&&!TEST;
+// a phone held upright (html.rows) or on its side (html.side)
+const phoneRows=()=>isPhone()&&innerHeight>innerWidth;
 function syncPhone(){
-  const on=isPhone();
-  document.documentElement.classList.toggle('phone',on);
+  const on=isPhone(),el=document.documentElement;
+  el.classList.toggle('phone',on);el.classList.toggle('rows',phoneRows());el.classList.toggle('side',on&&!phoneRows());
   CR=on?.86:1.4;ROW_STEP=on?.92:.58;
 }
 syncPhone();
-PHONE_MQ.addEventListener('change',()=>{syncPhone();if(G){renderHand();render()}});
+// turning the phone (or the window changing size) can switch these: the hand and the table are then laid out again
+const phoneSwitch=()=>{
+  const was=document.documentElement.className;syncPhone();
+  if(document.documentElement.className!==was&&G){renderHand();render();pileRebuild()}
+};
+addEventListener('resize',phoneSwitch);addEventListener('orientationchange',phoneSwitch);PHONE_MQ.addEventListener('change',phoneSwitch);
 // flat rows of about equal length, the player's choice of one to three; a single row too cramped to read becomes two
+// an upright phone's hand: rows from the left edge, as few as keep every card's rank and suit in view (or as many
+// as the player chose, up to three), the last row stopping short of the play buttons
+function phoneFlat(n,W,cw,ch,keys,reserve){
+  const lift=Math.round(ch*.22),rowGap=Math.round(ch*ROW_STEP);
+  let counts,offs;
+  for(let rows=Math.max(1,Math.min(flatRows,3,n));;rows++){
+    const room=k=>k===rows-1?Math.max(cw,W-reserve):W;
+    counts=rows===1?[n]:rowCounts(n,keys,rows,Array.from({length:rows},(_,r)=>room(r)),false);
+    const last=counts.length-1,w=r=>r===last?Math.max(cw,W-reserve):W;
+    offs=counts.map((k,r)=>k>1?Math.min((w(r)-cw)/(k-1),cw*.5):0);
+    if(counts.every((k,r)=>k<=1||offs[r]>=cw*.4)||rows>=3||rows>=n)break;
+  }
+  flatShown=counts.length;flatOneFits=true;
+  const slots=[];
+  counts.forEach((k,r)=>{for(let j=0;j<k;j++)slots.push({x:j*offs[r],y:lift+r*rowGap,rot:0})});
+  return{slots,cw,ch,counts,height:lift+ch+(counts.length-1)*rowGap+4};
+}
 function flatGeo(n,W,cw,ch,keys){
   let rows=Math.max(1,Math.min(TEST?3:flatRows,Math.ceil(n/5)));
   flatOneFits=!(n>12&&(W-cw)/(n-1)<cw*.36);
@@ -3204,6 +3248,8 @@ function placeButtons(g){
 // or not the hand has been dealt; phones keep their own places
 function placeActionBtns(){
   const on=sideBtns(),h=$('#hand').getBoundingClientRect();
+  // what a phone's layouts set is undone when the screen is no longer one
+  {const b=$('#btns');if(!phoneRows())b.style.bottom='';if(!(on&&isPhone()))b.style.columnGap=''}
   // the test version's side hands fill the table's sides, so the buttons stand in a row beside your hand instead
   if(on&&TEST){
     const b=$('#btns'),top=h.height-b.offsetHeight-34+'px';
@@ -3216,7 +3262,16 @@ function placeActionBtns(){
     }
     return;
   }
-  if(on){
+  // a phone on its side: the play buttons two by two, their right edge on 复原's and standing just over 两排 / 复原
+  if(on&&isPhone()){
+    const b=$('#btns'),w=$('.handwrap').getBoundingClientRect(),s=$('#sortBtn').getBoundingClientRect(),r=$('#rowsBtn').getBoundingClientRect();
+    // each column of buttons centred over one of the two tool buttons
+    const d=b.firstElementChild.offsetWidth||32,cr=r.left+r.width/2,cs=s.left+s.width/2;
+    b.style.columnGap=Math.max(6,cs-cr-d)+'px';
+    b.style.left=cr-d/2-w.left+'px';
+    const top=Math.min(s.top,r.top)-w.top-6-b.offsetHeight+'px';
+    if(b.style.top!==top){b.style.top=top;if(pileGroups.length&&!b.hidden)pileRefit()}
+  }else if(on){
     // the column is placed so its tribute / return button, or else its hint button, stands on the spot
     const b=$('#btns'),rb=$('#returnBtn'),anchor=rb.hidden?$('#hintBtn'):rb;
     // in a short window the buttons above the spot could reach the right-hand player's plate: they get smaller
@@ -3230,7 +3285,12 @@ function placeActionBtns(){
     const top=h.height-SPOT_UP-anchor.offsetTop-anchor.offsetHeight/2+'px';
     // the column moved (the hand got shorter): the table's cards make way for it again
     if(b.style.top!==top){b.style.top=top;if(pileGroups.length&&!b.hidden)pileRefit()}
-  }else $('#btns').style.removeProperty('--d');
+  }else{
+    const b=$('#btns');b.style.removeProperty('--d');
+    // an upright phone: the row of buttons stands just over the hand tools
+    b.style.bottom=phoneRows()?$('.handtools').offsetHeight+6+'px':'';
+    if(!phoneRows())b.style.left=b.style.top='';
+  }
   for(const id of ['#deckBtn','#readyBtn','#nextBtn']){
     const e=$(id);if(!e)continue;
     e.classList.toggle('atcol',on);
@@ -4405,8 +4465,11 @@ $('#nick').addEventListener('input',()=>{
   renderLobby();
 });
 $('#nick').addEventListener('keydown',e=>{if(e.key==='Enter'&&!$('#sitBtn').disabled&&!$('#sitBtn').hidden)$('#sitBtn').click()});
+// a phone goes full screen as its player takes a seat (a tap is needed for that); 选项 has the way back
+const phoneFull=()=>{if(isPhone()&&!fsOn())testFull(true)};
 seatBtns.forEach(b=>b.addEventListener('click',()=>{
   if(!nickNow()){lobbyStatus('先输入昵称');$('#nick').focus();return}
+  phoneFull();
   const d=b.dataset.seat;
   Sound.unlock();Sound.play('select');
   if(lobbyMode==='host'){
@@ -4422,6 +4485,7 @@ seatBtns.forEach(b=>b.addEventListener('click',()=>{
 $('#sitBtn').onclick=()=>{
   myNick=nickNow();
   if(!myNick||!myDir)return;
+  phoneFull();
   try{localStorage.setItem('guandan-nick',myNick)}catch(_){}
   Sound.unlock();
   if(lobbyMode==='host')startOnline();
