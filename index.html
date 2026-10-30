@@ -424,7 +424,10 @@ html.phone.side body:not(.test) .tribinfo .ct{font-size:13px}
    them), on its side two by two over 两排 / 复原 (placed by placeActionBtns) */
 html.phone body:not(.test) #btns{--d:32px!important;gap:6px}
 html.phone body:not(.test) #btns .btn{font-size:12px}
-html.phone.rows body:not(.test) #btns{position:absolute;right:0;margin:0;z-index:6;flex-wrap:nowrap;justify-content:flex-end}
+html.phone.rows body:not(.test) #btns{position:absolute;right:0;margin:0;z-index:6;flex-direction:column;flex-wrap:nowrap;--d:48px!important}
+html.phone.rows body:not(.test) #btns .btn{font-size:15px}
+/* upright: the empty fixed zone is a thin strip over the hand, its name written across */
+html.phone.rows body:not(.test) #fixZone.empty .fzl{writing-mode:horizontal-tb;top:3px;left:10px;right:auto;translate:none;font-size:12px;letter-spacing:.1em;text-align:left}
 html.phone.side body:not(.test) #btns{display:grid;grid-template-columns:repeat(2,auto)}
 html.phone.rows body:not(.test) #hand{--cw:clamp(48px,15vw,64px)}
 /* upright, the hand takes as many rows as its cards need, so the rows button has nothing to offer */
@@ -2479,7 +2482,7 @@ function pileGeo(){
   const cw=$('#pile .probe').offsetWidth||48;
   const e=R('.emblem'),mid=q=>{const r=R(q);return r.top+r.height/2-L.top};
   // the action column, where it reaches up over the table on the right
-  const b=$('#btns'),br=sideBtns()&&!b.hidden&&b.offsetHeight?b.getBoundingClientRect():null;
+  const b=$('#btns'),br=(sideBtns()||phoneRows())&&!b.hidden&&b.offsetHeight?b.getBoundingClientRect():null;
   const col=br?{left:br.left-L.left,top:br.top-L.top}:null;
   return{L,top,bottom,left,right,cx:L.width/2,cy:(top+bottom)/2,hy:e.top+e.height/2-L.top,sideY:{1:mid('#seat1 .who'),3:mid('#seat3 .who')},cw,ch:cw*CR,col,
     ...(r=>r.height?{lp:r.bottom-L.top,lpBox:{l:r.left-L.left,r:r.right-L.left,t:r.top-L.top}}:{lp:0,lpBox:{l:0,r:0,t:0}})(R('#lastPlay')),
@@ -2534,19 +2537,18 @@ function zoneFor(p,g){
   }
   return z;
 }
-// a phone held upright: the table is cut into four rows, one per player, each as wide as the table - your partner's
-// at the top, yours at the bottom, and the left-hand player's (cards starting from the left) just above the two side
-// plates and the right-hand player's (cards ending at the right) just below them - so that even a long play fits at a
-// size everyone can read. A phone on its side keeps the usual layout, which has the width for it
+// a phone held upright: the table is cut into four rows, one per player and each as wide as the table - your
+// partner's at the top, then the left-hand player's (cards starting from the left), the right-hand player's (cards
+// ending at the right) and yours at the bottom - so the whole middle of the table is used and even a long play fits
+// at a size everyone can read. The rows share out the room above and below the side plates (and the tags over them)
+// in proportion, so that none has to squeeze past a plate; every row keeps clear of the column of play buttons
 function phoneZone(p,g){
   const R=q=>$(q).getBoundingClientRect(),a=R('#seat3 .whorow'),c=R('#seat1 .whorow');
-  // the side plates, with the 已出牌 / 过 tags above them
-  const pt=Math.min(a.top,c.top)-g.L.top-26,pb=Math.max(a.bottom,c.bottom)-g.L.top;
-  const t=g.top+PASS_Y,b=g.near-PASS_Y,h=(b-t)*.25,x0=PASS_X,x1=g.L.width-PASS_X;
-  const z=p===2?{x0,x1,y0:t,y1:t+h}
-    :p===0?{x0,x1,y0:b-h,y1:b}
-    :p===3?{x0,x1,y0:t+h,y1:Math.max(t+h+20,pt-PASS_Y)}
-    :{x0,x1,y0:Math.min(b-h-20,pb+PASS_Y),y1:b-h};
+  const t=g.top+PASS_Y,b=g.near-PASS_Y;
+  const pt=Math.max(t,Math.min(a.top,c.top)-g.L.top-26),pb=Math.min(b,Math.max(a.bottom,c.bottom)-g.L.top+4);
+  const A=pt-t,B=b-pb,k=Math.max(1,Math.min(3,Math.round(4*A/Math.max(1,A+B)))),i=[2,3,1,0].indexOf(p);
+  const z=i<k?{y0:t+i*A/k,y1:t+(i+1)*A/k-4}:{y0:pb+(i-k)*B/(4-k),y1:pb+(i-k+1)*B/(4-k)-4};
+  z.x0=PASS_X;z.x1=g.L.width-PASS_X;
   if(g.col&&g.col.left<z.x1&&g.col.top<z.y1)z.x1=Math.max(z.x0+g.cw,g.col.left-PASS_X);
   return z;
 }
@@ -2652,7 +2654,8 @@ function pileThrow(p,play,origins,animate){
   // its smallest size will not fit, the whole trick steps down in size and every player's line is laid out again
   for(;;){
     let ok=false;
-    for(const sc of [BIG,1.4,1.3,1.2,1.1,1]){gr.sc=sc;if(layoutPlayer(p,g,false)){ok=true;break}}
+    // (on a phone the new play may come down smaller still on its own, so the plays already there keep their size)
+    for(const sc of isPhone()?[BIG,1.4,1.3,1.2,1.1,1,.9,.8,.7,.6]:[BIG,1.4,1.3,1.2,1.1,1]){gr.sc=sc;if(layoutPlayer(p,g,false)){ok=true;break}}
     if(ok||TS<=minTS())break;
     TS=Math.max(minTS(),TS*.9);
   }
@@ -3020,6 +3023,7 @@ const FIX_GAP=14,FIX_TAG=46,FIX_BTN=66;
 let fixPeak={k:'',w:0,h:0};
 function handGeo(n,keys){
   if(testGrouped())return testGeo();
+  if(phoneRows())return phoneHandGeo(n,keys);
   const el=$('#hand'),probe=el.firstElementChild,Wall=el.clientWidth;
   // the active cards stay centred under your name, with the action column's room kept free on both sides,
   // as long as the fixed zone fits in the free room on the left; a wider zone pushes them right
@@ -3034,14 +3038,13 @@ function handGeo(n,keys){
   const bw=side&&!TEST?FIX_BTN:0;
   // while a round is played the zone only ever grows: it keeps the largest width and height it has had until the next
   // deal (or until the window or the cards change size), so it never shrinks as groups are played out
+  // (on a phone the frame instead hugs the cards in it, and an empty one is just a narrow strip)
   const pk=`${G&&G.round}|${Wall}|${cw}`;
-  if(TEST||!G||['start','shuffle','cut','deal'].includes(G.phase)||fixPeak.k!==pk)fixPeak={k:pk,w:0,h:0};
-  const fw=fixPeak.w=TEST?0:Math.max(fixPeak.w,rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:side?Math.max(Math.round(cw*1.84+FIX_TAG),Math.round(side-bw-FIX_GAP)):30);
+  if(TEST||isPhone()||!G||['start','shuffle','cut','deal'].includes(G.phase)||fixPeak.k!==pk)fixPeak={k:pk,w:0,h:0};
+  const fw=fixPeak.w=TEST?0:Math.max(fixPeak.w,rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:isPhone()?60:side?Math.max(Math.round(cw*1.84+FIX_TAG),Math.round(side-bw-FIX_GAP)):30);
   // (the test version has no fixed zone: its groups are made with 成组 and 拆开)
   const x0=TEST?side:Math.max(side,fw+bw+FIX_GAP),W=Wall-side-x0;
-  // an upright phone's play buttons stand over the right end of the hand's last row, which keeps clear of them
-  const reserve=phoneRows()&&!$('#btns').hidden?$('#btns').offsetWidth+8:0;
-  const g=fanMode()?fanGeo(n,W,cw,ch,keys):phoneRows()?phoneFlat(n,W,cw,ch,keys,reserve):flatGeo(n,W,cw,ch,keys);
+  const g=fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
   g.slots=g.slots.map(sl=>({...sl,x:sl.x+x0}));
   // the groups step down like flat rows (each still shows its row of corners), closer together if there are many
   const lift=ch*.22,pad=4,base=n?g.height:0;
@@ -3118,16 +3121,36 @@ const phoneSwitch=()=>{
 };
 addEventListener('resize',phoneSwitch);addEventListener('orientationchange',phoneSwitch);PHONE_MQ.addEventListener('change',phoneSwitch);
 // flat rows of about equal length, the player's choice of one to three; a single row too cramped to read becomes two
-// an upright phone's hand: rows from the left edge, as few as keep every card's rank and suit in view (or as many
-// as the player chose, up to three), the last row stopping short of the play buttons
-function phoneFlat(n,W,cw,ch,keys,reserve){
+// an upright phone's hand. The fixed groups lie side by side across the top (onto a further line if they must), each
+// with its kind beside it, in a frame that hugs them (an empty frame is a thin strip to drop cards on); the other cards
+// fill rows from the left edge below, as few as keep every card's rank and suit in view (or as many as the player
+// chose, up to three). The column of play buttons at the right edge stays clear of all of it
+function phoneHandGeo(n,keys){
+  const el=$('#hand'),probe=el.firstElementChild,Wall=el.clientWidth,cw=probe.offsetWidth,ch=probe.offsetHeight;
+  const b=$('#btns'),W=Wall-(b.hidden?0:b.offsetWidth+8),off=cw*.42,lift=Math.round(ch*.22);
+  const groups=G&&G.fixed||[],fix=new Map(),fixTags=[];
+  let x=0,y=0,fw=0;
+  for(const gr of groups){
+    const k=gr.length,w=cw+off*(k-1);
+    if(x>0&&x+w+FIX_TAG>W){x=0;y+=ch+6}
+    gr.forEach((id,j)=>fix.set(id,{x:x+j*off,y:lift+y,rot:0}));
+    fixTags.push({x:x+w+5,y:lift+y,gr,x0:x});
+    x+=w+FIX_TAG;fw=Math.max(fw,x);x+=6;
+  }
+  const fixH=groups.length?lift+y+ch+4:22,top=fixH+8;
+  const g=phoneFlat(n,W,cw,ch,keys);
+  g.slots=g.slots.map(sl=>({...sl,y:sl.y+top}));
+  Object.assign(g,{fix,fixTags,fixW:groups.length?fw:W,fixH,cw,ch,fixEmpty:!groups.length,fixEdge:-1,height:top+g.height,
+    // a dragged card above the hand's rows lands in the zone: on a group (or its tag) it joins it
+    inFix:(px,py)=>py<fixH+4,fixAt:(px,py)=>fixTags.findIndex(t=>px>=t.x0-4&&px<t.x+FIX_TAG&&py>=t.y-4&&py<t.y+ch)});
+  return g;
+}
+function phoneFlat(n,W,cw,ch,keys){
   const lift=Math.round(ch*.22),rowGap=Math.round(ch*ROW_STEP);
   let counts,offs;
   for(let rows=Math.max(1,Math.min(flatRows,3,n));;rows++){
-    const room=k=>k===rows-1?Math.max(cw,W-reserve):W;
-    counts=rows===1?[n]:rowCounts(n,keys,rows,Array.from({length:rows},(_,r)=>room(r)),false);
-    const last=counts.length-1,w=r=>r===last?Math.max(cw,W-reserve):W;
-    offs=counts.map((k,r)=>k>1?Math.min((w(r)-cw)/(k-1),cw*.5):0);
+    counts=rows===1?[n]:rowCounts(n,keys,rows,[1,1,1].slice(0,rows),false);
+    offs=counts.map(k=>k>1?Math.min((W-cw)/(k-1),cw*.5):0);
     if(counts.every((k,r)=>k<=1||offs[r]>=cw*.4)||rows>=3||rows>=n)break;
   }
   flatShown=counts.length;flatOneFits=true;
@@ -4136,8 +4159,9 @@ function moveCards(e){
   // over the fixed zone: on a group's cards they will join that group (its tag lights up); anywhere else in the zone
   // (beside the groups, on the tags) they make a new group
   const px=e.clientX-L.left,py=e.clientY-L.top,fz=$('#fixZone');
-  if(px<g.fixEdge){
-    let row=-1;g.fixTags.forEach((r,i)=>{if(py>=r.y-4&&py<r.y+g.ch&&px<r.x-5)row=i});
+  if(g.inFix?g.inFix(px,py):px<g.fixEdge){
+    let row=-1;
+    if(g.fixAt)row=g.fixAt(px,py);else g.fixTags.forEach((r,i)=>{if(py>=r.y-4&&py<r.y+g.ch&&px<r.x-5)row=i});
     if(mv.t==='fix'&&mv.row===row)return;
     mv.t='fix';mv.row=row;
     mv.others.forEach((id,i)=>placeCard(cardEl(id),g.slots[i],100+i));
@@ -5510,7 +5534,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1029-2019';
+const VERSION='1029-2044';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
