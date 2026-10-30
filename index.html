@@ -408,8 +408,8 @@ html.phone #fanBtn{display:none}
    no line saying who played what; the cards on the table as large as they fit */
 html.phone body:not(.test) #deckBtn,html.phone body:not(.test) #readyBtn{--d:46px!important;font-size:13px!important}
 html.phone body:not(.test) .stack,html.phone body:not(.test) .flick{width:calc(var(--cw)*.5);height:calc(var(--cw)*.7);margin:calc(var(--cw)*-.35) 0 0 calc(var(--cw)*-.25)}
-html.phone body:not(.test) .prepbig #prepL{font-size:clamp(17px,3vh,28px);padding:4px 11px 4px 13px;border-radius:10px}
-html.phone body:not(.test) .prepbig .bigclock{font-size:clamp(15px,2.7vh,23px)}
+html.phone body:not(.test) .prepbig #prepL{font-size:clamp(14px,2.2vh,20px);padding:3px 9px 3px 11px;border-radius:9px}
+html.phone body:not(.test) .prepbig .bigclock{font-size:clamp(12px,1.9vh,17px)}
 html.phone body:not(.test) .clock{font-size:10px}
 html.phone body:not(.test) #myClock{font-size:11px}
 .who .back{display:none}
@@ -2136,6 +2136,10 @@ function placePrepBig(){
   if(lx<s3.right+10||rx+rw>s1.left-10){
     const h=Math.max(l.offsetHeight,r.offsetHeight),w=lw+rw+12;
     lx=e.left+e.width/2-w/2;rx=lx+lw+12;y=e.top-T.top-gap/2-h/2;
+    // a phone's box of who paid whom stands over the sign, under your partner's plate: where the two do not fit there
+    // (a short screen) the sign steps down to make room
+    const tb=$('#tribBox');
+    if(isPhone()&&tb&&!tb.hidden)y=Math.max(y,phoneSignTop()+tb.offsetHeight+8-T.top+h/2);
   }
   l.style.left=lx-T.left+'px';r.style.left=rx-T.left+'px';
   l.style.top=y-l.offsetHeight/2+'px';r.style.top=y-r.offsetHeight/2+'px';
@@ -3060,8 +3064,9 @@ function kangHtml(short){
   const who=k.has.length===1?`${NAMES[k.has[0].g]}两张大王`:`${k.has.map(x=>NAMES[x.g]).join('、')}各一张大王`;
   return`<div class="${short?'tl':'trib'}">抗贡：${who}</div>`;
 }
-// who paid whom (or whose big jokers refused it), in a box in the middle of the table, just under the sorting sign (over
-// it on a phone):
+// the highest a phone's box may stand: a little under your partner's plate and its tags
+const phoneSignTop=()=>{const r=$('#seat2 .whorow').getBoundingClientRect();return r.bottom+8};
+// who paid whom (or whose big jokers refused it), in a box in the middle of the table, just under the sorting sign:
 // while the tribute is given and the hands are sorted, and for the three seconds before the first play
 function syncTribBox(){
   let b=$('#tribBox');
@@ -3074,9 +3079,12 @@ function syncTribBox(){
   const T=$('#table').getBoundingClientRect(),e=$('.emblem').getBoundingClientRect(),pb=$('#prepBig');
   const signs=pb.hidden?[]:[...pb.children].map(k=>k.getBoundingClientRect()).filter(r=>r.height);
   let y;
-  // a phone has the side plates level with the space under the sign, so its box stands over the sign instead, or in
-  // the middle once the sign has gone
-  if(isPhone())y=signs.length?Math.min(...signs.map(r=>r.top))-8-b.offsetHeight:e.top+e.height/2-b.offsetHeight/2;
+  // a phone has the side plates level with the space under the sign, so its box stands between your partner's plate
+  // and the sign, as low as it can without reaching the sign (or the middle of the table, once the sign has gone)
+  if(isPhone()){
+    const top=phoneSignTop(),sign=signs.length?Math.min(...signs.map(r=>r.top)):Infinity;
+    y=Math.max(top,Math.min(sign-8,e.top+e.height/2)-b.offsetHeight);
+  }
   else y=Math.max(e.top+e.height/2,...signs.map(r=>r.bottom))+12;
   b.style.left=T.left+T.width/2+'px';b.style.top=y+'px';
 }
@@ -5698,7 +5706,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1030-0940';
+const VERSION='1030-1012';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
