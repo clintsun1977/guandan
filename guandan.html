@@ -405,7 +405,7 @@ html.phone body:not(.test) .prepbig #prepL{font-size:clamp(17px,3vh,28px);paddin
 html.phone body:not(.test) .prepbig .bigclock{font-size:clamp(15px,2.7vh,23px)}
 html.phone body:not(.test) .clock{font-size:10px}
 html.phone body:not(.test) #myClock{font-size:11px}
-html.phone body:not(.test) .who .back{display:none}
+.who .back{display:none}
 html.phone body:not(.test) .fx-act{font-size:13px}
 body:not(.test) .emblem{visibility:hidden}
 html.phone body:not(.test) #lastPlay{display:none}
@@ -427,6 +427,12 @@ html.phone body:not(.test) .score{flex-direction:row!important;gap:6px}
 #rotateTip p{margin:0;font-size:22px;font-weight:700;color:var(--gold)}
 #rotateTip small{font-size:14px;color:var(--muted)}
 @keyframes turnUp{0%,30%{transform:rotate(90deg)}60%,100%{transform:rotate(0)}}
+#tribBox{position:fixed;z-index:30;transform:translateX(-50%);pointer-events:none;padding:8px 18px;border-radius:12px;text-align:center;
+  background:rgba(19,54,41,.92);border:1.5px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#tribBox[hidden]{display:none}
+#tribBox .trib{font-size:clamp(17px,2.2vw,23px);font-weight:700;line-height:1.6;white-space:nowrap}
+html.phone body:not(.test) #tribBox{padding:6px 10px}
+html.phone body:not(.test) #tribBox .trib{font-size:14px}
 /* the table: every card framed in its player's side colour (red or blue), the newest play's frame thicker and flashing */
 .pc.tr{--tc:var(--red-team)}
 .pc.tb{--tc:var(--blue-team)}
@@ -2107,6 +2113,7 @@ function placePrepBig(){
   }
   l.style.left=lx-T.left+'px';r.style.left=rx-T.left+'px';
   l.style.top=y-l.offsetHeight/2+'px';r.style.top=y-r.offsetHeight/2+'px';
+  syncTribBox();
 }
 function renderClocks(){
   const c=G.clock;
@@ -3003,13 +3010,14 @@ function renderMsg(){
     const wait=G.tribGivers.filter(g=>g!==0&&G.tribPick[g]==null);
     if(wait.length)t+=`<div>等待${wait.map(g=>NAMES[g]).join('、')}进贡</div>`;
   }else if(G.phase==='tribute'||G.phase==='prep'){
-    t=tribHtml()+kangHtml()+(G.notice?`<div>${G.notice}</div>`:'');
+    t=G.notice?`<div>${G.notice}</div>`:'';
     // done sorting and owing a return: it can go now, without waiting for the others to finish sorting
     if(owesReturn(0))t+=`<div class="trib">还一张 10 或以下的牌给${NAMES[G.returns.find(x=>x.from===0).to]}</div>`;
   }else if(G.phase==='play'){
-    t=(G.tribHold?tribHtml()+kangHtml():'')+(G.notice?`<div>${G.notice}</div>`:'');
+    t=G.notice?`<div>${G.notice}</div>`:'';
   }
   m.innerHTML=t;
+  syncTribBox();
   const ti=$('#tribInfo'),showTi=['play','roundEnd','over'].includes(G.phase);
   // who paid whom is shown over your name while sorting and for three seconds into the play, then no more (the test
   // version keeps it in the corner, for going over the round)
@@ -3023,6 +3031,27 @@ function kangHtml(short){
   const who=k.has.length===1?`${NAMES[k.has[0].g]}两张大王`:`${k.has.map(x=>NAMES[x.g]).join('、')}各一张大王`;
   return`<div class="${short?'tl':'trib'}">抗贡：${who}</div>`;
 }
+// who paid whom (or whose big jokers refused it), in a box in the middle of the table, just under the sorting sign (over
+// it on a phone):
+// while the tribute is given and the hands are sorted, and for the three seconds before the first play
+function syncTribBox(){
+  let b=$('#tribBox');
+  if(!b){b=document.createElement('div');b.id='tribBox';document.body.appendChild(b)}
+  const on=!!G&&(G.phase==='tribute'||G.phase==='prep'||(G.phase==='play'&&G.tribHold))&&((G.trib&&G.trib.length)||!!G.kang);
+  b.hidden=!on;
+  if(!on)return;
+  const html=tribHtml()+kangHtml();
+  if(b.dataset.h!==html){b.dataset.h=html;b.innerHTML=html}
+  const T=$('#table').getBoundingClientRect(),e=$('.emblem').getBoundingClientRect(),pb=$('#prepBig');
+  const signs=pb.hidden?[]:[...pb.children].map(k=>k.getBoundingClientRect()).filter(r=>r.height);
+  let y;
+  // a phone has the side plates level with the space under the sign, so its box stands over the sign instead, or in
+  // the middle once the sign has gone
+  if(isPhone())y=signs.length?Math.min(...signs.map(r=>r.top))-8-b.offsetHeight:e.top+e.height/2-b.offsetHeight/2;
+  else y=Math.max(e.top+e.height/2,...signs.map(r=>r.bottom))+12;
+  b.style.left=T.left+T.width/2+'px';b.style.top=y+'px';
+}
+addEventListener('resize',()=>{if(G)syncTribBox()});
 function tribHtml(cls='trib'){
   const tr=G.trib||[],back=tr.length&&tr.every(t=>t.rc);
   return tr.map(t=>`<div class="${cls}">${NAMES[t.g]}进贡 ${cardTag(t.tc)} 给${NAMES[t.r]}${back?`，${NAMES[t.r]}还 ${cardTag(t.rc)}`:''}</div>`).join('');
