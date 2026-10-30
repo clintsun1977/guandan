@@ -424,11 +424,11 @@ html.phone body:not(.test) .score{flex-direction:row!important;gap:6px}
 #rotateTip p{margin:0;font-size:22px;font-weight:700;color:var(--gold)}
 #rotateTip small{font-size:14px;color:var(--muted)}
 @keyframes turnUp{0%,30%{transform:rotate(90deg)}60%,100%{transform:rotate(0)}}
-/* a phone's table: every card framed in its player's side colour (red or blue), the newest play's frame flashing */
+/* the table: every card framed in its player's side colour (red or blue), the newest play's frame flashing */
 .pc.tr{--tc:var(--red-team)}
 .pc.tb{--tc:var(--blue-team)}
-html.phone body:not(.test) .pc .card{box-shadow:0 0 0 2px var(--tc),0 2px 6px rgba(0,0,0,.4)}
-html.phone body:not(.test) .pc.cur .card{box-shadow:0 0 0 2.5px var(--tc),0 0 14px 3px var(--tc),0 4px 12px rgba(0,0,0,.45);animation:tcBlink 1.1s ease-in-out infinite}
+.pc.tr .card,.pc.tb .card{box-shadow:0 0 0 2px var(--tc),0 2px 6px rgba(0,0,0,.4)}
+.pc.cur.tr .card,.pc.cur.tb .card{box-shadow:0 0 0 2.5px var(--tc),0 0 14px 3px var(--tc),0 4px 12px rgba(0,0,0,.45);animation:tcBlink 1.1s ease-in-out infinite}
 @keyframes tcBlink{50%{box-shadow:0 0 0 2.5px color-mix(in srgb,var(--tc) 25%,transparent),0 0 3px 1px color-mix(in srgb,var(--tc) 20%,transparent),0 4px 12px rgba(0,0,0,.45)}}
 /* who paid whom, in the middle of the table for the three seconds before the first play */
 .tribshow{z-index:95;padding:12px 20px;border-radius:14px;background:rgba(19,54,41,.94);border:2px solid var(--gold);
@@ -921,7 +921,7 @@ body.test .tside:not(.open){display:none}
       <button class="btn round" id="clearBtn">重选</button>
     </div>
     <div id="hand"></div>
-    <div class="handtools"><button class="link" id="fixBtn" title="把选中的牌放进左边的固定区，作为你拟定的一组牌">固定</button><span class="toolgap"></span><button class="link tog" id="fanBtn" aria-pressed="true" title="像手里握着牌一样展开，可以拖动牌插到别处">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
+    <div class="handtools"><button class="link" id="fixBtn" title="把选中的牌放进左边的固定区，作为你拟定的一组牌">成组</button><span class="toolgap"></span><button class="link tog" id="fanBtn" aria-pressed="true" title="像手里握着牌一样展开，可以拖动牌插到别处">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
   </div>
 </div>
 
@@ -2985,7 +2985,7 @@ function renderControls(){
   $('#sfBtn').hidden=!['prep','play'].includes(G.phase)||!G.hands[0].length;
   const fb=$('#fixBtn'),fixedNow=new Set((G.fixed||[]).flat());
   fb.disabled=!picked||!G.hands[0].length;
-  fb.textContent=testGrouped()?'成组':picked&&[...sel].every(id=>fixedNow.has(id))?'放回':isPhone()?'成组':'固定';
+  fb.textContent=testGrouped()?'成组':picked&&[...sel].every(id=>fixedNow.has(id))?'放回':'成组';
   if(testGrouped()){
     fb.disabled=sel.size<2;
     const sp=$('#splitBtn');if(sp){sp.disabled=!picked;sp.hidden=false}
@@ -3022,8 +3022,9 @@ function renderMsg(){
   }
   m.innerHTML=t;
   const ti=$('#tribInfo'),showTi=['play','roundEnd','over'].includes(G.phase);
-  // a phone shows who paid whom only in the middle of the table, for the three seconds before the first play
-  ti.innerHTML=showTi&&!isPhone()?tribHtml('tl')+kangHtml(true):'';
+  // who paid whom is shown only in the middle of the table, for the three seconds before the first play (the test
+  // version keeps it in the corner, for going over the round)
+  ti.innerHTML=showTi&&TEST?tribHtml('tl')+kangHtml(true):'';
 }
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
@@ -3174,7 +3175,7 @@ function drawFixZone(g){
   const L=handEl.offsetLeft,T=handEl.offsetTop;
   z.style.left=L-6+'px';z.style.top=T+'px';z.style.width=g.fixW+6+'px';z.style.height=(g.fixH||handEl.offsetHeight)+'px';
   z.classList.toggle('empty',g.fixEmpty);
-  z.innerHTML=`<span class="fzl">固定区</span>`+(g.fixEmpty?'<span class="fzh">把牌拖到这里，或选好牌点“固定”</span>':'');
+  z.innerHTML=`<span class="fzl">固定区</span>`+(g.fixEmpty?'<span class="fzh">把牌拖到这里，或选好牌点“成组”</span>':'');
   t.style.left=L+'px';t.style.top=T+'px';
   // the button by the frame's bottom right corner (on a phone it stays in the row under the hand)
   const b=$('#fixBtn'),tb=b.parentNode;
@@ -5635,7 +5636,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1029-2221';
+const VERSION='1029-2239';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
