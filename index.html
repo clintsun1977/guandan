@@ -4524,11 +4524,17 @@ const DIRS=['S','E','N','W'];
 const absOf=(d,hostDir)=>(DIRS.indexOf(d)-DIRS.indexOf(hostDir)+4)%4;
 const seatBtns=[...document.querySelectorAll('.seat-btn')];
 const lobbyStatus=t=>{$('#lobbyStatus').textContent=t||''};
-// names end up in the page's markup, so characters that could form tags are dropped
-const nickNow=()=>$('#nick').value.replace(/[<>&"']/g,'').trim().slice(0,8);
+// names end up in the page's markup, so characters that could form tags are dropped; a phone allows three characters
+// (letters or Chinese characters), so the name fits its small plates, a computer or tablet eight
+const nickMax=()=>isPhone()?3:8;
+const nickNow=()=>$('#nick').value.replace(/[<>&"']/g,'').trim().slice(0,nickMax());
+function syncNickMax(){const n=$('#nick');n.maxLength=nickMax();if(n.value.length>n.maxLength)n.value=n.value.slice(0,n.maxLength)}
+syncNickMax();addEventListener('resize',syncNickMax);
+// (typing Chinese, the length can only be checked once the characters are in)
+$('#nick').addEventListener('compositionend',syncNickMax);
 function showStart(){
   resetGame();render();
-  $('#nick').value=myNick;
+  $('#nick').value=myNick;syncNickMax();
   setMode('solo');
   $('#lobby').hidden=false;
   if(!myNick)$('#nick').focus();
@@ -5634,7 +5640,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1029-2249';
+const VERSION='1029-2256';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
