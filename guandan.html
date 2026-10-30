@@ -413,6 +413,26 @@ html.phone body:not(.test) .score .tn{display:none}
 html.phone body:not(.test) .score>span{border-color:var(--team);min-width:2.4em}
 html.phone body:not(.test) .score>span b,html.phone body:not(.test) .score>span.playing b{margin-left:0}
 html.phone body:not(.test) .score{flex-direction:row!important;gap:6px}
+#rotateTip{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  background:var(--felt-deep);color:var(--ink);text-align:center}
+#rotateTip[hidden]{display:none}
+#rotateTip b{font-size:56px;line-height:1;animation:turnUp 1.6s ease-in-out infinite}
+#rotateTip p{margin:0;font-size:22px;font-weight:700;color:var(--gold)}
+#rotateTip small{font-size:14px;color:var(--muted)}
+@keyframes turnUp{0%,30%{transform:rotate(90deg)}60%,100%{transform:rotate(0)}}
+/* a phone's table: every card framed in its player's side colour (red or blue), the newest play's frame flashing */
+.pc.tr{--tc:var(--red-team)}
+.pc.tb{--tc:var(--blue-team)}
+html.phone body:not(.test) .pc .card{box-shadow:0 0 0 2px var(--tc),0 2px 6px rgba(0,0,0,.4)}
+html.phone body:not(.test) .pc.cur .card{box-shadow:0 0 0 2.5px var(--tc),0 0 14px 3px var(--tc),0 4px 12px rgba(0,0,0,.45);animation:tcBlink 1.1s ease-in-out infinite}
+@keyframes tcBlink{50%{box-shadow:0 0 0 2.5px color-mix(in srgb,var(--tc) 25%,transparent),0 0 3px 1px color-mix(in srgb,var(--tc) 20%,transparent),0 4px 12px rgba(0,0,0,.45)}}
+/* who paid whom, in the middle of the table for the three seconds before the first play */
+.tribshow{z-index:95;padding:12px 20px;border-radius:14px;background:rgba(19,54,41,.94);border:2px solid var(--gold);
+  box-shadow:0 0 24px rgba(221,176,80,.5),0 10px 30px rgba(0,0,0,.5);text-align:center;animation:tribShow 3s ease-out forwards}
+.tribshow .trib{white-space:nowrap}
+html.phone body:not(.test) .tribshow{padding:8px 12px}
+html.phone body:not(.test) .tribshow .trib{font-size:15px}
+@keyframes tribShow{0%{opacity:0;scale:.8}10%{opacity:1;scale:1}85%{opacity:1}100%{opacity:0}}
 /* on its side the tribute line stands to the right of the score, clear of the left-hand player's plate */
 html.phone.side body:not(.test) .tribinfo{position:absolute;grid-area:auto;left:120px;top:34px;font-size:13px;white-space:nowrap}
 html.phone.side body:not(.test) .tribinfo .ct{font-size:13px}
@@ -432,8 +452,13 @@ html.phone body:not(.test) #rowsBtn{display:none}
 html.phone body:not(.test) #fixZone,html.phone body:not(.test) #fixTags{display:none!important}
 html.phone body:not(.test) #hand .card.grp{border-top:3px solid var(--gold)}
 html.phone body:not(.test) #fixBtn{position:static!important}
-/* upright: the name row keeps clear of the column of play buttons, which may reach up beside it */
-html.phone.rows body:not(.test) .mebar{padding-right:56px}
+/* upright: the name row keeps clear of the column of play buttons, which may reach up beside it; your own status tag
+   is left out there (the lit plate, the clock and the play buttons say the same), and the row's buttons are a little
+   smaller, so it stays on one line */
+html.phone.rows body:not(.test) .mebar{padding-right:56px;gap:6px}
+html.phone.rows body:not(.test) .mebar .stat{display:none}
+html.phone.rows body:not(.test) .mebar .link{font-size:13px;padding:3px 8px}
+html.phone.rows body:not(.test) .mebar .left{gap:6px}
 /* the finishing places at half size; your partner's beside the plate rather than under it, where their cards lie */
 html.phone body:not(.test) .place{font-size:14px;padding:3px 7px 3px 9px;border-radius:7px}
 html.phone body:not(.test) #seat2 .place{top:50%;left:100%;transform:translateY(-50%);margin:0 0 0 8px}
@@ -1972,10 +1997,26 @@ function beginPlay(){
   if(G.returns&&G.returns.length){processReturns();return}
   startPlay(G.turn);
 }
+// after a tribute (or a refused one) the play waits three seconds while who paid whom is shown in the middle of the
+// table; the leader may already press 出牌 meanwhile, as between two tricks
+const TRIB_SHOW_MS=3000;
 function startPlay(leader){
   G.phase='play';G.turn=leader;G.clock=null;
   if(TEST)testRoundStart();
+  if((G.trib&&G.trib.length)||G.kang){
+    G.turn=-1;G.nextLeader=leader;
+    render();showTribBig();
+    later(()=>{G.turn=leader;startTurn()},TRIB_SHOW_MS);
+    return;
+  }
   startTurn();
+}
+function showTribBig(){
+  const m=$('#table').getBoundingClientRect(),e=document.createElement('div');
+  e.className='fx tribshow';e.innerHTML=tribHtml('trib')+kangHtml(false);
+  e.style.left=m.left+m.width/2+'px';e.style.top=m.top+m.height*.42+'px';
+  document.body.appendChild(e);
+  setTimeout(()=>e.remove(),TRIB_SHOW_MS);
 }
 
 const active=i=>G.hands[i].length>0;
@@ -2669,7 +2710,7 @@ function pileThrow(p,play,origins,animate){
   const seat=relPoint(seatPoint(p),g);
   cards.forEach((c,i)=>{
     const el=document.createElement('div');
-    el.className='pc cur';
+    el.className='pc cur '+(isRedSeat(p)?'tr':'tb');
     el.innerHTML=cardHTML(c,G.L)+'<div class="bk"></div>';
     el.style.zIndex=++pileZ;
     if(anim){
@@ -2783,7 +2824,7 @@ function restLayout(p,cards,origins,animate){
   counts.forEach((k,r)=>{
     for(let j=0;j<k;j++,i++){
       const c=cards[i],el=document.createElement('div');
-      el.className='pc rest';
+      el.className='pc rest '+(isRedSeat(p)?'tr':'tb');
       el.innerHTML=cardHTML(c,G.L)+'<div class="bk"></div>';
       el.style.zIndex=++pileZ;
       const to=pileT(cx-rowW(k)/2+cw/2+j*off,top+ch/2+r*ch*ROW_STEP,0,0,s);
@@ -2976,8 +3017,8 @@ function renderMsg(){
   }
   m.innerHTML=t;
   const ti=$('#tribInfo'),showTi=['play','roundEnd','over'].includes(G.phase);
-  // a phone shows who paid whom only until the first trick of the play has been taken in
-  ti.innerHTML=showTi&&!(isPhone()&&G.phase==='play'&&G.heapN>0)?tribHtml('tl')+kangHtml(true):'';
+  // a phone shows who paid whom only in the middle of the table, for the three seconds before the first play
+  ti.innerHTML=showTi&&!isPhone()?tribHtml('tl')+kangHtml(true):'';
 }
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
@@ -3146,6 +3187,14 @@ function drawFixZone(g){
 let ROW_STEP=.58,CR=1.4;
 const PHONE_MQ=matchMedia('(max-width:560px), (max-height:500px)');
 const isPhone=()=>PHONE_MQ.matches&&!TEST;
+// a phone is played upright only: turned on its side (a touch screen less than 500 high) it asks to be turned back
+const COARSE_MQ=matchMedia('(pointer: coarse)');
+const phoneSideways=()=>!TEST&&COARSE_MQ.matches&&innerWidth>innerHeight&&innerHeight<=500;
+function syncRotateTip(){
+  let t=$('#rotateTip');
+  if(!t){t=document.createElement('div');t.id='rotateTip';t.innerHTML='<b>📱</b><p>请把手机竖过来玩</p><small>手机上只支持竖屏</small>';document.body.appendChild(t)}
+  t.hidden=!phoneSideways();
+}
 // a phone held upright (html.rows) or on its side (html.side)
 const phoneRows=()=>isPhone()&&innerHeight>innerWidth;
 function syncPhone(){
@@ -3157,9 +3206,10 @@ function syncPhone(){
   else if(!on&&fb.parentNode!==$('.handtools'))$('.handtools').prepend(fb);
   CR=on?.86:1.4;ROW_STEP=on?.92:.58;
 }
-syncPhone();
+syncPhone();syncRotateTip();
 // turning the phone (or the window changing size) can switch these: the hand and the table are then laid out again
 const phoneSwitch=()=>{
+  syncRotateTip();
   const was=document.documentElement.className;syncPhone();
   if(document.documentElement.className!==was&&G){renderHand();render();pileRebuild()}
 };
@@ -4680,6 +4730,8 @@ function testFull(on){
   }catch(_){}
 }
 const fsMark=()=>{
+  // full screen on a phone also holds the screen upright, where the browser allows it
+  if(fsOn()&&isPhone())try{const r=screen.orientation&&screen.orientation.lock&&screen.orientation.lock('portrait');if(r&&r.catch)r.catch(()=>{})}catch(_){}
   $('#fsBtn').textContent=fsOn()?'退出全屏':'回到全屏';document.body.classList.toggle('fs',fsOn());
   $('#fsOptBtn').textContent=fsOn()?'退出全屏':'全屏';$('#fsOptBtn').setAttribute('aria-pressed',fsOn());
 };
