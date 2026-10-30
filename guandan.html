@@ -191,7 +191,10 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 #myName{color:var(--team,var(--ink));font-weight:700}
 .mebar .meinfo{border-color:color-mix(in srgb,var(--team,#fff) 45%,transparent)}
 /* the count sits beside the name plate, never inside it */
-.whorow{display:flex;align-items:center;gap:12px}
+.whorow{display:flex;align-items:center;gap:12px;position:relative}
+.actlbl{position:absolute;z-index:5;pointer-events:none;white-space:nowrap}
+#seat1 .actlbl,#seat3 .actlbl{bottom:calc(100% + 30px);left:50%;translate:-50% 0}
+#seat2 .actlbl{left:calc(100% + 12px);top:50%;translate:0 -50%}
 /* card counts stay hidden until a player is down to 10 or fewer, then they shout */
 .cnt{display:inline-flex;align-items:baseline;gap:2px;font-family:var(--font-display);font-weight:900;font-size:26px;line-height:1;
   font-variant-numeric:tabular-nums;color:var(--felt-deep);background:var(--warn);border-radius:8px;padding:3px 7px 2px;animation:pop .35s ease-out}
@@ -410,6 +413,11 @@ html.phone body:not(.test) .fx-act{font-size:13px}
 body:not(.test) .emblem{visibility:hidden}
 html.phone body:not(.test) #lastPlay{display:none}
 html.phone body:not(.test) #pile{--cw:clamp(54px,min(18vw,15vh),88px)}
+/* a computer or tablet: a player's count of cards left stands under their plate, clear of the cards they play */
+html:not(.phone) .seat .cnt{position:absolute;top:calc(100% + 6px)}
+html:not(.phone) #seat3 .cnt{left:0}
+html:not(.phone) #seat1 .cnt{right:0}
+html:not(.phone) #seat2 .cnt{left:50%;translate:-50% 0}
 /* a computer or tablet's score: each side's level as a white number on its colour, the side being played ringed in gold */
 html:not(.phone) .score .tn{display:none}
 html:not(.phone) .score>span{background:var(--team-fill);color:#fff;border-color:var(--team);min-width:2.6em}
@@ -1826,10 +1834,11 @@ function markActor(p,text){
   (p===0?$('.meinfo'):$('#seat'+p+' .who')).classList.add('acting');
   // on your own turn the button is the only thing to look at, so no label competes with it
   if(p===0)return;
-  const q=actPoint(p),e=document.createElement('div');
-  e.className='fx fx-act';e.textContent=text;
-  e.style.left=q.x+'px';e.style.top=q.y+'px';
-  document.body.appendChild(e);
+  // the label belongs to the plate's row, so it moves with the plate: over it for the side players (above their tags),
+  // to the right of the row for the player across the table
+  const e=document.createElement('div');
+  e.className='fx-act actlbl';e.textContent=text;
+  $('#seat'+p+' .whorow').appendChild(e);
 }
 function beginDeal(){
   G.phase='deal';G.busy=false;G.clock=null;
@@ -2512,10 +2521,13 @@ function pileGeo(){
   const L=pileEl().getBoundingClientRect(),R=q=>$(q).getBoundingClientRect();
   // a player's plate, and in the test version the face-up hand beside it, which the table's cards keep clear of too
   const P=p=>{
-    const a=R('#seat'+p+' .whorow'),k=TEST&&$('#peek'+p);
-    if(!k||!k.offsetHeight)return a;
-    const b=k.getBoundingClientRect();
-    return{left:Math.min(a.left,b.left),right:Math.max(a.right,b.right),bottom:Math.max(a.bottom,b.bottom)};
+    // (with the count of cards under the plate, where a computer shows it)
+    let a=R('#seat'+p+' .whorow');
+    const add=b=>{a={left:Math.min(a.left,b.left),right:Math.max(a.right,b.right),bottom:Math.max(a.bottom,b.bottom)}};
+    const c=$('#seat'+p+' .cnt'),k=TEST&&$('#peek'+p);
+    if(c&&c.offsetHeight)add(c.getBoundingClientRect());
+    if(k&&k.offsetHeight)add(k.getBoundingClientRect());
+    return a;
   };
   const top=P(2).bottom-L.top;
   const bottom=R('#seat0').top-L.top;
@@ -2619,12 +2631,12 @@ function phoneZone(p,g){
     y+=h;
   }
 }
-// a phone's table changes size during the round (the hand takes fewer rows, the name row wraps): the cards on it are
-// laid out again in the new room
+// the room around the cards on the table changes during the round (a count of cards appears under a plate; on a phone
+// the hand takes fewer rows or the name row wraps): the cards are laid out again in the new room
 // (and after every redraw, since the room also changes when the name row or the hand moves without the table resizing)
 let phoneRefitAsked=false;
 function phoneRefit(){
-  if(!isPhone()||phoneRefitAsked)return;
+  if(phoneRefitAsked)return;
   phoneRefitAsked=true;
   setTimeout(()=>{phoneRefitAsked=false;if(pileGroups.length)pileRefit()},0);
 }
