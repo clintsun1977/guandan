@@ -426,12 +426,17 @@ html.phone body:not(.test) #btns{--d:32px!important;gap:6px}
 html.phone body:not(.test) #btns .btn{font-size:12px}
 html.phone.rows body:not(.test) #btns{position:absolute;right:0;margin:0;z-index:6;flex-direction:column;flex-wrap:nowrap;--d:48px!important}
 html.phone.rows body:not(.test) #btns .btn{font-size:15px}
-/* upright: the empty fixed zone is a thin strip over the hand, its name written across */
-html.phone.rows body:not(.test) #fixZone.empty .fzl{writing-mode:horizontal-tb;top:3px;left:10px;right:auto;translate:none;font-size:12px;letter-spacing:.1em;text-align:left}
 html.phone.side body:not(.test) #btns{display:grid;grid-template-columns:repeat(2,auto)}
 html.phone.rows body:not(.test) #hand{--cw:clamp(48px,15vw,64px)}
-/* upright, the hand takes as many rows as its cards need, so the rows button has nothing to offer */
-html.phone.rows body:not(.test) #rowsBtn{display:none}
+/* a phone's hand takes as many rows as its cards need, so the rows button has nothing to offer; its groups lie in
+   the rows themselves (no frame, no tags), each card of a group with a gold edge along the top, and 成组 stands
+   beside 同花顺 */
+html.phone body:not(.test) #rowsBtn{display:none}
+html.phone body:not(.test) #fixZone,html.phone body:not(.test) #fixTags{display:none!important}
+html.phone body:not(.test) #hand .card.grp{border-top:3px solid var(--gold)}
+html.phone body:not(.test) #fixBtn{position:static!important}
+/* upright: the name row keeps clear of the column of play buttons, which may reach up beside it */
+html.phone.rows body:not(.test) .mebar{padding-right:56px}
 /* the finishing places at half size; your partner's beside the plate rather than under it, where their cards lie */
 html.phone body:not(.test) .place{font-size:14px;padding:3px 7px 3px 9px;border-radius:7px}
 html.phone body:not(.test) #seat2 .place{top:50%;left:100%;transform:translateY(-50%);margin:0 0 0 8px}
@@ -2552,6 +2557,16 @@ function phoneZone(p,g){
   if(g.col&&g.col.left<z.x1&&g.col.top<z.y1)z.x1=Math.max(z.x0+g.cw,g.col.left-PASS_X);
   return z;
 }
+// a phone's table changes size during the round (the hand takes fewer rows, the name row wraps): the cards on it are
+// laid out again in the new room
+// (and after every redraw, since the room also changes when the name row or the hand moves without the table resizing)
+let phoneRefitAsked=false;
+function phoneRefit(){
+  if(!isPhone()||phoneRefitAsked)return;
+  phoneRefitAsked=true;
+  setTimeout(()=>{phoneRefitAsked=false;if(pileGroups.length)pileRefit()},0);
+}
+if(window.ResizeObserver)new ResizeObserver(phoneRefit).observe($('#table'));
 const pileT=(x,y,rot,flip,sc=1)=>`perspective(800px) translate(${x}px,${y}px) rotate(${rot}deg) rotateY(${flip}deg) scale(${sc})`;
 function relPoint(pt,g){return{x:pt.x-g.L.left,y:pt.y-g.L.top}}
 // the plays of the current trick, oldest first, each remembering its cards' elements and its own little jitter
@@ -2786,6 +2801,7 @@ if(document.fonts)document.fonts.ready.then(()=>centerRank());
 // a seat's side colour, from the direction you sit at: north and south red, east and west blue
 const isRedSeat=p=>(DIRS.indexOf(myDir||'S')+p)%2===0;
 function render(){
+  phoneRefit();
   syncPauseBtn();
   for(let p=0;p<4;p++){const el=p===0?$('#mebar'):$('#seat'+p);el.classList.toggle('t-red',isRedSeat(p));el.classList.toggle('t-blue',!isRedSeat(p))}
   $('#lv0').textContent=rankName(G.levels[0]);
@@ -2899,7 +2915,7 @@ function renderControls(){
   $('#sfBtn').hidden=!['prep','play'].includes(G.phase)||!G.hands[0].length;
   const fb=$('#fixBtn'),fixedNow=new Set((G.fixed||[]).flat());
   fb.disabled=!picked||!G.hands[0].length;
-  fb.textContent=testGrouped()?'成组':picked&&[...sel].every(id=>fixedNow.has(id))?'放回':'固定';
+  fb.textContent=testGrouped()?'成组':picked&&[...sel].every(id=>fixedNow.has(id))?'放回':isPhone()?'成组':'固定';
   if(testGrouped()){
     fb.disabled=sel.size<2;
     const sp=$('#splitBtn');if(sp){sp.disabled=!picked;sp.hidden=false}
@@ -3023,7 +3039,7 @@ const FIX_GAP=14,FIX_TAG=46,FIX_BTN=66;
 let fixPeak={k:'',w:0,h:0};
 function handGeo(n,keys){
   if(testGrouped())return testGeo();
-  if(phoneRows())return phoneHandGeo(n,keys);
+  if(isPhone())return phoneHandGeo(n,keys);
   const el=$('#hand'),probe=el.firstElementChild,Wall=el.clientWidth;
   // the active cards stay centred under your name, with the action column's room kept free on both sides,
   // as long as the fixed zone fits in the free room on the left; a wider zone pushes them right
@@ -3092,7 +3108,7 @@ function drawFixZone(g){
   t.style.left=L+'px';t.style.top=T+'px';
   // the button by the frame's bottom right corner (on a phone it stays in the row under the hand)
   const b=$('#fixBtn'),tb=b.parentNode;
-  if(sideBtns()){b.style.left=L+g.fixW+6-tb.offsetLeft+'px';b.style.top=T+(g.fixH||handEl.offsetHeight)-b.offsetHeight-tb.offsetTop+'px'}
+  if(sideBtns()&&!isPhone()){b.style.left=L+g.fixW+6-tb.offsetLeft+'px';b.style.top=T+(g.fixH||handEl.offsetHeight)-b.offsetHeight-tb.offsetTop+'px'}
   else b.style.left=b.style.top='';
   t.innerHTML=g.fixTags.map(r=>{
     const cards=r.gr.map(id=>G.hands[0].find(c=>c.id===id)).filter(Boolean);
@@ -3111,6 +3127,10 @@ const phoneRows=()=>isPhone()&&innerHeight>innerWidth;
 function syncPhone(){
   const on=isPhone(),el=document.documentElement;
   el.classList.toggle('phone',on);el.classList.toggle('rows',phoneRows());el.classList.toggle('side',on&&!phoneRows());
+  // a phone's 成组 button stands beside 同花顺; elsewhere 固定 stays at the left end of the hand tools
+  const fb=$('#fixBtn');
+  if(on&&fb.previousElementSibling!==$('#sfBtn')){$('#sfBtn').after(fb);fb.style.left=fb.style.top=''}
+  else if(!on&&fb.parentNode!==$('.handtools'))$('.handtools').prepend(fb);
   CR=on?.86:1.4;ROW_STEP=on?.92:.58;
 }
 syncPhone();
@@ -3121,42 +3141,39 @@ const phoneSwitch=()=>{
 };
 addEventListener('resize',phoneSwitch);addEventListener('orientationchange',phoneSwitch);PHONE_MQ.addEventListener('change',phoneSwitch);
 // flat rows of about equal length, the player's choice of one to three; a single row too cramped to read becomes two
-// an upright phone's hand. The fixed groups lie side by side across the top (onto a further line if they must), each
-// with its kind beside it, in a frame that hugs them (an empty frame is a thin strip to drop cards on); the other cards
-// fill rows from the left edge below, as few as keep every card's rank and suit in view (or as many as the player
-// chose, up to three). The column of play buttons at the right edge stays clear of all of it
+// a phone's hand: the groups made with 成组 come first, each kept together, from the left of the first row, then the
+// other cards, a small gap after each group; in as few rows as keep every card's rank and suit in view - at most three
+// upright, two on its side, closing the cards up if they must - and clear of the play buttons at the right
 function phoneHandGeo(n,keys){
   const el=$('#hand'),probe=el.firstElementChild,Wall=el.clientWidth,cw=probe.offsetWidth,ch=probe.offsetHeight;
-  const b=$('#btns'),W=Wall-(b.hidden?0:b.offsetWidth+8),off=cw*.42,lift=Math.round(ch*.22);
-  const groups=G&&G.fixed||[],fix=new Map(),fixTags=[];
-  let x=0,y=0,fw=0;
-  for(const gr of groups){
-    const k=gr.length,w=cw+off*(k-1);
-    if(x>0&&x+w+FIX_TAG>W){x=0;y+=ch+6}
-    gr.forEach((id,j)=>fix.set(id,{x:x+j*off,y:lift+y,rot:0}));
-    fixTags.push({x:x+w+5,y:lift+y,gr,x0:x});
-    x+=w+FIX_TAG;fw=Math.max(fw,x);x+=6;
-  }
-  const fixH=groups.length?lift+y+ch+4:22,top=fixH+8;
-  const g=phoneFlat(n,W,cw,ch,keys);
-  g.slots=g.slots.map(sl=>({...sl,y:sl.y+top}));
-  Object.assign(g,{fix,fixTags,fixW:groups.length?fw:W,fixH,cw,ch,fixEmpty:!groups.length,fixEdge:-1,height:top+g.height,
-    // a dragged card above the hand's rows lands in the zone: on a group (or its tag) it joins it
-    inFix:(px,py)=>py<fixH+4,fixAt:(px,py)=>fixTags.findIndex(t=>px>=t.x0-4&&px<t.x+FIX_TAG&&py>=t.y-4&&py<t.y+ch)});
-  return g;
-}
-function phoneFlat(n,W,cw,ch,keys){
-  const lift=Math.round(ch*.22),rowGap=Math.round(ch*ROW_STEP);
-  let counts,offs;
-  for(let rows=Math.max(1,Math.min(flatRows,3,n));;rows++){
-    counts=rows===1?[n]:rowCounts(n,keys,rows,[1,1,1].slice(0,rows),false);
-    offs=counts.map(k=>k>1?Math.min((W-cw)/(k-1),cw*.5):0);
-    if(counts.every((k,r)=>k<=1||offs[r]>=cw*.4)||rows>=3||rows>=n)break;
-  }
-  flatShown=counts.length;flatOneFits=true;
-  const slots=[];
-  counts.forEach((k,r)=>{for(let j=0;j<k;j++)slots.push({x:j*offs[r],y:lift+r*rowGap,rot:0})});
-  return{slots,cw,ch,counts,height:lift+ch+(counts.length-1)*rowGap+4};
+  const b=$('#btns'),W=Wall-(b.hidden?0:b.offsetWidth+8),maxRows=phoneRows()?3:2;
+  const lift=Math.round(ch*.22),rowGap=Math.round(ch*ROW_STEP),gapW=Math.round(cw*.3);
+  const groups=G&&G.fixed||[],seq=[];
+  groups.forEach(gr=>gr.forEach((id,j)=>seq.push({id,start:j===0,len:gr.length})));
+  for(let i=0;i<n;i++)seq.push({id:null,start:i===0&&seq.length>0,len:n});
+  const fill=off=>{
+    let x=0,r=0;const pos=[];
+    for(const it of seq){
+      if(it.start&&x>0){
+        // a group moves to the next row whole rather than breaking (the other cards may run on)
+        const need=it.id!=null?cw+off*(it.len-1):cw;
+        if(x+gapW+need>W){x=0;r++}else x+=gapW;
+      }else if(x>0&&x+cw>W){x=0;r++}
+      pos.push({x,r});x+=off;
+    }
+    return{pos,rows:r+1};
+  };
+  let best=null;
+  for(let R=1;R<=maxRows&&!best;R++)for(let f=.5;f>=.399;f-=.02){const t=fill(cw*f);if(t.rows<=R){best=t;break}}
+  if(!best)for(let f=.38;;f-=.02){const t=fill(cw*f);if(t.rows<=maxRows||f<.21){best=t;break}}
+  const fix=new Map(),slots=[],counts=Array(best.rows).fill(0);
+  best.pos.forEach((q,i)=>{
+    const sl={x:q.x,y:lift+q.r*rowGap,rot:0};
+    if(seq[i].id!=null)fix.set(seq[i].id,sl);else{slots.push(sl);counts[q.r]++}
+  });
+  flatShown=best.rows;flatOneFits=true;
+  return{slots,fix,fixTags:[],fixW:0,fixH:0,cw,ch,counts,fixEmpty:true,fixEdge:-1,inFix:()=>false,
+    height:lift+ch+(best.rows-1)*rowGap+4};
 }
 function flatGeo(n,W,cw,ch,keys){
   let rows=Math.max(1,Math.min(TEST?3:flatRows,Math.ceil(n/5)));
@@ -3245,6 +3262,7 @@ function placeCard(c,slot,i){
   if(fresh){c.getBoundingClientRect();c.style.transition=''}
 }
 function layoutHand(){
+  phoneRefit();
   const el=$('#hand'),cards=[...el.children],n=cards.length;
   el.classList.toggle('fan',fanMode());
   // while dealing, each card goes straight into its slot in a full 27-card hand,
@@ -3258,6 +3276,8 @@ function layoutHand(){
   if(probe)probe.remove();
   act.forEach((c,i)=>placeCard(c,g.slots[i],100+i));
   cards.filter(c=>fixed.has(+c.dataset.id)).forEach((c,i)=>placeCard(c,g.fix.get(+c.dataset.id),i));
+  // a phone marks the cards of its groups with a gold edge along the top
+  cards.forEach(c=>c.classList.toggle('grp',isPhone()&&fixed.has(+c.dataset.id)));
   el.style.height=g.height+'px';
   drawFixZone(g);
   placeLastPlay();
@@ -3290,14 +3310,11 @@ function placeActionBtns(){
     }
     return;
   }
-  // a phone on its side: the play buttons two by two, their right edge on 复原's and standing just over 两排 / 复原
+  // a phone on its side: the play buttons two by two, their right edge on 复原's and standing just over it
   if(on&&isPhone()){
-    const b=$('#btns'),w=$('.handwrap').getBoundingClientRect(),s=$('#sortBtn').getBoundingClientRect(),r=$('#rowsBtn').getBoundingClientRect();
-    // each column of buttons centred over one of the two tool buttons
-    const d=b.firstElementChild.offsetWidth||32,cr=r.left+r.width/2,cs=s.left+s.width/2;
-    b.style.columnGap=Math.max(6,cs-cr-d)+'px';
-    b.style.left=cr-d/2-w.left+'px';
-    const top=Math.min(s.top,r.top)-w.top-6-b.offsetHeight+'px';
+    const b=$('#btns'),w=$('.handwrap').getBoundingClientRect(),s=$('#sortBtn').getBoundingClientRect();
+    b.style.left=s.right-w.left-b.offsetWidth+'px';
+    const top=s.top-w.top-6-b.offsetHeight+'px';
     if(b.style.top!==top){b.style.top=top;if(pileGroups.length&&!b.hidden)pileRefit()}
   }else if(on){
     // the column is placed so its tribute / return button, or else its hint button, stands on the spot
@@ -5534,7 +5551,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1029-2044';
+const VERSION='1029-2129';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
