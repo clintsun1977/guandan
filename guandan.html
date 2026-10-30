@@ -424,6 +424,7 @@ html.phone.rows body:not(.test) #btns{position:absolute;right:0;margin:0;z-index
 html.phone.rows body:not(.test) #btns .btn{font-size:15px}
 html.phone.side body:not(.test) #btns{display:grid;grid-template-columns:repeat(2,auto)}
 html.phone.rows body:not(.test) #hand{--cw:clamp(48px,15vw,64px)}
+html.phone.side body:not(.test) #hand{--cw:clamp(48px,14vh,60px)}
 /* a phone's hand takes as many rows as its cards need, so the rows button has nothing to offer; its groups lie in
    the rows themselves (no frame, no tags), each card of a group with a gold edge along the top, and 成组 stands
    beside 同花顺 */
@@ -2459,6 +2460,7 @@ function displayOrder(play,L){
 /* ---------- the table pile: plays are thrown face up into the middle, a finished trick is turned face down onto the heap ---------- */
 let pileZ=1000,heapZ=1;
 const BIG=1.5; // how much the most recent play is enlarged
+const PHONE_SC=1.3; // a phone: the size every play of a trick comes down at (before the trick has to step down)
 const TRICK_HOLD_MS=2200; // a finished trick stays face up this long, so everyone can remember it, then turns over
 // a trick with many cards on the table stays up longer, up to about 5.5 seconds, so they can all be taken in
 const trickHold=()=>TRICK_HOLD_MS+Math.min(3300,150*Math.max(0,(G.trickPlays||[]).reduce((s,t)=>s+t.play.cards.length,0)-6));
@@ -2493,7 +2495,8 @@ function pileGeo(){
 function pileRefit(){
   const g=pileGeo(),last=pileGroups[pileGroups.length-1];
   // as when a play is thrown: the newest play's player must fit, and the right-hand player beside the column
-  while([1,last&&last.p].some(q=>q!=null&&!layoutPlayer(q,g,false))&&TS>minTS())TS=Math.max(minTS(),TS*.9);
+  const who=isPhone()?[0,1,2,3]:[1,last&&last.p];
+  while(who.some(q=>q!=null&&!layoutPlayer(q,g,false))&&TS>minTS())TS=Math.max(minTS(),TS*.9);
   for(let q=0;q<4;q++)layoutPlayer(q,g,true);
 }
 // how far down your own cards on the table may reach: to your name plate (or your place label once you are out); the
@@ -2537,20 +2540,42 @@ function zoneFor(p,g){
   }
   return z;
 }
-// a phone held upright: the table is cut into four rows, one per player and each as wide as the table - your
-// partner's at the top, then the left-hand player's (cards starting from the left), the right-hand player's (cards
-// ending at the right) and yours at the bottom - so the whole middle of the table is used and even a long play fits
-// at a size everyone can read. The rows share out the room above and below the side plates (and the tags over them)
-// in proportion, so that none has to squeeze past a plate; every row keeps clear of the column of play buttons
+// a phone held upright: one row per player, each as wide as the table - your partner's and then the left-hand
+// player's (cards starting from the left) in the room above the side plates, the right-hand player's (cards ending at
+// the right) and yours in the room below them (or three rows above and one below, whichever fits). Within its room a
+// row is as deep as its player's plays need - a second play that does not fit beside the first goes onto a line of
+// its own below it - and the two rows share what is left over. Every row keeps clear of the column of play buttons
+function phoneNeed(q,g,w){
+  let used=0,deep=0,depth=0,any=false;
+  for(const gr of pileGroups.filter(x=>x.p===q)){
+    const d=groupDims(gr,g,gr.sc,false);
+    if(any&&used+GAP+d.w>w){depth+=deep+GAP;used=0;deep=0}
+    used+=(used?GAP:0)+d.w;deep=Math.max(deep,d.h);any=true;
+  }
+  return any?depth+deep:0;
+}
 function phoneZone(p,g){
   const R=q=>$(q).getBoundingClientRect(),a=R('#seat3 .whorow'),c=R('#seat1 .whorow');
-  const t=g.top+PASS_Y,b=g.near-PASS_Y;
+  const t=g.top+PASS_Y,b=g.near-PASS_Y,X0=PASS_X,X1=g.L.width-PASS_X;
   const pt=Math.max(t,Math.min(a.top,c.top)-g.L.top-26),pb=Math.min(b,Math.max(a.bottom,c.bottom)-g.L.top+4);
-  const A=pt-t,B=b-pb,k=Math.max(1,Math.min(3,Math.round(4*A/Math.max(1,A+B)))),i=[2,3,1,0].indexOf(p);
-  const z=i<k?{y0:t+i*A/k,y1:t+(i+1)*A/k-4}:{y0:pb+(i-k)*B/(4-k),y1:pb+(i-k+1)*B/(4-k)-4};
-  z.x0=PASS_X;z.x1=g.L.width-PASS_X;
-  if(g.col&&g.col.left<z.x1&&g.col.top<z.y1)z.x1=Math.max(z.x0+g.cw,g.col.left-PASS_X);
-  return z;
+  const order=[2,3,1,0],room=(y0,y1)=>({y0,y1,x1:g.col&&g.col.top<y1?Math.max(X0+g.cw,Math.min(X1,g.col.left-PASS_X)):X1});
+  const A=room(t,pt),B=room(pb,b),need=q=>phoneNeed(q,g,(order.indexOf(q)<k?A:B).x1-X0);
+  // two rows above and two below, unless three above and one below (or one and three) is what lets them all fit
+  let k=2;
+  for(const kk of [2,3,1]){
+    k=kk;
+    const up=order.slice(0,k).reduce((s,q)=>s+need(q),0),down=order.slice(k).reduce((s,q)=>s+need(q),0);
+    if(up<=A.y1-A.y0&&down<=B.y1-B.y0)break;
+    k=2;
+  }
+  const rows=order.indexOf(p)<k?order.slice(0,k):order.slice(k),r=order.indexOf(p)<k?A:B;
+  const needs=rows.map(need),spare=Math.max(0,r.y1-r.y0-needs.reduce((s,x)=>s+x,0))/rows.length;
+  let y=r.y0;
+  for(let i=0;i<rows.length;i++){
+    const h=needs[i]+spare;
+    if(rows[i]===p)return{x0:X0,x1:r.x1,y0:y,y1:i===rows.length-1?r.y1:y+h};
+    y+=h;
+  }
 }
 // a phone's table changes size during the round (the hand takes fewer rows, the name row wraps): the cards on it are
 // laid out again in the new room
@@ -2662,10 +2687,14 @@ function pileThrow(p,play,origins,animate){
   pileGroups.push(gr);
   // the newest play as large as the player's zone allows, and always clearly larger than the earlier plays; if even
   // its smallest size will not fit, the whole trick steps down in size and every player's line is laid out again
-  for(;;){
+  // a phone gives every play of the trick one size, set when the trick opens; if a play does not fit, the whole trick
+  // steps down together, so the cards on the table are never of different sizes
+  if(isPhone()){
+    gr.sc=pileGroups.length>1?pileGroups[0].sc:PHONE_SC;
+    while([0,1,2,3].some(q=>!layoutPlayer(q,g,false))&&TS>minTS())TS=Math.max(minTS(),TS*.9);
+  }else for(;;){
     let ok=false;
-    // (on a phone the new play may come down smaller still on its own, so the plays already there keep their size)
-    for(const sc of isPhone()?[BIG,1.4,1.3,1.2,1.1,1,.9,.8,.7,.6]:[BIG,1.4,1.3,1.2,1.1,1]){gr.sc=sc;if(layoutPlayer(p,g,false)){ok=true;break}}
+    for(const sc of [BIG,1.4,1.3,1.2,1.1,1]){gr.sc=sc;if(layoutPlayer(p,g,false)){ok=true;break}}
     if(ok||TS<=minTS())break;
     TS=Math.max(minTS(),TS*.9);
   }
@@ -3141,20 +3170,23 @@ addEventListener('resize',phoneSwitch);addEventListener('orientationchange',phon
 // upright, two on its side, closing the cards up if they must - and clear of the play buttons at the right
 function phoneHandGeo(n,keys){
   const el=$('#hand'),probe=el.firstElementChild,Wall=el.clientWidth,cw=probe.offsetWidth,ch=probe.offsetHeight;
-  const b=$('#btns'),W=Wall-(b.hidden?0:b.offsetWidth+8),maxRows=phoneRows()?3:2;
+  // (on its side the hand always takes two rows, each card the easier to read)
+  const b=$('#btns'),W=Wall-(b.hidden?0:b.offsetWidth+8),maxRows=phoneRows()?3:2,cap=phoneRows()?Infinity:Math.ceil((n+(G&&G.fixed||[]).flat().length)/2);
   const lift=Math.round(ch*.22),rowGap=Math.round(ch*ROW_STEP),gapW=Math.round(cw*.3);
   const groups=G&&G.fixed||[],seq=[];
   groups.forEach(gr=>gr.forEach((id,j)=>seq.push({id,start:j===0,len:gr.length})));
   for(let i=0;i<n;i++)seq.push({id:null,start:i===0&&seq.length>0,len:n});
   const fill=off=>{
-    let x=0,r=0;const pos=[];
+    let x=0,r=0,k=0;const pos=[];
     for(const it of seq){
-      if(it.start&&x>0){
+      // the first row stops at half the cards on its side (a group is not broken for it)
+      if(r===0&&x>0&&(it.id==null||it.start)&&k+(it.id!=null&&it.start?it.len:1)>cap){x=0;r++}
+      else if(it.start&&x>0){
         // a group moves to the next row whole rather than breaking (the other cards may run on)
         const need=it.id!=null?cw+off*(it.len-1):cw;
         if(x+gapW+need>W){x=0;r++}else x+=gapW;
       }else if(x>0&&x+cw>W){x=0;r++}
-      pos.push({x,r});x+=off;
+      pos.push({x,r});x+=off;k++;
     }
     return{pos,rows:r+1};
   };
