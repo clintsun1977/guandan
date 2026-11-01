@@ -95,9 +95,9 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .vc.mute::after{content:"闭麦";font-size:11px;font-weight:400;line-height:1;padding:2px 5px;border-radius:999px;color:var(--muted);border:1px solid var(--line-strong)}
 @keyframes vcTalk{from{transform:scale(.8);opacity:.6}to{transform:scale(1.15);opacity:1}}
 /* who paid whom and what came back, kept in the corner while the round is played */
-.tribinfo{display:flex;flex-direction:column;gap:3px;font-size:16px;color:var(--ink);line-height:1.5}
+.tribinfo{display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--ink);line-height:1.5;white-space:nowrap}
 .tribinfo:empty{display:none}
-.tribinfo .ct{font-size:16px;padding:0 5px}
+.tribinfo .ct{font-size:13px;padding:0 4px}
 .link{font:inherit;font-size:16px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer;white-space:nowrap}
 .link:hover{color:var(--ink);border-color:var(--line-strong)}
 .tog{display:inline-flex;align-items:center;gap:6px}
@@ -3057,9 +3057,9 @@ function renderMsg(){
   m.innerHTML=t;
   syncTribBox();
   const ti=$('#tribInfo'),showTi=['play','roundEnd','over'].includes(G.phase);
-  // who paid whom is shown over your name while sorting and for three seconds into the play, then no more (the test
-  // version keeps it in the corner, for going over the round)
-  ti.innerHTML=showTi&&TEST?tribHtml('tl')+kangHtml(true):'';
+  // once the play has begun, a computer or tablet keeps who paid whom in a small line under the score in the corner
+  // (a phone has no room for it there: it shows only in the middle while sorting and for three seconds after)
+  ti.innerHTML=showTi&&!G.tribHold&&(TEST||!isPhone())?tribHtml('tl')+kangHtml(true):'';
 }
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
