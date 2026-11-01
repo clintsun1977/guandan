@@ -3254,22 +3254,28 @@ function drawFixZone(g){
 // a card's corner index (rank over suit) takes about half its height, so rows of cards step down by a little more
 // than that; a phone's cut-down cards are almost all index, so its rows hardly overlap
 let ROW_STEP=.58,CR=1.4;
-const PHONE_MQ=matchMedia('(max-width:560px), (max-height:500px)');
-const isPhone=()=>PHONE_MQ.matches&&!TEST;
+// a phone is told by its screen (the device itself, which an on-screen keyboard never shrinks, unlike the window):
+// a touch screen whose short side is at most 500. A window narrowed to 560 or less on any device is laid out the
+// same way. (Telling it by the window's height took an iPad for a phone on its side the moment its keyboard came up)
+const PHONE_MQ=matchMedia('(max-width:560px)'),COARSE_MQ=matchMedia('(pointer: coarse)');
+const phoneDevice=()=>COARSE_MQ.matches&&Math.min(screen.width,screen.height)<=500;
+// which way the device is held: from the screen where the browser says, else from the window
+const heldSideways=()=>screen.orientation&&screen.orientation.type?screen.orientation.type.startsWith('landscape')
+  :typeof window.orientation==='number'?Math.abs(window.orientation)===90:innerWidth>innerHeight;
+const isPhone=()=>!TEST&&(PHONE_MQ.matches||phoneDevice());
 // each turn clock stands beside its plate, never inside it (so the plate keeps its size): after the plate, or before
 // it for the right-hand player, whose plate is on the right of its row
 for(const q of [1,2,3]){const w=$('#seat'+q+' .who'),c=w.querySelector('.clock');if(q===1)w.before(c);else w.after(c)}
 $('#mebar .meinfo').after($('#myClock'));
-// a phone is played upright only: turned on its side (a touch screen less than 500 high) it asks to be turned back
-const COARSE_MQ=matchMedia('(pointer: coarse)');
-const phoneSideways=()=>!TEST&&COARSE_MQ.matches&&innerWidth>innerHeight&&innerHeight<=500;
+// a phone is played upright only: turned on its side it asks to be turned back
+const phoneSideways=()=>!TEST&&phoneDevice()&&heldSideways();
 function syncRotateTip(){
   let t=$('#rotateTip');
   if(!t){t=document.createElement('div');t.id='rotateTip';t.innerHTML='<b>📱</b><p>请把手机竖过来玩</p><small>手机上只支持竖屏</small>';document.body.appendChild(t)}
   t.hidden=!phoneSideways();
 }
 // a phone held upright (html.rows) or on its side (html.side)
-const phoneRows=()=>isPhone()&&innerHeight>innerWidth;
+const phoneRows=()=>isPhone()&&(phoneDevice()?!heldSideways():innerHeight>innerWidth);
 function syncPhone(){
   const on=isPhone(),el=document.documentElement;
   el.classList.toggle('phone',on);el.classList.toggle('rows',phoneRows());el.classList.toggle('side',on&&!phoneRows());
@@ -5727,7 +5733,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1101-0919';
+const VERSION='1101-0924';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
