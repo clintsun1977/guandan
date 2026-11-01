@@ -576,8 +576,9 @@ html.phone body:not(.test) #myPlace{margin-bottom:2px}
 .rule-btn{font:inherit;font-size:17px;padding:6px 4px;border-radius:10px;cursor:pointer;background:transparent;color:var(--ink);border:1.5px solid var(--line-strong)}
 .rule-btn.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700}
 .rule-btn:disabled{cursor:default}
-/* entering someone's room: the host's choices show on a dull gold, and cannot be changed */
+/* entering someone's room: 进房间 itself and the host's choices show on a dull gold, and the choices cannot be changed */
 .rule-btn:disabled.on{background:#7a6630;border-color:#7a6630;color:#e9dfbf}
+.mode-btn.on[data-mode="join"]{background:#7a6630;border-color:#7a6630;color:#e9dfbf}
 /* the room code box calls for the number until the room is entered; 进入 dims once pressed */
 #roomCode.call{animation:codeCall 1s ease-in-out infinite}
 @keyframes codeCall{50%{border-color:var(--gold);box-shadow:0 0 0 3px rgba(221,176,80,.35),0 0 18px var(--gold)}}
@@ -4547,7 +4548,14 @@ syncAudioBtns();
 // the touch going down), so every kind of tap event tries, and each later tap tries again until the sound is on
 for(const ev of ['pointerdown','pointerup','touchend','click','keydown'])document.addEventListener(ev,()=>{Sound.unlock();VC.wake()},{capture:true,passive:true});
 // coming back to the page (after switching apps or unlocking the iPad) wakes the sound up again where allowed
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)Sound.wake()});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)return;
+  Sound.wake();
+  // a page that was out of sight may not have heard the others' hellos meanwhile: it gives them a fresh 20 seconds
+  // rather than taking the silence for their leaving
+  if(NET.hostSeen)NET.hostSeen=Date.now();
+  for(const v of NET.conns.values())v.seen=Date.now();
+});
 $('#quitBtn').onclick=askQuit;
 $('#micBtn').onclick=()=>VC.toggle();
 $('#pauseBtn').onclick=()=>{if(G&&G.phase!=='start'&&!(G.paused&&G.pausedBy!==0))act({k:'pause',on:!G.paused,p:toAbs(0)})};
@@ -4639,7 +4647,7 @@ ruleBtns.forEach(b=>b.addEventListener('click',()=>{
 function setMode(m){
   leaveNet();
   loadRules();
-  lobbyMode=m;myDir='';
+  lobbyMode=m;myDir='';NET.lastCode=null;NET.rejoinDir=null;
   NET.lobby={S:null,E:null,N:null,W:null};
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
   $('#joinRow').hidden=m!=='join';
@@ -4712,6 +4720,7 @@ $('#joinBtn').onclick=()=>{
   Sound.unlock();
   // pressed once: the button dims and the box stops calling (both come back if the room cannot be reached)
   $('#joinBtn').disabled=true;$('#roomCode').classList.remove('call');
+  NET.lastCode=code;NET.rejoinTries=0;
   joinRoom(code);
 };
 $('#roomCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('#joinBtn').click()});
@@ -5718,7 +5727,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1101-0844';
+const VERSION='1101-0904';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -5976,7 +5985,8 @@ function joinRoom(code){
     NET.hostConn=conn;
     conn.on('open',()=>{NET.hostSeen=Date.now();lobbyStatus('选一个空座位');$('#roomCodeShow').textContent=code;$('#roomInfo').hidden=false;renderLobby()});
     conn.on('data',guestOnData);
-    conn.on('close',hostGone);
+    // (only the current line's closing counts: an old one closed on the way back in must not start another round)
+    conn.on('close',()=>{if(NET.hostConn===conn)hostGone()});
   });
   peer.on('error',err=>{
     if(NET.peer!==peer)return;
@@ -5995,6 +6005,9 @@ function guestOnData(d){
   if(d.t==='nope'){NET.pending=false;if(['play','pass','return','tribute'].includes(d.k))setMsg('这一步没有成功，请再试一次',true);render();return}
   if(d.t==='lobby'){
     NET.lobby=d.seats;myDir=d.you||'';
+    if(myDir){NET.rejoinDir=null;NET.rejoinTries=0}
+    // back in after a broken line: the seat held before is taken again if it is still free
+    else if(NET.rejoinDir&&!d.seats[NET.rejoinDir]){const r=NET.rejoinDir;NET.rejoinDir=null;sendSit(r)}
     if(d.rules)Object.assign(RULES,d.rules);
     if(d.ver&&d.ver!==VERSION)lobbyStatus(OLD_PAGE);else lobbyStatus(myDir?'已坐下，等待房主开始':'选一个空座位',!!myDir);
     renderLobby();
@@ -6023,6 +6036,14 @@ function hostGone(){
     $('#backBtn').onclick=()=>location.reload();
   }else if(lobbyMode==='join'){
     if(NET.refused)return;
+    // the line to the room broke while waiting (the phone switched to another app, say): the page goes straight back
+    // in and takes the same seat again, a few times at most, before asking the player to enter again
+    if(NET.lastCode&&(NET.rejoinTries||0)<3){
+      NET.rejoinTries=(NET.rejoinTries||0)+1;NET.rejoinDir=myDir||NET.rejoinDir;myDir='';
+      lobbyStatus('和房间断开了，正在重新连接…');renderLobby();
+      joinRoom(NET.lastCode);
+      return;
+    }
     NET.hostConn=null;myDir='';lobbyStatus('和房间断开了，请重新进入');renderLobby();
     $('#joinBtn').disabled=false;$('#roomCode').classList.add('call');
   }
