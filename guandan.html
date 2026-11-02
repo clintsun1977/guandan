@@ -97,6 +97,12 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 /* who paid whom and what came back, kept in the corner while the round is played */
 .tribinfo{display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--ink);line-height:1.5;white-space:nowrap}
 .tribinfo:empty{display:none}
+.tribinfo{position:relative}
+.tribinfo .tribbtn{font-size:15px;font-weight:700;padding:2px 12px;color:var(--gold);border-color:var(--gold);align-self:flex-start}
+.tribinfo .tribbtn.on{background:var(--gold);color:var(--on-gold)}
+.tribpop{position:absolute;left:0;top:calc(100% + 6px);z-index:40;padding:8px 12px;border-radius:10px;cursor:pointer;
+  background:rgba(19,54,41,.96);border:1.5px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.45);white-space:nowrap}
+html.phone .tribpop{left:auto;right:0}
 .tribinfo .ct{font-size:13px;padding:0 4px}
 .link{font:inherit;font-size:16px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer;white-space:nowrap}
 .link:hover{color:var(--ink);border-color:var(--line-strong)}
@@ -2010,7 +2016,8 @@ function retWait(){
   render();
 }
 // owes a return now: in the return phase, or during the sorting minute once they have said they are done sorting
-const owesReturn=p=>(G.phase==='return'||(G.phase==='prep'&&(G.ready||[]).includes(p)))&&(G.returns||[]).some(x=>x.from===p)&&(G.retPick||{})[p]==null;
+// a player owing a return may give it any time from the start of the sorting, without first finishing their sorting
+const owesReturn=p=>(G.phase==='return'||G.phase==='prep')&&(G.returns||[]).some(x=>x.from===p)&&(G.retPick||{})[p]==null;
 // a return made during the sorting minute goes across at once, while the others are still sorting
 function returnNow(p,id){
   const x=G.returns.find(r=>r.from===p);if(!x)return;
@@ -2126,11 +2133,11 @@ function timeUp(c){
 // the sorting countdown flanks the level disc: 理牌 on its left, the seconds on its right, both clear of the
 // side players' plates; where the sides are too narrow (a phone) the two sit together above the disc
 function placePrepBig(){
-  const T=$('#table').getBoundingClientRect(),e=$('.emblem').getBoundingClientRect(),gap=20;
+  const T=$('#table').getBoundingClientRect(),e=$('.emblem').getBoundingClientRect();
   const l=$('#prepL'),r=$('#prepR'),lw=l.offsetWidth,rw=r.offsetWidth;
-  const s3=$('#seat3 .whorow').getBoundingClientRect(),s1=$('#seat1 .whorow').getBoundingClientRect();
-  const cy=e.top+e.height/2-T.top;
-  let lx=e.left-gap-lw,rx=e.right+gap,y=cy;
+  const cy=e.top+e.height/2-T.top,h=Math.max(l.offsetHeight,r.offsetHeight),w=lw+rw+12;
+  // the sign and the clock stand side by side, close together, in the middle of the table
+  let lx=e.left+e.width/2-w/2,rx=lx+lw+12,y=cy;
   // the test version's face-up hands take the room around the disc: the two sit together in the middle of the open table
   if(TEST){
     const g=pileGeo(),w=lw+rw+12;
@@ -2138,14 +2145,10 @@ function placePrepBig(){
     l.style.top=g.cy-l.offsetHeight/2+'px';r.style.top=g.cy-r.offsetHeight/2+'px';
     return;
   }
-  if(lx<s3.right+10||rx+rw>s1.left-10){
-    const h=Math.max(l.offsetHeight,r.offsetHeight),w=lw+rw+12;
-    lx=e.left+e.width/2-w/2;rx=lx+lw+12;y=e.top-T.top-gap/2-h/2;
-    // a phone's box of who paid whom stands over the sign, under your partner's plate: where the two do not fit there
-    // (a short screen) the sign steps down to make room
-    const tb=$('#tribBox');
-    if(isPhone()&&tb&&!tb.hidden)y=Math.max(y,phoneSignTop()+tb.offsetHeight+8-T.top+h/2);
-  }
+  // a phone's box of who paid whom stands over the sign, under your partner's plate: where the two do not fit there
+  // (a short screen) the sign steps down to make room
+  const tb=$('#tribBox');
+  if(isPhone()&&tb&&!tb.hidden)y=Math.max(y,phoneSignTop()+tb.offsetHeight+8-T.top+h/2);
   l.style.left=lx-T.left+'px';r.style.left=rx-T.left+'px';
   l.style.top=y-l.offsetHeight/2+'px';r.style.top=y-r.offsetHeight/2+'px';
   syncTribBox();
@@ -3056,11 +3059,23 @@ function renderMsg(){
   }
   m.innerHTML=t;
   syncTribBox();
-  const ti=$('#tribInfo'),showTi=['play','roundEnd','over'].includes(G.phase);
-  // once the play has begun, a computer or tablet keeps who paid whom in a small line under the score in the corner
-  // (a phone has no room for it there: it shows only in the middle while sorting and for three seconds after)
-  ti.innerHTML=showTi&&!G.tribHold&&(TEST||!isPhone())?tribHtml('tl')+kangHtml(true):'';
+  syncTribInfo();
 }
+// once the play has begun, who paid whom waits behind a 贡 button under the score: a tap opens it, another closes it
+// (the test version keeps it written out in the corner, for going over the round)
+const TRIBUI={round:null,open:false};
+function syncTribInfo(){
+  const ti=$('#tribInfo'),showTi=!!G&&['play','roundEnd','over'].includes(G.phase)&&!G.tribHold;
+  if(TEST){ti.innerHTML=showTi?tribHtml('tl')+kangHtml(true):'';return}
+  if(!showTi||!((G.trib&&G.trib.length)||G.kang)){ti.innerHTML='';TRIBUI.open=false;return}
+  if(TRIBUI.round!==G.round){TRIBUI.round=G.round;TRIBUI.open=false}
+  ti.innerHTML=`<button class="link tribbtn${TRIBUI.open?' on':''}" title="看进贡还贡">贡</button>`+
+    (TRIBUI.open?`<div class="tribpop">${tribHtml('tl')+kangHtml(true)}</div>`:'');
+}
+$('#tribInfo').addEventListener('click',e=>{
+  if(TEST||!e.target.closest('.tribbtn,.tribpop'))return;
+  e.stopPropagation();TRIBUI.open=!TRIBUI.open;syncTribInfo();
+});
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
 // 抗贡: just whose big jokers they are (short: the line kept in the corner while the round is played)
@@ -3492,7 +3507,8 @@ function placeActionBtns(){
     e.classList.toggle('atcol',on);
     if(!on){e.style.left=e.style.top='';continue}
     e.style.left=h.right-actionInset(h.width)+'px';
-    e.style.top=h.bottom-SPOT_UP+'px';
+    // while sorting you may also owe a return: 还贡 then takes the spot and 理牌结束 stands just above it
+    e.style.top=h.bottom-SPOT_UP-(id==='#readyBtn'&&!$('#returnBtn').hidden&&!$('#btns').hidden?120:0)+'px';
   }
 }
 
@@ -3597,8 +3613,10 @@ function giveAnim(from,to,card,label,start){
     const mx=m.left+m.width/2,my=m.top+m.height/2;
     const w=document.createElement('div');
     w.className='gift';
-    // a returned card travels face down; what came back is named once every return is in
-    w.innerHTML=`<span class="gl">${NAMES[from]} ${label}</span>${label==='还贡'?'<div class="gback"></div>':cardHTML(card,G.L)}`;
+    // a returned card travels face down, except for the two players it passes between: the receiver sees at once what
+    // came back, everyone else when every return is in (both, after a double-down), as the tribute line then names it
+    const hide=label==='还贡'&&from!==0&&to!==0;
+    w.innerHTML=`<span class="gl">${NAMES[from]} ${label}</span>${hide?'<div class="gback"></div>':cardHTML(card,G.L)}`;
     w.style.transform=`translate(${a.x}px,${a.y}px) scale(.55)`;
     w.style.opacity='0';
     document.body.appendChild(w);
@@ -4252,6 +4270,11 @@ function playerLeft(name,how){
 const handEl=$('#hand');
 let lastDown=null,mv=null,sweep=null;
 const cardEl=id=>handEl.querySelector(`.card[data-id="${id}"]`);
+// the cards a tap picks: the card's whole group if it is in one (made with 成组), else the card alone
+function groupOf(id){
+  const gr=!TEST&&(G.fixed||[]).find(g=>g.includes(id));
+  return gr?gr.filter(x=>G.hands[0].some(c=>c.id===x)):[id];
+}
 function setSel(id,on,lazy){
   if(on)sel.add(id);else sel.delete(id);
   // a card being put back down waits out the double-tap window, so a double tap never dips it first
@@ -4266,8 +4289,8 @@ handEl.addEventListener('pointerdown',e=>{
   e.preventDefault();
   const id=+el.dataset.id,t=performance.now();
   if(lastDown&&lastDown.id===id&&t-lastDown.t<350){
-    // double tap: undo the first tap's toggle, keep this card in the selection, then play it
-    sel=new Set(lastDown.prev);sel.add(id);
+    // double tap: undo the first tap's toggle, keep this card (or its whole group) in the selection, then play it
+    sel=new Set(lastDown.prev);for(const x of groupOf(id))sel.add(x);
     lastDown=null;
     renderHand();
     if(G.phase==='return'||G.phase==='tribPick'||owesReturn(0))onReturn();else if(G.phase==='play')onPlay();
@@ -4384,7 +4407,7 @@ function dropCards(){
   const m=mv;mv=null;
   const lm=$('#landMark');if(lm)lm.remove();
   if(!m.active){
-    if(!m.cancel){setSel(m.id,!sel.has(m.id),true);Sound.play('select')}
+    if(!m.cancel){const on=!sel.has(m.id);for(const id of groupOf(m.id))setSel(id,on,true);Sound.play('select')}
     return;
   }
   if(m.test){testDropMine(m);return}
