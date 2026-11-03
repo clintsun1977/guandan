@@ -346,6 +346,10 @@ html.phone .tribpop{left:auto;right:0}
 #hand .card.sel{transform:rotate(var(--rot,0deg)) translateY(-20%)}
 /* 竖式: a picked card rises less, so the card behind it in the column still shows its rank */
 #hand.vert .card.sel{transform:translateY(-10%)}
+/* 竖式: only a strip of each card shows above the one in front, so rank and suit sit side by side in that strip
+   (stacked, the suit would be hidden); a wild card's crown drops to a second line, and it is the front card of its column */
+#hand.vert .card:not(.joker) .idx{flex-direction:row;flex-wrap:wrap;justify-content:flex-start;align-items:center;width:calc(var(--cw)*.9);gap:0 calc(var(--cw)*.04)}
+#hand.vert .card:not(.joker) .idx .su{margin-top:0}
 /* 出牌需确认: the picked cards are shown side by side at 1.8 times their size in the middle of the table, and 确认 flashes,
    until it is pressed */
 #cfmShow{position:fixed;z-index:40;transform:translate(-50%,-50%);display:flex;padding:calc(var(--cw)*.12) calc(var(--cw)*.14);border-radius:14px;
@@ -3202,7 +3206,16 @@ function handGeo(n,keys){
   const side=sideBtns()?isPhone()?colW+BTN_GAP:actionInset(Wall)+colW/2+BTN_GAP:0;
   const cw=probe.offsetWidth,ch=probe.offsetHeight;
   // each group in one row, overlapping just enough to show every card's corner; a long group closes up
-  const rows=(G&&G.fixed||[]).map(gr=>{const k=gr.length,off=k>1?Math.min(cw*.42,(Wall*.34-cw)/(k-1)):0;return{gr,off,w:cw+off*(k-1)}});
+  // (in 竖式 each group stands as one column, its cards piled upward, and the next group is another column beside it, the
+  // columns just far enough apart to show a rank and suit side by side)
+  const vert=vertMode();
+  const rows=(G&&G.fixed||[]).map(gr=>{
+    if(vert)return{gr,cs:gr.map(id=>G.hands[0].find(x=>x.id===id)).filter(Boolean).sort(cmpVert)};
+    const k=gr.length,off=k>1?Math.min(cw*.42,(Wall*.34-cw)/(k-1)):0;
+    return{gr,off,w:cw+off*(k-1)};
+  });
+  const vdx=vert&&rows.length>1?Math.max(cw*.78,Math.min(cw*1.08,(Wall*.34-cw)/(rows.length-1))):0;
+  if(vert)rows.forEach(r=>r.w=cw+vdx*(rows.length-1));
   // with no groups yet the zone is an empty frame: on a computer or tablet at least as wide as a group of three with
   // its tag (wider if the free room on the left allows, leaving the button its strip), a narrow strip on a phone,
   // where the button sits in the row under the hand
@@ -3220,18 +3233,41 @@ function handGeo(n,keys){
   g.slots=g.slots.map(sl=>({...sl,x:sl.x+x0}));
   // the groups step down like flat rows (each still shows its row of corners), closer together if there are many
   const lift=ch*.22,pad=4,base=n?g.height:0;
-  let gap=ch*ROW_STEP;
-  if(rows.length>1)gap=Math.max(ch*.3,Math.min(gap,(Math.max(base,ch*2.4)-lift-ch-pad)/(rows.length-1)));
+  // 竖式 while playing: the hand area is only as tall as the cards left in it (and the groups still standing), so as cards
+  // go out the name bar settles down and the table gains the room; while sorting it keeps its height so nothing jumps
+  if(vert&&G&&G.phase==='play')fixPeak.h=0;
+  let gap=ch*ROW_STEP,need=0;
   g.fix=new Map();g.fixTags=[];
-  rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:r.w+5,y,gr:r.gr})});
+  if(vert&&rows.length){
+    // the columns stand on the bottom, their cards closing up to fit the height the hand area already has (more cards
+    // don't push the name bar up and squeeze the cards played on the table); only when even the closest won't fit does
+    // the area grow. Each column's tag sits over its top.
+    const TP=25,most=Math.max(...rows.map(r=>r.cs.length));
+    const dy=most>1?Math.max(ch*.25,Math.min(ch*.3,(Math.max(base,fixPeak.h)-TP-ch-6)/(most-1))):ch*.3;
+    let z=0;
+    rows.forEach((r,i)=>{
+      const top=TP+(most-r.cs.length)*dy;
+      r.cs.forEach((c,j)=>g.fix.set(c.id,{x:i*vdx,y:top+j*dy,rot:0,z:z++}));
+      g.fixTags.push({x:i*vdx,y:top-TP,gr:r.gr});
+    });
+    need=TP+ch+(most-1)*dy+6;
+    // a card dropped on a group's column joins that group, anywhere else in the zone it makes a new one
+    g.fixAt=px=>rows.findIndex((r,i)=>px>=i*vdx&&px<i*vdx+(i<rows.length-1?vdx:cw));
+  }else{
+    if(rows.length>1)gap=Math.max(ch*.3,Math.min(gap,(Math.max(base,ch*2.4)-lift-ch-pad)/(rows.length-1)));
+    rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:r.w+5,y,gr:r.gr})});
+    need=lift+ch+(rows.length-1)*gap+6;
+  }
   // an empty frame stands as tall as the hand (never less than one card and its margin)
-  g.fixH=fixPeak.h=TEST?0:Math.max(fixPeak.h,rows.length?lift+ch+(rows.length-1)*gap+6:Math.max(base,ch+20));
+  g.fixH=fixPeak.h=TEST?0:Math.max(fixPeak.h,rows.length?need:Math.max(base,ch+20));
   g.fixW=fw;g.cw=cw;g.ch=ch;g.fixEmpty=!rows.length;
   g.fixEdge=fw+bw/2+FIX_GAP/2;
-  g.height=Math.max(base,g.fixH+(rows.length?pad:0));
+  g.height=Math.max(base,g.fixH+(rows.length&&!vert?pad:0));
   // 竖式 stands on the hand area's bottom edge: when cards leave (played, or into the fixed zone) the area keeps its
   // height, and the columns stay down on the bottom row rather than floating up
   if(g.vert){const d=g.height-base;g.slots.forEach(sl=>{sl.y+=d})}
+  // (and so do the groups' columns, in a frame as tall as the area)
+  if(vert&&rows.length){const d=g.height-need;g.fix.forEach(s=>{s.y+=d});g.fixTags.forEach(t=>{t.y+=d});g.fixH=g.height}
   return g;
 }
 // the fixed zone's outline (behind the cards) and, beside each group, what kind of play it makes (over them);
@@ -3379,7 +3415,7 @@ function vertGeo(n,W,cw,ch,keys){
   for(let i=0;i<n;i++){if(!i||keys[i]!==keys[i-1])cols.push(0);cols[cols.length-1]++}
   const C=cols.length,most=Math.max(1,...cols);
   const dx=C>1?Math.min(cw*1.08,(W-cw)/(C-1)):0;
-  const dy=most>1?Math.max(ch*.3,Math.min(ch*.4,ch*1.5/(most-1))):0;
+  const dy=most>1?Math.max(ch*.25,Math.min(ch*.3,ch*1.2/(most-1))):0;
   const lift=Math.round(ch*.22),x0=(W-(cw+dx*(C-1)))/2;
   const slots=[];
   cols.forEach((k,c)=>{for(let j=0;j<k;j++)slots.push({x:x0+c*dx,y:lift+(most-k+j)*dy,rot:0})});
@@ -3469,7 +3505,7 @@ function layoutHand(){
   const g=handGeo(dealing?27:act.length,dealing?null:handKeys(act.map(c=>+c.dataset.id)));
   if(probe)probe.remove();
   act.forEach((c,i)=>placeCard(c,g.slots[i],100+i));
-  cards.filter(c=>fixed.has(+c.dataset.id)).forEach((c,i)=>placeCard(c,g.fix.get(+c.dataset.id),i));
+  cards.filter(c=>fixed.has(+c.dataset.id)).forEach((c,i)=>{const s=g.fix.get(+c.dataset.id);placeCard(c,s,s.z??i)});
   // a phone marks the cards of its groups with a gold edge along the top
   cards.forEach(c=>c.classList.toggle('grp',isPhone()&&fixed.has(+c.dataset.id)));
   el.style.height=g.height+'px';
@@ -4318,10 +4354,11 @@ handEl.addEventListener('pointerdown',e=>{
   const id=+el.dataset.id,t=performance.now();
   if(lastDown&&lastDown.id===id&&t-lastDown.t<350){
     // double tap: undo the first tap's toggle, keep this card (or its whole group) in the selection, then play it
+    // (paying or returning a tribute card is never done by a double tap: the card is picked and the button pressed)
     sel=new Set(lastDown.prev);for(const x of groupOf(id))sel.add(x);
     lastDown=null;
     renderHand();
-    if(G.phase==='return'||G.phase==='tribPick'||owesReturn(0))onReturn();else if(G.phase==='play')onPlay();
+    if(G.phase==='play')onPlay();
     return;
   }
   lastDown={id,t,prev:[...sel]};
