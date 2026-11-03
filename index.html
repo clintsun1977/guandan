@@ -2262,9 +2262,14 @@ function sortHints(plays){
   ).sort((a,b)=>tier(a)-tier(b)||isBomb(a)-isBomb(b)||(isBomb(a)?power(a)-power(b):a.value-b.value)||cardSum(a,L)-cardSum(b,L));
   // last, plays that take cards out of a fixed group: the hand's own order, as if those cards were loose
   const seen=new Set();
-  return full.filter(pl=>pl.cards.length===hand.length).concat(
+  const out=full.filter(pl=>pl.cards.length===hand.length).concat(
     pures,rest,full.filter(pl=>!whole(pl)&&!splits(pl))
   ).filter(pl=>{const k=key(pl);return!seen.has(k)&&seen.add(k)});
+  // nothing left but fixed bombs (and the plays that would split them): as in the plain order, when there is nothing else
+  // to lead or to answer with, every play that does not split a fixed bomb is listed, the ordinary ones first and the
+  // bombs after them, small to large
+  if(!out.length)return plays.filter(pl=>!splits(pl)).sort((a,b)=>isBomb(a)-isBomb(b)||(isBomb(a)?power(a)-power(b):a.value-b.value)||cardSum(a,L)-cardSum(b,L));
+  return out;
 }
 
 function doPlay(p,play){
@@ -5935,7 +5940,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1103-1752';
+const VERSION='1103-1756';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

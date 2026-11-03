@@ -2257,9 +2257,14 @@ function sortHints(plays){
   ).sort((a,b)=>tier(a)-tier(b)||isBomb(a)-isBomb(b)||(isBomb(a)?power(a)-power(b):a.value-b.value)||cardSum(a,L)-cardSum(b,L));
   // last, plays that take cards out of a fixed group: the hand's own order, as if those cards were loose
   const seen=new Set();
-  return full.filter(pl=>pl.cards.length===hand.length).concat(
+  const out=full.filter(pl=>pl.cards.length===hand.length).concat(
     pures,rest,full.filter(pl=>!whole(pl)&&!splits(pl))
   ).filter(pl=>{const k=key(pl);return!seen.has(k)&&seen.add(k)});
+  // nothing left but fixed bombs (and the plays that would split them): as in the plain order, when there is nothing else
+  // to lead or to answer with, every play that does not split a fixed bomb is listed, the ordinary ones first and the
+  // bombs after them, small to large
+  if(!out.length)return plays.filter(pl=>!splits(pl)).sort((a,b)=>isBomb(a)-isBomb(b)||(isBomb(a)?power(a)-power(b):a.value-b.value)||cardSum(a,L)-cardSum(b,L));
+  return out;
 }
 
 function doPlay(p,play){
