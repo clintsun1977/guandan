@@ -748,6 +748,21 @@ body.test .table{grid-template-columns:auto minmax(0,1fr) auto}
 body.test #pile .pc,body.test #pile .ktag{visibility:hidden}
 body.test .emblem{visibility:hidden}
 body.test #lastPlay{display:none}
+/* 极简出牌区 (an option on a computer or tablet): the same framed box of plays in the middle of the table */
+body.mini #pile .pc,body.mini #pile .ktag{visibility:hidden}
+body.mini #lastPlay{display:none}
+/* a play of several cards is laid close, like the 横式 hand: each card over the one before it, its rank and suit at the left
+   corner, so only a strip of every card but the last shows */
+body.mini .tpb{overflow-x:hidden;overflow-y:auto;pointer-events:auto;scrollbar-width:thin}
+/* a pass: a solid frame like the plays, its 过 in the middle with no dashed frame of its own */
+body.mini .tq.pass{border-style:solid}
+body.mini .pchip{border:0;width:auto;align-self:stretch;min-width:calc(var(--mcw)*1.2)}
+body.mini .mcs{gap:0}
+body.mini .mc{align-items:flex-start;padding-left:calc(var(--mcw)*.1);box-sizing:border-box}
+body.mini .mc+.mc{margin-left:calc(var(--mcw)*-.34)}
+body:not(.test) .tq{pointer-events:none;cursor:default}
+body:not(.test) .tq:hover{outline:none}
+body.test #miniBtn,html.phone #miniBtn{display:none}
 #tplays{position:absolute;inset:0;z-index:1;pointer-events:none}
 .tpb{position:absolute;--mcw:30px;border-radius:10px;background:rgba(0,0,0,.16);padding:6px;
   display:flex;flex-wrap:wrap;align-content:flex-start;align-items:flex-end;gap:calc(var(--mcw)*.2) calc(var(--mcw)*.22);overflow:hidden}
@@ -915,7 +930,7 @@ body.test .tside:not(.open){display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="miniBtn" aria-pressed="false" title="已出的牌像测试版那样，按出牌顺序排在桌面中间的一个框里（只有电脑和 iPad）">极简出牌区</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -2349,6 +2364,7 @@ function finishRound(){
   later(()=>{
     pileSweep();Sound.play('shuffle');
     G.heapN+=G.trickPlays.reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];G.last=[null,null,null,null];
+    if(miniMode())testPlays();
   },END_SHOW_MS);
   // places already earned during play are on the plates; the rest (always including last place) are called out now
   const dbl=G.out[0]%2===G.out[1]%2;
@@ -2390,6 +2406,16 @@ function onPlay(){
 // with the same cards still picked plays them, and any change to the picked cards or the turn calls it off
 let confirmPlay=false,cfm=null;
 try{confirmPlay=localStorage.getItem('guandan-confirm')==='1'}catch(_){}
+// 极简出牌区 (an option, computer and tablet only): this player's table shows the plays the way the test version does, in
+// one framed box in the middle, in the order they were made, instead of the cards thrown down by each player
+let miniPlays=false;
+try{miniPlays=localStorage.getItem('guandan-mini')==='1'}catch(_){}
+function miniMode(){return miniPlays&&!TEST&&!isPhone()}
+function syncMini(){
+  const on=miniMode(),b=document.body;
+  if(b.classList.contains('mini')!==on){b.classList.toggle('mini',on);if(!on){const t=$('#tplays');if(t){t.innerHTML='';t.dataset.k=''}}}
+  $('#miniBtn').setAttribute('aria-pressed',miniPlays);
+}
 const selKey=()=>[...sel].sort((a,b)=>a-b).join(',');
 function askConfirm(){
   if(!confirmPlay||cfm===selKey())return false;
@@ -2840,8 +2866,8 @@ function pileSweep(){
   const layer=pileEl(),g=pileGeo();
   pileGroups=[];TS=1;
   layer.querySelectorAll('.ktag').forEach(e=>e.remove());
-  // a phone keeps no heap: the finished trick simply goes
-  if(isPhone()){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return}
+  // a phone keeps no heap, nor does 极简出牌区: the finished trick simply goes, with no turning over
+  if(isPhone()||miniMode()){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return}
   layer.querySelectorAll('.pc.cur,.pc.old').forEach(el=>{
     el.classList.remove('cur','old');
     el.style.transitionDelay=(Math.random()*120|0)+'ms';
@@ -2994,7 +3020,7 @@ function render(){
   renderHand();
   renderMsg();
   renderClocks();
-  if(TEST)testRender();
+  if(TEST)testRender();else{syncMini();testPlays()}
 }
 // the line under the disc: the play now on the table and who made it, or who leads when the table is clear
 function renderLastPlay(){
@@ -3552,6 +3578,8 @@ function layoutHand(){
   placeLastPlay();
   placeButtons(g);
   syncHandBtns();
+  // (the hand's height moves the table's lower edge, and the box of plays with it)
+  if(!TEST&&miniMode())testPlays();
 }
 // the button column hugs the right edge of the cards, centred on the hand's height
 function placeButtons(g){
@@ -4682,6 +4710,13 @@ function startNextIfReady(){
 }
 $('#sfxBtn').onclick=()=>{Sound.toggle('sfx');syncAudioBtns()};
 $('#musicBtn').onclick=()=>{Sound.toggle('music');syncAudioBtns()};
+$('#miniBtn').onclick=()=>{
+  miniPlays=!miniPlays;
+  try{localStorage.setItem('guandan-mini',miniPlays?'1':'0')}catch(_){}
+  syncMini();
+  if(G){testPlays();pileRefit()}
+};
+if(window.ResizeObserver)new ResizeObserver(()=>{if(G&&miniMode())testPlays()}).observe($('#table'));
 $('#confirmBtn').setAttribute('aria-pressed',confirmPlay);
 $('#confirmBtn').onclick=()=>{
   confirmPlay=!confirmPlay;
@@ -5435,12 +5470,16 @@ function testPeeks(){
 const testMidHalf=.17;
 const tcwNow=()=>parseFloat(getComputedStyle(document.body).getPropertyValue('--tcw'))||50;
 function testPlays(){
-  if(!TEST||!G)return;
+  if(!(TEST||miniMode())||!G)return;
   let box=$('#tplays');
   if(!box){box=document.createElement('div');box.id='tplays';$('#table').appendChild(box)}
-  if(!['play','roundEnd','over'].includes(G.phase)){if(box.innerHTML)box.innerHTML='';box.dataset.k='';return}
+  // (in 极简出牌区 the box holds only the trick on the table now, and clears the moment the trick is taken in: with nothing
+  // to show there is no box, and the tribute notice and the like keep the middle to themselves)
+  if(!['play','roundEnd','over'].includes(G.phase)||(!TEST&&!(G.trickPlays||[]).length&&!(G.rest||[]).length)){if(box.innerHTML)box.innerHTML='';box.dataset.k='';return}
   const g=pileGeo();
-  const key=[G.round,G.log.length,(G.trickPlays||[]).length,(G.rest||[]).length,G.out.length,g.L.width,g.L.height,g.top,g.bottom,g.left,g.near,curRec()?curRec().nv:0].map(Math.round).join('|');
+  // in 极简出牌区 the box keeps one place and size (see miniBoxRect); the test version's follows the table's middle
+  const R=TEST?{left:g.left+6,top:g.top+6,w:Math.max(60,g.right-g.left-12),h:Math.max(40,g.near-g.top-12)}:miniBoxRect(g);
+  const key=[G.round,G.log.length,(G.trickPlays||[]).length,(G.rest||[]).length,G.out.length,R.left,R.top,R.w,R.h,TEST&&curRec()?curRec().nv:0].map(Math.round).join('|');
   if(box.dataset.k===key)return;
   box.dataset.k=key;
   // the trick on the table now: from its lead on (none once it has been taken in)
@@ -5449,22 +5488,35 @@ function testPlays(){
   // the latest cards played (a pass after them does not take the frame away)
   let last=-1;
   for(let i=G.log.length-1;i>=0;i--)if(G.log[i].cards){last=i;break}
-  const rec=curRec()&&curRec().live&&curRec().g===G.round?curRec():null;
+  const rec=TEST&&curRec()&&curRec().live&&curRec().g===G.round?curRec():null;
   const item=(x,i)=>{
     const k=i+1,sep=x.cards&&x.lead&&i?'<span class="tsep"></span>':'';
-    return`${sep}<span class="tq${x.cards?'':' pass'}${i>=from?' cur':''}${i===last?' last':''}${rec&&rec.notes[k]?' noted':''}" data-k="${k}" style="--pc:${pcol(x.p)}" title="点一下写评语"><b><span>${k}</span><em>${NAMES[x.p]}</em></b>${
+    return`${sep}<span class="tq${x.cards?'':' pass'}${i>=from?' cur':''}${i===last?' last':''}${rec&&rec.notes[k]?' noted':''}" data-k="${k}" style="--pc:${pcol(x.p)}"${TEST?' title="点一下写评语"':''}><b><span>${k}</span><em>${NAMES[x.p]}</em></b>${
       x.cards?`<span class="mcs">${displayOrder(x,G.L).map(miniCard).join('')}</span>`:'<span class="pchip">过</span>'}</span>`;
   };
   const rest=(G.rest||[]).map(r=>`<span class="tq rest" style="--pc:${pcol(r.p)}"><b><span>剩牌</span><em>${NAMES[r.p]}</em></b><span class="mcs">${r.cards.map(miniCard).join('')}</span></span>`).join('');
   // the whole middle of the table, between the four hands
-  const pad=6;
-  box.innerHTML=`<div class="tpb" style="left:${g.left+pad}px;top:${g.top+pad}px;width:${Math.max(60,g.right-g.left-2*pad)}px;height:${Math.max(40,g.near-g.top-2*pad)}px">${G.log.map(item).join('')}${rest}</div>`;
-  // the cards as large as will still fit
+  box.innerHTML=`<div class="tpb" style="left:${R.left}px;top:${R.top}px;width:${R.w}px;height:${R.h}px">${G.log.map((x,i)=>TEST||i>=from?item(x,i):'').join('')}${rest}</div>`;
+  // the cards as large as will still fit (in 极简出牌区 never smaller than 24 wide: past that the box scrolls, to the
+  // newest play)
   const b=box.firstElementChild;
-  for(let w=72;w>=12;w-=2){
+  for(let w=72;w>=(TEST?12:24);w-=2){
     b.style.setProperty('--mcw',w+'px');
     if(b.scrollHeight<=b.clientHeight+1&&b.scrollWidth<=b.clientWidth+1)break;
   }
+  if(!TEST)b.scrollTop=b.scrollHeight;
+}
+// 极简出牌区: the box is fixed by the screen, not by what is happening round the table (a clock widening a plate, a message,
+// the hand growing or shrinking): the middle 58% of the table's width, from under the partner's plate to the line of
+// messages. It is worked out when the first play of a round lands and kept until the window changes (or the layout does)
+let miniRect=null;
+function miniBoxRect(g){
+  const k=[G.round,innerWidth,innerHeight,handView].join('|');
+  if(!miniRect||miniRect.k!==k||(G.phase==='play'&&!miniRect.play)){
+    const w=Math.round(g.L.width*.58),top=Math.round(g.top)+6;
+    miniRect={k,play:G.phase==='play',left:Math.round((g.L.width-w)/2),top,w,h:Math.max(80,Math.round(g.L.height-52-top))};
+  }
+  return miniRect;
 }
 // a played card as its rank over its suit, nothing more (wild cards gold, level cards marked, jokers 大王 / 小王)
 function miniCard(c){
@@ -5883,7 +5935,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1103-1207';
+const VERSION='1103-1752';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
