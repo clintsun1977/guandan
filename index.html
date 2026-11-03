@@ -348,6 +348,8 @@ html.phone .tribpop{left:auto;right:0}
   transform:rotate(var(--rot,0deg));transform-origin:50% 50%}
 #hand.fan{--cw:clamp(44px,min(6.4vw,10.5vh),74px)}
 #hand .card.sel{transform:rotate(var(--rot,0deg)) translateY(-20%)}
+/* 竖式: a picked card rises less, so the card behind it in the column still shows its rank */
+#hand.vert .card.sel{transform:translateY(-10%)}
 /* 出牌需确认: the picked cards are shown side by side at 1.8 times their size in the middle of the table, and 确认 flashes,
    until it is pressed */
 #cfmShow{position:fixed;z-index:40;transform:translate(-50%,-50%);display:flex;padding:calc(var(--cw)*.12) calc(var(--cw)*.14);border-radius:14px;
@@ -951,7 +953,7 @@ body.test .tside:not(.open){display:none}
       <button class="btn round" id="clearBtn">重选</button>
     </div>
     <div id="hand"></div>
-    <div class="handtools"><button class="link" id="fixBtn" title="把选中的牌放进左边的成组区，作为你拟定的一组牌">成组</button><span class="toolgap"></span><button class="link tog" id="fanBtn" aria-pressed="true" title="像手里握着牌一样展开，可以拖动牌插到别处">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
+    <div class="handtools"><button class="link" id="fixBtn" title="把选中的牌放进左边的成组区，作为你拟定的一组牌">成组</button><span class="toolgap"></span><button class="link" id="fanBtn">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
   </div>
 </div>
 
@@ -3145,8 +3147,15 @@ function orderedHand(){
   G.myOrder=ord;
   // the test version keeps every card in a group: a card that arrives (a tribute or return) is a group of its own
   if(testGrouped()&&ord.length){G.fixed.push(...ord.map(id=>[id]));G.myOrder=[];return G.fixed.flat().map(id=>byId.get(id))}
+  // 竖式 shows the active cards rank by rank, each rank's cards top to bottom by suit; the player's own order is kept
+  // for the other layouts
+  if(vertMode())return G.fixed.flat().map(id=>byId.get(id)).concat(act.sort(cmpVert));
   return G.fixed.flat().concat(ord).map(id=>byId.get(id));
 }
+// 竖式: ranks from big to small like the sorted hand; a rank's column is stacked up from the bottom 红心, 黑桃, 方块,
+// 梅花 (the wild, a 红心, at the bottom), so it runs 梅花 first, from the top, down to 红心 in front
+const VERT_SUIT={H:0,S:1,D:2,C:3,J:4};
+const cmpVert=(a,b)=>val(b,G.L)-val(a,G.L)||VERT_SUIT[b.s]-VERT_SUIT[a.s]||b.id-a.id;
 let handView='fan',handRows=3,flatRows=1,flatShown=1,flatOneFits=true;
 try{
   handView=localStorage.getItem('guandan-view')||'fan';
@@ -3155,6 +3164,7 @@ try{
 }catch(_){}
 // the test version always lays the hand out flat, in three rows
 const fanMode=()=>!TEST&&!isPhone()&&handView==='fan';
+const vertMode=()=>!TEST&&!isPhone()&&handView==='vert';
 // cards that just arrived in your hand, with when they came: they flash until ARRIVE_MS has passed
 const arrivals=new Map(),ARRIVE_MS=4000;
 function renderHand(){
@@ -3210,7 +3220,8 @@ function handGeo(n,keys){
   const fw=fixPeak.w=TEST?0:Math.max(fixPeak.w,rows.length?Math.max(...rows.map(r=>r.w))+FIX_TAG:isPhone()?60:side?Math.max(Math.round(cw*1.84+FIX_TAG),Math.round(side-bw-FIX_GAP)):30);
   // (the test version has no fixed zone: its groups are made with 成组 and 拆开)
   const x0=TEST?side:Math.max(side,fw+bw+FIX_GAP),W=Wall-side-x0;
-  const g=fanMode()?fanGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
+  // (while dealing there are no ranks to stack yet: 竖式 lays the cards out flat until they are all in)
+  const g=fanMode()?fanGeo(n,W,cw,ch,keys):vertMode()&&keys?vertGeo(n,W,cw,ch,keys):flatGeo(n,W,cw,ch,keys);
   g.slots=g.slots.map(sl=>({...sl,x:sl.x+x0}));
   // the groups step down like flat rows (each still shows its row of corners), closer together if there are many
   const lift=ch*.22,pad=4,base=n?g.height:0;
@@ -3223,6 +3234,9 @@ function handGeo(n,keys){
   g.fixW=fw;g.cw=cw;g.ch=ch;g.fixEmpty=!rows.length;
   g.fixEdge=fw+bw/2+FIX_GAP/2;
   g.height=Math.max(base,g.fixH+(rows.length?pad:0));
+  // 竖式 stands on the hand area's bottom edge: when cards leave (played, or into the fixed zone) the area keeps its
+  // height, and the columns stay down on the bottom row rather than floating up
+  if(g.vert){const d=g.height-base;g.slots.forEach(sl=>{sl.y+=d})}
   return g;
 }
 // the fixed zone's outline (behind the cards) and, beside each group, what kind of play it makes (over them);
@@ -3362,6 +3376,20 @@ function flatGeo(n,W,cw,ch,keys){
   });
   return{slots,cw,ch,counts,height:lift+ch+(counts.length-1)*rowGap+4};
 }
+// 竖式: one column per rank, side by side (apart if there is room, else overlapping but every corner in view); every
+// column stands on the same bottom row and piles upward, each card behind showing its rank and suit above the one in
+// front, closer together in a tall column so the hand stays low
+function vertGeo(n,W,cw,ch,keys){
+  const cols=[];
+  for(let i=0;i<n;i++){if(!i||keys[i]!==keys[i-1])cols.push(0);cols[cols.length-1]++}
+  const C=cols.length,most=Math.max(1,...cols);
+  const dx=C>1?Math.min(cw*1.08,(W-cw)/(C-1)):0;
+  const dy=most>1?Math.max(ch*.3,Math.min(ch*.4,ch*1.5/(most-1))):0;
+  const lift=Math.round(ch*.22),x0=(W-(cw+dx*(C-1)))/2;
+  const slots=[];
+  cols.forEach((k,c)=>{for(let j=0;j<k;j++)slots.push({x:x0+c*dx,y:lift+(most-k+j)*dy,rot:0})});
+  return{slots,cw,ch,counts:[n],vert:true,height:lift+ch+(most-1)*dy+4};
+}
 // cards held the way people hold 27 of them: two or three concentric fanned rows turning about one point below the hand.
 // The back (top) ring is the widest and holds the most cards; each ring in front is smaller and holds fewer,
 // and only the corners of a ring show above the one in front of it.
@@ -3435,7 +3463,7 @@ function placeCard(c,slot,i){
 function layoutHand(){
   phoneRefit();
   const el=$('#hand'),cards=[...el.children],n=cards.length;
-  el.classList.toggle('fan',fanMode());
+  el.classList.toggle('fan',fanMode());el.classList.toggle('vert',vertMode());
   // while dealing, each card goes straight into its slot in a full 27-card hand,
   // so cards already dealt never shift and the hand's height (and the table above it) stays put
   const dealing=G&&(G.phase==='deal'||G.phase==='shuffle'||G.phase==='cut');
@@ -4213,7 +4241,7 @@ function showRules(){
     <li>${RULES.trib?'从第二局起进贡：末游把最大的牌给头游，头游还一张 10 或以下的牌；双下则两人都进贡。要进贡的一方合起来有两张大王（一人两张，或双下时两人各一张）就可以抗贡：这一局不进贡、不还贡，由头游先出。':'本场不进贡：每局由上一局的头游先出。'}</li>
     <li>${RULES.aFail==='keep'?'打 A 不限次数，一直打到打过为止。':`每一方打 A 有三次机会，三次都没打过${RULES.aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。`}</li>
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
-    <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排。按住没选中的牌滑过几张，是连选这些牌；从选中的牌上按住拖动，是把选中的牌一起挪到别处（也可以拖进左边的成组区）。平铺模式也一样。“复原”恢复成按大小排好的样子。</li>
+    <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排。理牌方式按钮每点一下，依次换成“横式”、“竖式”、“手持”，按钮上写的是现在用的方式。“竖式”按牌的大小从左到右排，同样点数的牌从下往上按红心、黑桃、方块、梅花叠成一列，一眼就能看出每个点数有几张。按住没选中的牌滑过几张，是连选这些牌；从选中的牌上按住拖动，是把选中的牌一起挪到别处（也可以拖进左边的成组区）。平铺模式也一样。“复原”恢复成按大小排好的样子。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
     <li>发完牌先进贡（最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒），有抗贡也在这时亮出；然后有 90 秒理牌时间（理好了点“理牌结束”），理完再还贡（限时 20 秒）。每次出牌限时 60 秒，最后 5 秒倒计时会闪烁，超时由电脑代你出牌。</li>
   </ul>
@@ -4312,15 +4340,27 @@ handEl.addEventListener('pointermove',e=>{
   // bomb or a run can be swept up and dragged into the fixed zone in one go
   if(mv&&!mv.active&&!sel.has(mv.id)&&!testGrouped()){
     if(Math.hypot(e.clientX-mv.x0,e.clientY-mv.y0)<6)return;
-    const id=mv.id,on=!sel.has(id);
+    const id=mv.id,on=!sel.has(id),px=mv.x0,py=mv.y0;
     mv=null;lastDown=null;
-    sweep={on,seen:new Set([id]),last:[...handEl.children].findIndex(c=>+c.dataset.id===id)};
+    sweep={on,seen:new Set([id]),last:[...handEl.children].findIndex(c=>+c.dataset.id===id),px,py};
     setSel(id,on);
     Sound.play('select');
   }
   // the test version's groups: dragged onto another group to join it, or onto a gap to make one of their own
   if(mv){if(testGrouped())testDragMove(e);else moveCards(e);return}
   if(!sweep)return;
+  // 竖式: the hand's order runs down each column, so a sweep picks just the cards it passes over (looked up along the
+  // way, as a fast sweep can skip some between two pointer events)
+  if(vertMode()){
+    const k=Math.max(1,Math.ceil(Math.hypot(e.clientX-sweep.px,e.clientY-sweep.py)/6));
+    for(let s=1;s<=k;s++){
+      const t=document.elementFromPoint(sweep.px+(e.clientX-sweep.px)*s/k,sweep.py+(e.clientY-sweep.py)*s/k);
+      const el=t&&t.closest('#hand .card'),id=el&&+el.dataset.id;
+      if(el&&!sweep.seen.has(id)){sweep.seen.add(id);setSel(id,sweep.on)}
+    }
+    sweep.px=e.clientX;sweep.py=e.clientY;
+    return;
+  }
   const t=document.elementFromPoint(e.clientX,e.clientY);
   const el=t&&t.closest('#hand .card');if(!el)return;
   // a fast sweep can skip cards between two pointer events, so fill in everything between the last card and this one
@@ -4347,7 +4387,8 @@ function moveCards(e){
     mv.others=ord.filter(i=>!mv.ids.includes(i));
     mv.order=ord;
     // the active zone as it will be with the dragged cards dropped into it
-    mv.g=handGeo(mv.others.length+mv.ids.length,null);
+    // (竖式 keeps every card in its rank's column, so there the others just close up without the dragged cards)
+    mv.g=vertMode()?handGeo(mv.others.length,handKeys(mv.others)):handGeo(mv.others.length+mv.ids.length,null);
     mv.rowOf=mv.g.counts.flatMap((k,r)=>Array(k).fill(r));
     const L=handEl.getBoundingClientRect(),el=cardEl(mv.id);
     mv.dx=mv.x0-L.left-parseFloat(el.style.left);
@@ -4381,6 +4422,11 @@ function moveCards(e){
     document.querySelectorAll('#fixTags .fzt').forEach(t=>t.classList.remove('hot'));
   }
   if(mv.t==='fix')mv.t=null;
+  // 竖式: dropped anywhere but the fixed zone, the cards go back to their columns (out of any group they were in)
+  if(vertMode()){
+    if(mv.t!=='vert'){mv.t='vert';mv.others.forEach((id,i)=>placeCard(cardEl(id),g.slots[i],100+i))}
+    return;
+  }
   const cx=x+g.cw/2,cy=y+g.ch/2;
   let s=0,best=Infinity;
   g.slots.forEach((sl,i)=>{const d=(sl.x+g.cw/2-cx)**2+((sl.y+g.ch/2-cy)*1.6)**2;if(d<best){best=d;s=i}});
@@ -4418,6 +4464,7 @@ function dropCards(){
   if(m.test){testDropMine(m);return}
   if(!m.cancel){
     if(m.t==='fix')fixCards(m.ids,m.row);
+    else if(m.t==='vert'){const f=new Set(G.fixed.flat()),back=m.ids.filter(id=>f.has(id));if(back.length)unfixCards(back)}
     else if(m.t!=null){
       // dropped among the active cards: out of any group, and several cards land tidied as a combination reads
       unfixCards(m.ids);
@@ -4474,17 +4521,26 @@ const ROW_NAME={1:'一排',2:'两排',3:'三排'};
 // (a single flat row that would be too cramped to read is skipped)
 const nextRows=()=>fanMode()?(handRows===3?2:3):flatShown===3?(flatOneFits?1:2):flatShown+1;
 function syncHandBtns(){
-  $('#fanBtn').setAttribute('aria-pressed',fanMode());
-  // the button names what a click switches to
+  // one button for the three layouts: it names the one in use, and a click moves on to the next
+  const v=fanMode()?'fan':vertMode()?'vert':'flat';
+  $('#fanBtn').textContent=VIEW_NAME[v];
+  $('#fanBtn').title=`理牌方式，点一下换成${VIEW_NAME[VIEW_NEXT[v]]}`;
+  // the button names what a click switches to (竖式 has no rows to choose: the button keeps its place, unseen, so
+  // 手持 and 竖式 never move under the pointer)
+  $('#rowsBtn').style.visibility=vertMode()?'hidden':'';
   $('#rowsBtn').textContent=ROW_NAME[nextRows()];
   $('#rowsBtn').title=`改成${ROW_NAME[nextRows()]}`;
 }
-$('#fanBtn').onclick=()=>{
-  handView=fanMode()?'flat':'fan';
+// 横式 (flat rows) -> 竖式 (a column per rank) -> 手持 (held in a fan) -> 横式
+const VIEW_NAME={flat:'横式',vert:'竖式',fan:'手持'},VIEW_NEXT={flat:'vert',vert:'fan',fan:'flat'};
+const setHandView=v=>{
+  handView=v;
   try{localStorage.setItem('guandan-view',handView)}catch(_){}
   syncHandBtns();
-  layoutHand();
+  // the cards slide to their new places (竖式 puts them in another order)
+  if(G&&G.hands)reflowHand();else layoutHand();
 };
+$('#fanBtn').onclick=()=>setHandView(VIEW_NEXT[fanMode()?'fan':vertMode()?'vert':'flat']);
 $('#rowsBtn').onclick=()=>{
   if(fanMode())handRows=nextRows();else flatRows=nextRows();
   try{localStorage.setItem('guandan-rows',handRows);localStorage.setItem('guandan-flatrows',flatRows)}catch(_){}
@@ -5756,7 +5812,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1102-1822';
+const VERSION='1102-1934';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
