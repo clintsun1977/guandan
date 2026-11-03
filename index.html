@@ -2184,11 +2184,12 @@ function renderClocks(){
   }
 }
 // hints go by the shape of your hand (see hintOrder): a pair of 5s before breaking up three 4s
-// and zone by zone: first plays from the active cards alone; then plays from the fixed cards alone (a whole group that
-// beats the table first, exactly as the player set it aside, then whole groups together, then plays that break a group
-// up, bombs last); then plays that take cards from both zones. A play that empties the hand still comes first of all.
-// Each zone's plays are found among its own cards and ordered by its own cards: a 9 in the active zone is a lone
-// single there even if a fixed straight holds another 9, so it is offered as such and not held back as half a pair.
+// and zone by zone. A play that empties the hand still comes first of all. Then the pure plays of both zones together,
+// small to large: whole groups of the active cards, and fixed groups exactly as the player set them (alone, together,
+// or with whole active groups). Then what breaks no fixed group: breaking an active pair or three, bombs (fixed and
+// active together), wild cards. Only last the plays that take cards out of a fixed group, as if those were loose.
+// The active cards' plays are found among the active cards alone: a 9 in the active zone is a lone single there even
+// if a fixed straight holds another 9, so it is offered as such and not held back as half a pair.
 function sortHints(plays){
   const hand=G.hands[0],L=G.L,cur=G.trick?G.trick.play:null,full=hintOrder(hand,L,cur,plays);
   const have=new Set(hand.map(c=>c.id));
@@ -2208,13 +2209,46 @@ function sortHints(plays){
     const r=analyze(cards,L).filter(a=>beats(a,cur)&&(!isBomb(a)||cur&&isBomb(cur))).sort((a,b)=>strength(a)-strength(b))[0];
     if(r)own.push({...r,cards,wu:cards.filter(c=>isWild(c,L)).length});
   }
+  const act=hand.filter(c=>!fixed.has(c.id)),ag=handGroups(act,L);
   const fx=zone(hand.filter(c=>fixed.has(c.id))).filter(pl=>!splits(pl));
+  // the active cards' share of a play: no wild card, and every rank it takes is taken whole, makes it pure
+  const part=pl=>pl.cards.filter(c=>!fixed.has(c.id));
+  const aPure=pl=>{
+    const a=part(pl),u={};
+    if(a.some(c=>isWild(c,L)))return false;
+    for(const c of a){const k=groupKey(c,ag.jk);u[k]=(u[k]||0)+1}
+    return Object.keys(u).every(k=>u[k]===ag.n[k]);
+  };
+  const pure=pl=>!pl.wu&&!isBomb(pl)&&hintTier(pl,ag)===0;
+  // how far a play breaks up the active cards (the fixed groups are not counted: they are played as the player set them)
+  const tier=pl=>{const a=part(pl);return hintTier({...pl,cards:a,wu:a.filter(c=>isWild(c,L)).length},ag)};
+  // size for ordering pure plays of both zones together: following, by the play's value; leading, by its lowest card
+  // (a run before the single plays of that card)
+  const lowest=pl=>Math.min(99,...pl.cards.filter(c=>!isWild(c,L)).map(c=>val(c,L)));
+  const size=pl=>cur?[pl.value,cardSum(pl,L)]:[lowest(pl),/straight|pairs3|trip2/.test(pl.type)?0:1];
+  const bySize=(a,b)=>{const x=size(a),y=size(b);return x[0]-y[0]||x[1]-y[1]};
+  const az=zone(act),pureA=az.filter(pure);
+  // pure plays of the fixed side: a whole group as set, whole groups together, whole groups with whole active groups
+  // (the same size: a single group first, then groups together, then groups with active cards)
+  const mixed=full.filter(pl=>nf(pl)>0&&nf(pl)<pl.cards.length&&!splits(pl)&&whole(pl));
+  const pureB=[].concat(
+    own.filter(pl=>!isBomb(pl)).map(pl=>({pl,k:0})),
+    fx.filter(pl=>whole(pl)&&!isBomb(pl)).map(pl=>({pl,k:1})),
+    mixed.filter(pl=>!isBomb(pl)&&aPure(pl)).map(pl=>({pl,k:2}))
+  ).sort((a,b)=>bySize(a.pl,b.pl)||a.k-b.k).map(x=>x.pl);
+  const pures=[];
+  for(let i=0,j=0;i<pureA.length||j<pureB.length;)
+    pures.push(j>=pureB.length||(i<pureA.length&&bySize(pureA[i],pureB[j])<=0)?pureA[i++]:pureB[j++]);
+  // then what breaks no fixed group: the active cards' other plays, bombs (the fixed ones and the active ones together,
+  // small to large), plays with wild cards, in the order of the table (breaking a pair, a three, ... wild cards)
+  const rest=az.filter(pl=>!pure(pl)).concat(
+    own.filter(isBomb),fx.filter(pl=>isBomb(pl)&&whole(pl)),
+    mixed.filter(pl=>isBomb(pl)||!aPure(pl))
+  ).sort((a,b)=>tier(a)-tier(b)||isBomb(a)-isBomb(b)||(isBomb(a)?power(a)-power(b):a.value-b.value)||cardSum(a,L)-cardSum(b,L));
+  // last, plays that take cards out of a fixed group: the hand's own order, as if those cards were loose
   const seen=new Set();
   return full.filter(pl=>pl.cards.length===hand.length).concat(
-    zone(hand.filter(c=>!fixed.has(c.id))),
-    own.sort((a,b)=>isBomb(a)-isBomb(b)||(isBomb(a)?power(a)-power(b):TEST?a.value-b.value:0)),
-    fx.filter(pl=>whole(pl)&&!isBomb(pl)),fx.filter(pl=>!whole(pl)&&!isBomb(pl)),fx.filter(isBomb).sort((a,b)=>power(a)-power(b)),
-    full.filter(pl=>nf(pl)>0&&nf(pl)<pl.cards.length&&!splits(pl))
+    pures,rest,full.filter(pl=>!whole(pl)&&!splits(pl))
   ).filter(pl=>{const k=key(pl);return!seen.has(k)&&seen.add(k)});
 }
 
@@ -5849,7 +5883,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1103-0002';
+const VERSION='1103-1207';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
