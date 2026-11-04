@@ -701,8 +701,8 @@ html.phone body:not(.test) #myPlace{margin-bottom:2px}
 body.test{--tside-w:340px}
 body.test #app{max-width:none;margin:0}
 body.test #fanBtn,body.test #rowsBtn{display:none}
-#tsBtn,#fsBtn{display:none}
-body.test #tsBtn{display:inline-flex}
+#tsBtn,#fsBtn,#backBtn{display:none}
+body.test #tsBtn,body.test #backBtn{display:inline-flex}
 .tcb{font:inherit;font-size:12px;font-weight:700;line-height:1;color:var(--gold);background:none;border:1px solid var(--gold);border-radius:999px;padding:3px 7px;cursor:pointer;white-space:nowrap}
 .tcb.on{color:var(--on-gold);background:var(--gold)}
 /* the card counter: a small table over the table, moved by its title bar */
@@ -916,6 +916,10 @@ body.test .tview .tvmid{--cw:calc(var(--tcw,40px)*.72)}
 .tvp.pass{color:var(--muted)}
 .tvp.cur{background:rgba(54,201,255,.12);box-shadow:0 0 0 2px var(--latest)}
 .tvnote{font-size:14px;color:var(--muted)}
+.tvbrk{display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:6px;padding:6px 8px;border:1px dashed var(--line-strong);border-radius:10px;max-width:100%}
+.tvbh{font-size:13px;color:var(--muted)}
+.tvbv{font-size:14px;font-weight:700;text-align:center;line-height:1.4}
+.tvbv.broke{color:#ffb347}
 .tvl{width:var(--tside-w,340px);flex:none;display:flex;flex-direction:column;border-left:1px solid var(--line);padding:8px 10px}
 .trec textarea{width:100%;height:50vh;font:13px/1.5 ui-monospace,Consolas,monospace;background:var(--felt-deep);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:8px}
 /* the record opens over the table from the 出牌记录 button, so the cards get the whole screen */
@@ -929,7 +933,7 @@ body.test .tside:not(.open){display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="miniBtn" aria-pressed="false" title="已出的牌像测试版那样，按出牌顺序排在桌面中间的一个框里（只有电脑和 iPad）">极简出牌区</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="miniBtn" aria-pressed="false" title="已出的牌像测试版那样，按出牌顺序排在桌面中间的一个框里（只有电脑和 iPad）">极简出牌区</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="backBtn" title="看刚走完的这一手（电脑有没有拆牌、拆了哪组），再往前看（键盘 ←）">上一步</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -3144,7 +3148,7 @@ function renderMsg(){
   }else if(G.phase==='play'){
     t=G.notice?`<div>${G.notice}</div>`:'';
     // the test version waiting between two steps
-    if(TEST&&G.stepWait!=null)t+=`<div class="tstep">下一步：${G.stepWait===0?'你':NAMES[G.stepWait]}　<button class="btn primary stepgo" id="stepGo">继续（空格）</button></div>`;
+    if(TEST&&G.stepWait!=null)t+=`<div class="tstep">下一步：${G.stepWait===0?'你':NAMES[G.stepWait]}　<button class="btn primary stepgo" id="stepGo">继续（空格）</button><button class="btn" id="stepBack">上一步</button></div>`;
   }
   m.innerHTML=t;
   syncTribBox();
@@ -4782,7 +4786,7 @@ document.addEventListener('keydown',e=>{
   else if(e.key===' '){e.preventDefault();onPass()}
   else if(e.key==='h'||e.key==='H')onHint();
 });
-$('#msg').addEventListener('click',e=>{if(e.target.closest('#stepGo'))testStepGo()});
+$('#msg').addEventListener('click',e=>{if(e.target.closest('#stepGo'))testStepGo();else if(e.target.closest('#stepBack'))testBack()});
 let resizeT=0;
 window.addEventListener('resize',()=>{layoutHand();clearTimeout(resizeT);resizeT=setTimeout(()=>{centerRank();placeLastPlay();pileRebuild()},150)});
 // the page can be laid out before it is shown (zero width); lay the hand out again once it gets its real width
@@ -5657,11 +5661,12 @@ function testList(){
   el.innerHTML=rec?recListHTML(rec,-1):'<li class="tend">开始出牌后，每一手牌都记在这里</li>';
   el.scrollTop=el.scrollHeight;
 }
-// 上一步: the table as it stood after the play before the latest one
+// 上一步: the table as it stands after the latest play, with how that play was made (the view's own 上一步 goes further back)
 function testBack(){
   const rec=curRec();if(!rec)return;
-  testView(TREC.rounds.length-1,Math.max(0,rec.log.length-1),false);
+  testView(TREC.rounds.length-1,rec.log.length,false);
 }
+$('#backBtn').onclick=()=>{if(TEST&&G&&curRec())testBack()};
 
 /* the look-back view, over the whole screen; the game waits while it is open */
 TV.speed=1500;
@@ -5720,6 +5725,21 @@ document.addEventListener('keydown',e=>{
     TV.step=Math.max(0,Math.min(tvCount(),TV.step+(e.key==='ArrowLeft'?-1:1)));tvPlay(false);
   }
 });
+// how the play being looked at was made: the hand as arranged just before it, the cards played raised, and whether a group
+// was broken up (which one, what was taken out and what is left) or whole groups were played
+function tvBreak(rec,plays,cur){
+  if(!cur||!cur.cards)return'';
+  const L=rec.L,p=cur.p,ct=c=>cardText(c)+(isWild(c,L)?'*':'');
+  const before=new Set(plays.slice(0,-1).flatMap(e=>e.cards.map(c=>c.id)));
+  const units=recUnits(rec,p,rec.hands[p].filter(c=>!before.has(c.id))),played=new Set(cur.cards.map(c=>c.id));
+  const gd=cs=>{const u=readGroup(cs,L);return`[${u?playName(u):'散牌'} ${cs.map(ct).join(' ')}]`};
+  const info=units.map(u=>({cs:u.cards,out:u.cards.filter(c=>played.has(c.id))})).filter(x=>x.out.length);
+  const part=info.filter(x=>x.out.length<x.cs.length),whole=info.filter(x=>x.out.length===x.cs.length);
+  const verdict=part.length
+    ?`拆牌了：`+part.map(x=>`从 ${gd(x.cs)} 里拿出 ${x.out.map(ct).join(' ')}，剩 ${x.cs.filter(c=>!played.has(c.id)).map(ct).join(' ')}`).join('；')+(whole.length?`；另外整组出了 ${whole.map(x=>gd(x.cs)).join(' ')}`:'')
+    :`没有拆牌：出的是整组 ${whole.map(x=>gd(x.cs)).join(' ')}`;
+  return`<div class="tvbrk"><div class="tvbh">${NAMES[p]}出牌前的配牌（出的牌抬起）</div><div class="peek"><div class="prows">${rowsHTML(units,L,played)}</div></div><div class="tvbv${part.length?' broke':''}">${verdict}</div></div>`;
+}
 // the table after the k-th play of the round (0: as play began): every hand, the trick so far, the comment on this play,
 // the record beside it
 function tvDraw(){
@@ -5744,7 +5764,7 @@ function tvDraw(){
   const mid=`<div class="tvmid">${note?`<div class="tvnote">${note}</div>`:''}${trick.map(e=>e.cards?
     `<div class="tvp${e===cur?' cur':''}"><span class="no">${done.indexOf(e)+1}</span><span class="tw">${NAMES[e.p]} ${e.lead?'领出':'跟'}</span><span class="grp">${displayOrder(e,L).map(c=>cardHTML(c,L)).join('')}</span><small>${playName(e)}</small></div>`:
     `<div class="tvp pass${e===cur?' cur':''}"><span class="no">${done.indexOf(e)+1}</span><span class="tw">${NAMES[e.p]}</span>过</div>`).join('')}${
-    k?'':`<div class="tvnote">${NAMES[rec.leader]}先出</div>`}${k===n&&rec.result?`<div class="tvnote">${rec.result}</div>`:''}</div>`;
+    k?'':`<div class="tvnote">${NAMES[rec.leader]}先出</div>`}${k===n&&rec.result?`<div class="tvnote">${rec.result}</div>`:''}${tvBreak(rec,plays,cur)}</div>`;
   const cm=`<div class="tvcm"><label for="tvNote">${k?`对第 ${k} 手的评语`:'对这一局开局（配牌）的评语'}</label>
       <textarea id="tvNote" rows="2" placeholder="${!k?'比如：这手牌应该配成…':cur.cards?'比如：这里应该出…，因为…':'比如：这里不该过，应该出…，因为…'}">${esc(rec.notes[k]||'')}</textarea></div>`;
   const v=$('#tview');
