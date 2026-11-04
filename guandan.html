@@ -1250,6 +1250,10 @@ const AIP={
   // bomb back, no hurry to bomb late, leave the joker to the partner, top the partner's small card, hand the partner a play
   // they may go out on, no three-with-a-pair or straight led to an opponent with five cards
   rKeepBig:1,rSmallPair:1,rBombBack:1,rLateBomb:1,rMateJoker:1,rTopMate:1,rFeed:1,rNoFive:1,
+  // from the 12th test round (07-guandan-ai/第12局评语分析.txt): the last cards are a bomb that could go out over your partner's
+  // play: leave it when no opponent is likely to beat that play (the unseen cards dealt at random: at most this share of the
+  // deals gives an opponent something over it, a bomb included) and each opponent holds more than this many cards
+  rMateBomb:1,mateBombMax:.2,mateBombOppMin:5,
 };
 // how good each kind of play is to hold, by its value (runs: their lowest card, 1 = A played low), from self-play in
 // 07-guandan-ai (stats.js): how often it wins the lead back, and how often an opponent's smaller one of its kind comes
@@ -1482,6 +1486,21 @@ function mateBeatChance(p,cur){
   }
   return k/AIP.mateSamples;
 }
+// card memory: how likely an opponent holds anything (a bomb too) that beats this play, dealing the unseen cards at random to the
+// other three players by how many cards each holds
+function oppBeatChance(p,cur){
+  const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
+  const pool=makeDeck().filter(c=>!gone.has(c.id));
+  const ns=[(p+1)%4,(p+2)%4,(p+3)%4].map(i=>G.hands[i].length),need=ns[0]+ns[1]+ns[2];
+  if(pool.length<need)return 1; // the memory is short of cards: no telling
+  const N=AIP.mateSamples*2;let k=0;
+  for(let t=0;t<N;t++){
+    for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(pool.length-i));[pool[i],pool[j]]=[pool[j],pool[i]]}
+    const a=pool.slice(0,ns[0]),b=pool.slice(ns[0]+ns[1],need);
+    if(genPlays(a,G.L).some(x=>beats(x,cur))||genPlays(b,G.L).some(x=>beats(x,cur)))k++;
+  }
+  return k/N;
+}
 // leading: the two-plays-from-out case, then help a partner about to go out, keep an opponent about to go out from
 // getting their kind of play, and otherwise lead from the arranged hand (see pickLead)
 function aiLead(p,units,plays,ph){
@@ -1623,6 +1642,10 @@ function aiChoose(p){
   const plays=genPlays(hand,L).filter(pl=>beats(pl,cur));
   if(!plays.length)return null;
   const fin=plays.find(pl=>pl.cards.length===hand.length);
+  // going out wins, except when the way out is the last bomb and your partner's play on the table cannot be beaten: the
+  // bomb stays in hand, a sure way out for later
+  if(fin&&AIP.rMateBomb&&cur&&isBomb(fin)&&G.trick.player!==p&&G.trick.player%2===p%2&&!isBomb(cur)&&
+    G.hands[(p+1)%4].length>AIP.mateBombOppMin&&G.hands[(p+3)%4].length>AIP.mateBombOppMin&&oppBeatChance(p,cur)<=AIP.mateBombMax)return null;
   if(fin)return fin;
   const ph=gamePhase(),units=armPlays(hand,L);
   if(!cur)return aiLead(p,units,plays,ph);
