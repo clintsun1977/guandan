@@ -844,8 +844,18 @@ body.test .tview .tvmid{--cw:calc(var(--tcw,40px)*.72)}
 #seat2 .peek{align-items:center}
 #seat1 .peek{align-items:flex-end}
 .peek .pw{font-size:13px;color:var(--muted);line-height:1.2}
+/* the 2号 and 4号 hands: the 牌力 lines stand as columns written downwards at the screen's outer edge, out of the table's middle */
+#peek1,#peek3{flex-direction:row;align-items:flex-start;gap:6px}
+#peek1 .pw,#peek3 .pw{writing-mode:vertical-rl;text-orientation:upright;white-space:nowrap;letter-spacing:.04em;line-height:1.35;flex:none}
+#peek1 .pw{order:1}
+#peek3 .pw{order:-1}
+#peek1 .pw div+div,#peek3 .pw div+div{margin-right:4px}
+.tcu{text-combine-upright:all}
+.pwn{font-size:13px;color:var(--muted);line-height:1.2;margin-left:10px;white-space:nowrap}
+.pwn span+span{margin-left:12px}
+.pwn .sfi{color:var(--gold);font-weight:700}
 .peek .pw:empty{display:none}
-.peek .pw .sfi{color:var(--gold);font-weight:700;font-size:13px;margin-top:2px}
+.peek .pw .sfi{color:var(--gold);font-weight:700;font-size:13px}
 .prows{display:flex;flex-direction:column}
 .prow{display:flex;gap:calc(var(--cw)*.22)}
 .prow+.prow{margin-top:calc(var(--cw)*-.58)}
@@ -2104,8 +2114,10 @@ function startTurn(){
   // so each step can be looked at and commented on before the next one is made
   // (your own turn needs no stop: after 4号 the game goes straight to you; a copy of the game is kept at its start all the same)
   if(TEST&&G.phase==='play'&&G.turn>=0){
-    if(G.turn!==0&&!G.stepGo){G.stepWait=G.turn;G.turn=-1;G.nextLeader=-1;G.clock=null;testSnap();render();return}
-    if(G.turn===0)testSnap();
+    // (no stop after your own move either: the game goes straight on to the next player)
+    const after0=G.log.length>0&&G.log[G.log.length-1].p===0;
+    if(G.turn!==0&&!G.stepGo&&!after0){G.stepWait=G.turn;G.turn=-1;G.nextLeader=-1;G.clock=null;testSnap();render();return}
+    testSnap();
   }
   G.stepGo=false;
   render();
@@ -4396,7 +4408,7 @@ let lastDown=null,mv=null,sweep=null;
 const cardEl=id=>handEl.querySelector(`.card[data-id="${id}"]`);
 // the cards a tap picks: the card's whole group if it is in one (made with 成组), else the card alone
 function groupOf(id){
-  const gr=!TEST&&(G.fixed||[]).find(g=>g.includes(id));
+  const gr=(G.fixed||[]).find(g=>g.includes(id));
   return gr?gr.filter(x=>G.hands[0].some(c=>c.id===x)):[id];
 }
 function setSel(id,on,lazy){
@@ -4670,7 +4682,9 @@ let sfIdx=0;
 $('#sfBtn').onclick=()=>{
   const list=straightFlushes();
   if(!list.length){setMsg('手里的牌组不成同花顺');return}
-  const k=sfIdx%list.length,f=list[k];sfIdx++;
+  // every one has been shown: one more press puts the picked cards down again
+  if(sfIdx>=list.length){sfIdx=0;sel=new Set();renderHand();Sound.play('select');setMsg('同花顺已全部看完，收回');return}
+  const k=sfIdx,f=list[k];sfIdx++;
   sel=new Set(f.cards.map(c=>c.id));
   renderHand();
   Sound.play('select');
@@ -5147,7 +5161,9 @@ function testCompSF(p){
   if(G.phase!=='prep')return;
   const list=straightFlushes(G.hands[p]);
   if(!list.length){TSFI={p,k:TSEL.p===p?[...TSEL.ids].join():'',text:'这手牌组不成同花顺'};testPeeks();return}
-  const k=(sfIdxP[p]||0)%list.length,f=list[k];sfIdxP[p]=k+1;
+  // every one has been shown: one more press takes it all back
+  if((sfIdxP[p]||0)>=list.length){sfIdxP[p]=0;TSEL.ids=new Set();TSFI=null;testPeeks();Sound.play('select');return}
+  const k=sfIdxP[p]||0,f=list[k];sfIdxP[p]=k+1;
   TSEL.p=p;TSEL.ids=new Set(f.cards.map(c=>c.id));
   // the information stands in the computer's own heading, over its cards, never on them
   TSFI={p,k:[...TSEL.ids].join(),text:`同花顺 ${k+1}/${list.length}：${displayOrder({type:'sflush',value:f.s,cards:f.cards},G.L).map(cardText).join(' ')}`};
@@ -5468,19 +5484,35 @@ function testPeeks(){
     const key=[G.round,G.L,grouped,edit,h.map(c=>c.id).join(),JSON.stringify(ua),[...picked].join(),TSFI&&TSFI.p===p?TSFI.text:''].join('|');
     if(el.dataset.k===key)continue;
     el.dataset.k=key;moved=true;
-    let pw='';
-    if(live)pw=powerText(rec.power[p])+(rec.userPower[p]!=null?`　你改后 ${powerText(rec.userPower[p])}`:'');
-    else if(grouped&&h.length)pw=powerText(rawPower(h,G.L))+(ua?`　你改后 ${powerText(handPower(h,G.L))}`:'');
+    // the 牌力 line, in parts: the computer's own, and (when you changed its sorting) after your change
+    let pw=[];
+    if(live)pw=[powerText(rec.power[p])].concat(rec.userPower[p]!=null?[`你改后 ${powerText(rec.userPower[p])}`]:[]);
+    else if(grouped&&h.length)pw=[powerText(rawPower(h,G.L))].concat(ua?[`你改后 ${powerText(handPower(h,G.L))}`]:[]);
     // the sorting buttons: a column beside the rows (never on a card), level with the first row for your partner, a
     // little lower for the sides
     const btns=edit&&h.length?`<span class="tgrp${p===2?'':' low'}"><button class="tgbtn" data-a="sf" title="依次选出这手牌里能组成的同花顺（包括用百搭），再点成组">同花顺</button><button class="tgbtn" data-a="grp"${picked.size>=2?'':' disabled'} title="选中的牌组成一组">成组</button><button class="tgbtn" data-a="split"${picked.size?'':' disabled'} title="选中的牌拆成单张">拆开</button><button class="tgbtn" data-a="reset"${ua?'':' disabled'} title="改回电脑自己的配法">复原</button></span>`:'';
     el.classList.toggle('edit',edit);
+    // (what 同花顺 found follows, while the cards it picked are still the ones picked)
+    if(TSFI&&TSFI.p===p&&TSFI.k===[...picked].join())pw=pw.concat([{sfi:TSFI.text}]);
+    // your partner's go beside its name (so the table's middle is clear), the sides' stand in columns down the screen's edge
+    // (the 2号 and 4号 hands), written downwards
     const pwEl=el.querySelector('.pw');
-    pwEl.textContent=pw;
-    // what 同花顺 found: in this heading, over the cards, while the cards it picked are still the ones picked
-    if(TSFI&&TSFI.p===p&&TSFI.k===[...picked].join()){const d=document.createElement('div');d.className='sfi';d.textContent=TSFI.text;pwEl.appendChild(d)}
+    pwEl.textContent='';
+    let host=pwEl;
+    if(p===2){
+      host=$('#pwn2');
+      if(!host){host=document.createElement('span');host.id='pwn2';host.className='pwn';$('#seat2 .whorow').appendChild(host)}
+      host.textContent='';
+    }
+    for(const x of pw){
+      const d=document.createElement(p===2?'span':'div'),t=p===2?(x.sfi||x):(x.sfi||x).replace(/\s+/g,'');
+      if(x.sfi)d.className='sfi';
+      // (written downwards a number stands as one upright block, not a stack of single digits)
+      if(p===2)d.textContent=t;else d.innerHTML=t.replace(/[0-9]+/g,'<span class="tcu">$&</span>').replace(/[♠♥♦♣]/g,m=>m);
+      host.appendChild(d);
+    }
     const units=ua?seatGroups(p).map(gr=>({cards:gr.map(id=>h.find(c=>c.id===id)),name:''})):handUnits(h,G.L,grouped);
-    el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked,p===2?3:5):'';
+    el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked,p===2?2:5):'';
     const old=el.querySelector('.tgrp');if(old)old.remove();
     if(btns)el.querySelector('.pbody').insertAdjacentHTML('beforeend',btns);
   }
@@ -5702,7 +5734,10 @@ function testUndo(){
   sel=new Set();hints=[];hintIdx=0;cfm=null;
   pileRebuild();
   render();
-  if(G.turn===0&&G.phase==='play')startTurn(); // back at the start of your own turn
+  // back at the start of a turn that had not stopped (yours, or the computer's right after yours): yours begins again, the
+  // computer's waits for its step
+  if(G.phase==='play'&&G.turn===0)startTurn();
+  else if(G.phase==='play'&&G.turn>0){G.stepWait=G.turn;G.turn=-1;G.nextLeader=-1;render()}
 }
 // 上一步 (the look-back): the table as it stands after the latest play, with how that play was made (the view's own 上一步 goes further back)
 function testBack(){
@@ -6018,7 +6053,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1103-2220';
+const VERSION='1103-2242';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
