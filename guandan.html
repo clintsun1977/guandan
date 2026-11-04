@@ -728,6 +728,10 @@ body.test .overlay.dock .panel .btn:not(.round){font-size:12px;padding:3px 10px;
      block of two columns, well clear of the player across the table */
   .bar .acts{position:absolute;top:0;right:0;display:grid;grid-template-columns:repeat(2,auto);gap:6px}
   .bar .acts .link{text-align:center}
+  /* the test version: the six buttons as small squares, three by two, in the top-right corner */
+  body.test .bar .acts{grid-template-columns:repeat(3,40px);gap:4px}
+  body.test .bar .acts .link,body.test .bar .acts .optwrap{box-sizing:border-box;width:40px;height:40px}
+  body.test .bar .acts .link{padding:2px;border-radius:6px;font-size:12px;line-height:1.15;white-space:normal;text-align:center;display:flex;align-items:center;justify-content:center}
 }
 @media (prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
