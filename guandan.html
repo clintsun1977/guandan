@@ -3182,8 +3182,6 @@ function renderMsg(){
     if(owesReturn(0))t+=`<div class="trib">还一张 10 或以下的牌给${NAMES[G.returns.find(x=>x.from===0).to]}</div>`;
   }else if(G.phase==='play'){
     t=G.notice?`<div>${G.notice}</div>`:'';
-    // the test version waiting between two steps
-    if(TEST&&G.stepWait!=null)t+=`<div class="tstep">下一步：${G.stepWait===0?'你':NAMES[G.stepWait]}　点“继续”、按空格或点屏幕空白处继续</div>`;
   }
   m.innerHTML=t;
   syncTribBox();
