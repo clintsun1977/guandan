@@ -148,6 +148,8 @@ html.phone .tribpop{left:auto;right:0}
 /* the side players sit a little low; the level disc stays in the middle, leaving room under it for the last-play line
    and the near player's cards */
 #seat3,#seat1{transform:translateY(var(--mid-drop))}
+/* the test version: the 2号 and 4号 plates stand at the top of the table's sides, so their hands have the whole side */
+body.test #seat3,body.test #seat1{justify-content:flex-start;transform:none}
 #seat0{grid-area:me;align-items:center;justify-content:flex-end;gap:4px;text-align:center;pointer-events:none}
 #seat0 .btn{pointer-events:auto}
 .table{position:relative}
@@ -213,6 +215,14 @@ html.phone .tribpop{left:auto;right:0}
 /* the test version: the count stands right beside the name plate, in the row, so no hand or message can cover it */
 html body.test .seat .cnt{position:static!important;translate:none!important;top:auto!important;left:auto!important;right:auto!important;margin:0 0 0 8px;font-size:22px;z-index:3}
 html body.test #seat1 .cnt{margin:0 8px 0 0}
+/* the 2号 and 4号: the count of cards left stands right over the name plate, and the status chip (已出牌, 过 ...) over the count:
+   nothing reaches toward the middle of the table, which keeps the played cards' room; the plates drop a little so both clear the header */
+html body.test #seat3,html body.test #seat1{padding-top:50px}
+html body.test #seat3 .cnt,html body.test #seat1 .cnt{position:absolute!important;bottom:calc(100% + 4px)!important;top:auto!important;margin:0}
+html body.test #seat3 .cnt{left:0!important;right:auto!important}
+html body.test #seat1 .cnt{right:0!important;left:auto!important}
+html body.test #seat3 .stat{top:auto;bottom:calc(100% + 35px);left:0;right:auto;translate:none}
+html body.test #seat1 .stat{top:auto;bottom:calc(100% + 35px);right:0;left:auto;translate:none}
 @keyframes pop{0%{transform:scale(1.6)}100%{transform:scale(1)}}
 /* the finishing place: a large label on the table side of each plate, so the four sit symmetrically around the table */
 .who,.meinfo{position:relative}
@@ -840,7 +850,9 @@ body.test #fixBtn:disabled{opacity:.4}
 body.test #sfBtn{font-size:13px;padding:2px 9px}
 body.test #sfBtn:disabled{opacity:.45;cursor:default}
 body.test #seat0 #readyBtn.atcol{--d:70px;font-size:16px}
-body.test #goBtn{position:absolute;margin:0;z-index:7;pointer-events:auto;font:inherit;font-size:15px;font-weight:700;padding:6px 16px;border-radius:999px;cursor:pointer;color:var(--on-gold);background:var(--gold);border:1.5px solid var(--gold);box-shadow:0 0 14px rgba(221,176,80,.6);white-space:nowrap}
+/* 成组 拆开 复原 上一步 and 出牌 提示 过 重选 and 继续: one size */
+body.test #fixBtn,body.test #splitBtn,body.test #sortBtn,body.test #undoBtn,body.test #btns .btn,body.test #goBtn{box-sizing:border-box;width:72px;height:30px;min-width:0;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1;white-space:nowrap;text-align:center}
+body.test #goBtn{position:absolute;margin:0;z-index:7;pointer-events:auto;font:inherit;font-size:14px;font-weight:700;padding:0;border-radius:999px;cursor:pointer;color:var(--on-gold);background:var(--gold);border:1.5px solid var(--gold);box-shadow:0 0 14px rgba(221,176,80,.6);white-space:nowrap}
 body.test #goBtn[hidden]{display:none}
 body.test #fixBtn,body.test #splitBtn,body.test #sortBtn,body.test #undoBtn{position:absolute;margin:0;z-index:7;pointer-events:auto}
 #splitBtn{display:none}
@@ -3448,9 +3460,13 @@ function drawFixZone(g){
     // the column starts level with the first row of cards, but no lower than will keep its last button on the hand's area
     const total=col.reduce((s,b)=>s+b.offsetHeight+6,-6),limit=handEl.offsetTop+handEl.offsetHeight-tb.offsetTop;
     let y=Math.min(handEl.offsetTop+g.lift-tb.offsetTop,limit-total);
+    // the sorting column and the play column beside it must both stay on the screen
+    let colLeft=handEl.offsetLeft+g.right+14-tb.offsetLeft;
+    const over=tb.getBoundingClientRect().left+colLeft+72+10+72-(innerWidth-8);
+    if(over>0)colLeft-=over;
     for(const id of ['#fixBtn','#splitBtn','#sortBtn','#undoBtn']){
       const b=$(id);if(!b)continue;
-      b.style.left=handEl.offsetLeft+g.right+14-tb.offsetLeft+'px';b.style.top=y+'px';
+      b.style.left=colLeft+'px';b.style.top=y+'px';
       y+=b.offsetHeight+6;
     }
     return;
@@ -3697,8 +3713,9 @@ function placeActionBtns(){
     const fx=colEls[0].getBoundingClientRect(),colR=Math.max(...colEls.map(e=>e.getBoundingClientRect().right));
     const top=fx.top-w.top+'px',left=colR-w.left+10+'px';
     if(b.style.left!==left)b.style.left=left;
+    // 继续 stands over the column, one row above its first button
     const go=$('#goBtn');
-    if(go){go.style.left=(b.hidden||!b.offsetWidth?colR-w.left+10:colR-w.left+10+b.offsetWidth+10)+'px';go.style.top=top}
+    if(go){go.style.left=left;go.style.top=fx.top-w.top-30-6+'px'}
     if(b.style.top!==top){b.style.top=top;if(pileGroups.length&&!b.hidden)pileRefit()}
     for(const id of ['#deckBtn','#readyBtn','#nextBtn']){
       const e=$(id);if(!e)continue;
@@ -5021,7 +5038,7 @@ function enterTest(){
   $('#splitBtn').onclick=()=>{const have=new Set(G.hands[0].map(c=>c.id));testRegroup([...sel].filter(id=>have.has(id)),true)};
   $('#sortBtn').insertAdjacentHTML('afterend','<button class="link" id="undoBtn" title="撤销刚才这一手，回到它之前（游戏画面不变）" disabled>上一步</button>');
   $('#undoBtn').onclick=testUndo;
-  $('#undoBtn').insertAdjacentHTML('afterend','<button class="link" id="goBtn" title="走下一步（空格，或点屏幕空白处）" hidden>继续</button>');
+  $('#btns').insertAdjacentHTML('beforebegin','<button class="link" id="goBtn" title="走下一步（空格，或点屏幕空白处）" hidden>继续</button>');
   $('#goBtn').onclick=testStepGo;
   $('#fixBtn').title='选中的牌组成一组';$('#sortBtn').title='改回电脑自己的配法';
   const s=document.createElement('aside');
@@ -5464,13 +5481,20 @@ function rowsOf(units,k=3){
 }
 // the 2号 and 4号 hands: groups in order into rows of at most six cards each (a bomb of more than six stands alone in its row)
 function rowsMax6(units){
+  const multi=units.filter(u=>u.cards.length>1),singles=units.filter(u=>u.cards.length===1);
   const rows=[];let cur=[],n=0;
-  for(const u of units){
+  for(const u of multi){
     const m=u.cards.length;
     if(cur.length&&n+m>6){rows.push(cur);cur=[];n=0}
     cur.push(u);n+=m;
   }
   if(cur.length)rows.push(cur);
+  // the single cards go last, each row of them laid close like a run, no wider than the widest row above (in card widths: a
+  // group is 1 + .42 a card for each card after the first, and groups overlap by .16)
+  const wOf=r=>r.reduce((t,u)=>t+1+.42*(u.cards.length-1),0)-.16*(r.length-1);
+  const maxW=Math.max(3.1,...rows.map(wOf));
+  const per=Math.floor((maxW-1)/.42+1e-6)+1;
+  for(let i=0;i<singles.length;i+=per)rows.push([{cards:singles.slice(i,i+per).map(u=>u.cards[0]),name:''}]);
   return rows;
 }
 const rowsHTML=(units,L,picked,k)=>(Array.isArray(k)?k:rowsOf(units,k)).map(r=>`<div class="prow">${
@@ -6128,7 +6152,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1104-0753';
+const VERSION='1104-0808';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
