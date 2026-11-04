@@ -828,6 +828,8 @@ body.test #miniBtn,html.phone #miniBtn{display:none}
   color:var(--gold);background:var(--felt-deep);border:1.5px solid var(--gold);line-height:1.2;text-align:center}
 .tgbtn:not(:disabled),body.test #fixBtn:not(:disabled),body.test #splitBtn:not(:disabled),body.test #sortBtn:not(:disabled),body.test #undoBtn:not(:disabled){color:var(--on-gold);background:var(--gold);box-shadow:0 0 12px rgba(221,176,80,.5)}
 body.test #fixBtn:disabled{opacity:.4}
+body.test #goBtn{position:absolute;margin:0;z-index:7;pointer-events:auto;font:inherit;font-size:16px;font-weight:700;padding:8px 20px;border-radius:999px;cursor:pointer;color:var(--on-gold);background:var(--gold);border:1.5px solid var(--gold);box-shadow:0 0 14px rgba(221,176,80,.6);white-space:nowrap}
+body.test #goBtn[hidden]{display:none}
 body.test #fixBtn,body.test #splitBtn,body.test #sortBtn,body.test #undoBtn{position:absolute;margin:0;z-index:7;pointer-events:auto}
 #splitBtn{display:none}
 body.test #splitBtn{display:inline-block}
@@ -843,6 +845,7 @@ body.test .tview .tvmid{--cw:calc(var(--tcw,40px)*.72)}
 #seat1 .peek{align-items:flex-end}
 .peek .pw{font-size:13px;color:var(--muted);line-height:1.2}
 .peek .pw:empty{display:none}
+.peek .pw .sfi{color:var(--gold);font-weight:700;font-size:13px;margin-top:2px}
 .prows{display:flex;flex-direction:column}
 .prow{display:flex;gap:calc(var(--cw)*.22)}
 .prow+.prow{margin-top:calc(var(--cw)*-.58)}
@@ -2099,7 +2102,11 @@ function startTurn(){
   hints=[];hintIdx=0;
   // the test version stops before every turn, yours as much as a computer's, until the space bar (or 继续) is pressed,
   // so each step can be looked at and commented on before the next one is made
-  if(TEST&&G.phase==='play'&&G.turn>=0&&!G.stepGo){G.stepWait=G.turn;G.turn=-1;G.nextLeader=-1;G.clock=null;testSnap();render();return}
+  // (your own turn needs no stop: after 4号 the game goes straight to you; a copy of the game is kept at its start all the same)
+  if(TEST&&G.phase==='play'&&G.turn>=0){
+    if(G.turn!==0&&!G.stepGo){G.stepWait=G.turn;G.turn=-1;G.nextLeader=-1;G.clock=null;testSnap();render();return}
+    if(G.turn===0)testSnap();
+  }
   G.stepGo=false;
   render();
   if(G.phase!=='play')return;
@@ -2138,7 +2145,7 @@ setInterval(()=>{
   const before=c.left;
   c.left-=dt;
   if(c.think==null&&c.left>0&&c.left<=HURRY_MS&&Math.ceil(before/1000)!==Math.ceil(c.left/1000))Sound.play('tick');
-  if(c.think!=null&&c.total-c.left>=c.think){G.clock=null;act(playEvt(c.who,aiDecide(c.who)));return}
+  if(c.think!=null&&c.total-c.left>=c.think){G.clock=null;act(playEvt(c.who,TEST?testDecide(c.who):aiDecide(c.who)));return}
   if(c.left<=0){if(isHost()){G.clock=null;timeUp(c)}else c.left=0;return}
   renderClocks();
 },100);
@@ -3153,7 +3160,7 @@ function renderMsg(){
   }else if(G.phase==='play'){
     t=G.notice?`<div>${G.notice}</div>`:'';
     // the test version waiting between two steps
-    if(TEST&&G.stepWait!=null)t+=`<div class="tstep">下一步：${G.stepWait===0?'你':NAMES[G.stepWait]}　<button class="btn primary stepgo" id="stepGo">继续（空格）</button></div>`;
+    if(TEST&&G.stepWait!=null)t+=`<div class="tstep">下一步：${G.stepWait===0?'你':NAMES[G.stepWait]}　按空格继续</div>`;
   }
   m.innerHTML=t;
   syncTribBox();
@@ -3384,6 +3391,9 @@ function drawFixZone(g){
     // the column starts level with the first row of cards, but no lower than will keep its last button on the hand's area
     const total=col.reduce((s,b)=>s+b.offsetHeight+6,-6),limit=handEl.offsetTop+handEl.offsetHeight-tb.offsetTop;
     let y=Math.min(handEl.offsetTop+g.lift-tb.offsetTop,limit-total);
+    // 继续 stands to the right of the column, level with its first button
+    const go=$('#goBtn');
+    if(go){go.style.left=handEl.offsetLeft+g.right+14-tb.offsetLeft+Math.max(...col.map(b=>b.offsetWidth))+12+'px';go.style.top=y+'px'}
     for(const id of ['#fixBtn','#splitBtn','#sortBtn','#undoBtn']){
       const b=$(id);if(!b)continue;
       b.style.left=handEl.offsetLeft+g.right+14-tb.offsetLeft+'px';b.style.top=y+'px';
@@ -3627,7 +3637,7 @@ function placeActionBtns(){
   {const b=$('#btns');if(!phoneRows())b.style.bottom='';if(!(on&&isPhone()))b.style.columnGap=''}
   // the test version's side hands fill the table's sides, so the buttons stand in a row beside your hand instead
   if(on&&TEST){
-    const b=$('#btns'),top=h.height-b.offsetHeight-34+'px';
+    const b=$('#btns'),top=h.height-b.offsetHeight-6+'px';
     b.style.setProperty('--d','64px');
     b.style.left=h.width-b.offsetWidth+'px';
     if(b.style.top!==top){b.style.top=top;if(pileGroups.length&&!b.hidden)pileRefit()}
@@ -4746,7 +4756,6 @@ document.addEventListener('keydown',e=>{
   else if(e.key===' '){e.preventDefault();onPass()}
   else if(e.key==='h'||e.key==='H')onHint();
 });
-$('#msg').addEventListener('click',e=>{if(e.target.closest('#stepGo'))testStepGo()});
 let resizeT=0;
 window.addEventListener('resize',()=>{layoutHand();clearTimeout(resizeT);resizeT=setTimeout(()=>{centerRank();placeLastPlay();pileRebuild()},150)});
 // the page can be laid out before it is shown (zero width); lay the hand out again once it gets its real width
@@ -4941,6 +4950,8 @@ function enterTest(){
   $('#splitBtn').onclick=()=>{const have=new Set(G.hands[0].map(c=>c.id));testRegroup([...sel].filter(id=>have.has(id)),true)};
   $('#sortBtn').insertAdjacentHTML('afterend','<button class="link" id="undoBtn" title="撤销刚才这一手，回到它之前（游戏画面不变）" disabled>上一步</button>');
   $('#undoBtn').onclick=testUndo;
+  $('#undoBtn').insertAdjacentHTML('afterend','<button class="link" id="goBtn" title="走下一步（空格）" hidden>继续（空格）</button>');
+  $('#goBtn').onclick=testStepGo;
   $('#fixBtn').title='选中的牌组成一组';$('#sortBtn').title='改回电脑自己的配法';
   const s=document.createElement('aside');
   s.className='tside';s.id='tside';
@@ -5124,14 +5135,16 @@ function testCompSel(p,id){
 }
 // 同花顺 on a computer's hand: each press picks the next straight flush its cards can make, to set aside with 成组
 const sfIdxP={};
+let TSFI=null;
 function testCompSF(p){
   if(G.phase!=='prep')return;
   const list=straightFlushes(G.hands[p]);
-  if(!list.length){testToast(`${NAMES[p]}的牌组不成同花顺`);return}
+  if(!list.length){TSFI={p,k:TSEL.p===p?[...TSEL.ids].join():'',text:'这手牌组不成同花顺'};testPeeks();return}
   const k=(sfIdxP[p]||0)%list.length,f=list[k];sfIdxP[p]=k+1;
   TSEL.p=p;TSEL.ids=new Set(f.cards.map(c=>c.id));
+  // the information stands in the computer's own heading, over its cards, never on them
+  TSFI={p,k:[...TSEL.ids].join(),text:`同花顺 ${k+1}/${list.length}：${displayOrder({type:'sflush',value:f.s,cards:f.cards},G.L).map(cardText).join(' ')}`};
   testPeeks();Sound.play('select');
-  testToast(`${NAMES[p]} 同花顺 ${k+1}/${list.length}：${displayOrder({type:'sflush',value:f.s,cards:f.cards},G.L).map(cardText).join(' ')}`);
 }
 function testCompGroup(p,split){
   if(G.phase!=='prep'||TSEL.p!==p||TSEL.ids.size<(split?1:2))return;
@@ -5269,7 +5282,7 @@ function testMine(){
 // a round's record starts when play starts (the tribute and returns done): the four hands, each one's 牌力 (yours also as
 // you grouped it), the log, the comments; numbered on from the rounds already kept in this browser
 function testRoundStart(){
-  TSNAP.length=0;
+  TSNAP.length=0;TDEC.clear();
   const L=G.L,rp=G.replay;G.replay=null;
   const mine=testGrouped()?G.fixed.map(gr=>gr.slice()):null;
   const power=G.hands.map(h=>rawPower(h,L)),ug={},up={};
@@ -5445,7 +5458,7 @@ function testPeeks(){
   for(const p of [1,2,3]){
     const el=$('#peek'+p);if(!el)continue;
     const h=G.hands[p],ua=uaOf(p),picked=TSEL.p===p?TSEL.ids:new Set();
-    const key=[G.round,G.L,grouped,edit,h.map(c=>c.id).join(),JSON.stringify(ua),[...picked].join()].join('|');
+    const key=[G.round,G.L,grouped,edit,h.map(c=>c.id).join(),JSON.stringify(ua),[...picked].join(),TSFI&&TSFI.p===p?TSFI.text:''].join('|');
     if(el.dataset.k===key)continue;
     el.dataset.k=key;moved=true;
     let pw='';
@@ -5455,7 +5468,10 @@ function testPeeks(){
     // little lower for the sides
     const btns=edit&&h.length?`<span class="tgrp${p===2?'':' low'}"><button class="tgbtn" data-a="sf" title="依次选出这手牌里能组成的同花顺（包括用百搭），再点成组">同花顺</button><button class="tgbtn" data-a="grp"${picked.size>=2?'':' disabled'} title="选中的牌组成一组">成组</button><button class="tgbtn" data-a="split"${picked.size?'':' disabled'} title="选中的牌拆成单张">拆开</button><button class="tgbtn" data-a="reset"${ua?'':' disabled'} title="改回电脑自己的配法">复原</button></span>`:'';
     el.classList.toggle('edit',edit);
-    el.querySelector('.pw').textContent=pw;
+    const pwEl=el.querySelector('.pw');
+    pwEl.textContent=pw;
+    // what 同花顺 found: in this heading, over the cards, while the cards it picked are still the ones picked
+    if(TSFI&&TSFI.p===p&&TSFI.k===[...picked].join()){const d=document.createElement('div');d.className='sfi';d.textContent=TSFI.text;pwEl.appendChild(d)}
     const units=ua?seatGroups(p).map(gr=>({cards:gr.map(id=>h.find(c=>c.id===id)),name:''})):handUnits(h,G.L,grouped);
     el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked,p===2?3:5):'';
     const old=el.querySelector('.tgrp');if(old)old.remove();
@@ -5639,8 +5655,30 @@ function testList(){
 // copy of the game, and going back puts the one before the latest back as it was, the game waiting there, the screen as it
 // was then; the space bar plays the step again
 const TSNAP=[];
-function testSnap(){try{TSNAP.push(structuredClone(G))}catch(_){TSNAP.length=0}}
-function syncUndo(){const b=$('#undoBtn');if(b)b.disabled=!(G&&G.phase==='play'&&TSNAP.length>=2)}
+function testSnap(){
+  const top=TSNAP[TSNAP.length-1];
+  if(top&&top.log.length===G.log.length)return; // the stop and the start of the same turn are one step
+  try{TSNAP.push(structuredClone(G))}catch(_){TSNAP.length=0}
+}
+// a computer's move is remembered by how the round had gone to that point: taking a step back and going on plays the same
+// move again (a different move of yours before it makes the position a new one, and it is thought out afresh)
+const TDEC=new Map();
+function testDecide(who){
+  const sig=G.round+'#'+G.log.map(e=>e.p+':'+(e.cards?e.cards.map(c=>c.id).join('.'):'p')).join('|');
+  const hit=TDEC.get(sig);
+  if(hit&&hit.p===who){
+    if(!hit.ids)return null;
+    const cards=hit.ids.map(id=>G.hands[who].find(c=>c.id===id));
+    if(cards.every(Boolean))return{...hit.rest,cards};
+  }
+  const pl=aiDecide(who);
+  if(pl){const{cards,...rest}=pl;TDEC.set(sig,{p:who,ids:cards.map(c=>c.id),rest})}else TDEC.set(sig,{p:who,ids:null});
+  return pl;
+}
+function syncUndo(){
+  const b=$('#undoBtn');if(b)b.disabled=!(G&&G.phase==='play'&&TSNAP.length>=2);
+  const go=$('#goBtn');if(go)go.hidden=!(G&&G.phase==='play'&&G.stepWait!=null);
+}
 function testUndo(){
   if(!TEST||!G||G.phase!=='play'||TSNAP.length<2)return;
   TSNAP.pop();
@@ -5657,6 +5695,7 @@ function testUndo(){
   sel=new Set();hints=[];hintIdx=0;cfm=null;
   pileRebuild();
   render();
+  if(G.turn===0&&G.phase==='play')startTurn(); // back at the start of your own turn
 }
 // 上一步 (the look-back): the table as it stands after the latest play, with how that play was made (the view's own 上一步 goes further back)
 function testBack(){
@@ -5972,7 +6011,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1103-2145';
+const VERSION='1103-2209';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
