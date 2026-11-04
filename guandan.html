@@ -213,6 +213,23 @@ body.test #seat3,body.test #seat1{justify-content:flex-start;transform:none}
 /* the test version: the count stands right beside the name plate, in the row, so no hand or message can cover it */
 html body.test .seat .cnt{position:static!important;translate:none!important;top:auto!important;left:auto!important;right:auto!important;margin:0 0 0 8px;font-size:22px;z-index:3}
 html body.test #seat1 .cnt{margin:0 8px 0 0}
+/* the test version: the name plates stay where they are all game. What stands beside the 3号 and 1号 plates (the count of cards,
+   the 牌力 line, the 同花顺 button) is laid out around the plate, never in the row with it, so a changing number cannot
+   push the plate along; the 2号 and 4号 plates are held by their columns (the top row's height is kept, see testPeeks) */
+body.test #seat2 .whorow,body.test #mebar .whorow,body.test #mebar .left{position:relative}
+html body.test #seat2 .whorow>.cnt,html body.test #mebar #myCnt{position:absolute!important;left:100%!important;right:auto!important;top:50%!important;bottom:auto!important;translate:0 -50%!important;margin:0 0 0 8px!important}
+body.test #seat2 .pwn{position:absolute;left:calc(100% + 84px);top:50%;translate:0 -50%;margin:0}
+body.test #mebar #sfBtn{position:absolute;left:calc(100% + 84px);top:50%;translate:0 -50%;margin:0}
+body.test #mebar #myPw{position:absolute;left:calc(100% + 168px);top:50%;translate:0 -50%;margin:0}
+/* the places (头游 ... 末游) stand by their plates, out of the middle of the table where the played cards are: over the count for the
+   2号 and 4号 (in place of the status chip), beside the plate for the 3号 (on its left, clear of the header buttons) and for you */
+html body.test #seat3 .place,html body.test #seat1 .place{top:auto;bottom:calc(100% + 35px);transform:none;margin:0}
+html body.test #seat3 .place{left:0;right:auto}
+html body.test #seat1 .place{right:0;left:auto}
+html body.test #seat3 .who:has(.place:not(:empty)) .stat,html body.test #seat1 .who:has(.place:not(:empty)) .stat{display:none}
+html body.test #seat2 .place{top:50%;right:calc(100% + 8px);left:auto;transform:translateY(-50%);margin:0}
+html body.test #seat2 .who:has(.place:not(:empty)) .stat{display:none}
+html body.test #mebar #myPlace{position:absolute;left:calc(100% + 84px);top:50%;transform:translateY(-50%);margin:0}
 /* the 2号 and 4号: the count of cards left stands right over the name plate, and the status chip (已出牌, 过 ...) over the count:
    nothing reaches toward the middle of the table, which keeps the played cards' room; the plates drop a little so both clear the header */
 html body.test #seat3,html body.test #seat1{padding-top:50px}
@@ -3674,7 +3691,8 @@ function layoutHand(){
   // while dealing, each card goes straight into its slot in a full 27-card hand,
   // so cards already dealt never shift and the hand's height (and the table above it) stays put
   const dealing=G&&(G.phase==='deal'||G.phase==='shuffle'||G.phase==='cut');
-  if(!n&&!dealing){el.style.height='';drawFixZone(null);placeActionBtns();return}
+  // (the test version keeps the hand area's height once your last card has gone, and to the end of the round, so the plates below it do not move)
+  if(!n&&!dealing){if(!(TEST&&['play','roundEnd','over'].includes(G.phase)))el.style.height='';drawFixZone(null);placeActionBtns();return}
   let probe=null;
   if(!n){probe=document.createElement('div');probe.className='card';probe.style.visibility='hidden';el.appendChild(probe)}
   const fixed=new Set((G.fixed||[]).flat()),act=cards.filter(c=>!fixed.has(+c.dataset.id));
@@ -5039,6 +5057,7 @@ function enterTest(){
   $('#splitBtn').onclick=()=>{const have=new Set(G.hands[0].map(c=>c.id));testRegroup([...sel].filter(id=>have.has(id)),true)};
   $('#sortBtn').insertAdjacentHTML('afterend','<button class="link" id="undoBtn" title="撤销刚才这一手，回到它之前（游戏画面不变）" disabled>上一步</button>');
   $('#undoBtn').onclick=testUndo;
+  $('#mebar .whorow').appendChild($('#myPlace')); // (the place label stands beside your plate)
   $('#btns').insertAdjacentHTML('beforebegin','<button class="link" id="goBtn" title="走下一步（空格，或点屏幕空白处）" hidden>继续</button>');
   $('#goBtn').onclick=testStepGo;
   $('#fixBtn').title='选中的牌组成一组';$('#sortBtn').title='改回电脑自己的配法';
@@ -5356,7 +5375,7 @@ function testGeo(){
     right=Math.max(right,x-gap);
   });
   return{test:true,slots:[],fix,fixTags:[],fixW:0,fixH:0,cw,ch,counts:[0],fixEmpty:true,fixEdge:-1,right,lift,
-    height:lift+ch+Math.max(0,rows.length-1)*rowGap+4};
+    height:lift+ch+Math.max(1,rows.length-1)*rowGap+4}; // (two rows' height even when one is left: nothing below the hand moves)
 }
 // beside your name: the 牌力 of your groups (and of the computer's arrangement, when it differs); during play, as play began
 function testMine(){
@@ -5606,8 +5625,16 @@ function testPeeks(){
     const old=el.querySelector('.tgrp');if(old)old.remove();
     if(btns)el.querySelector('.pbody').insertAdjacentHTML('beforeend',btns);
   }
+  // the top row keeps the height it has when the play begins (the 3号 hand shrinking to one row must not lift the side plates)
+  const s2=$('#seat2');
+  if(['play','roundEnd','over'].includes(G.phase)){
+    const k=G.round+'|'+innerWidth+'x'+innerHeight;
+    if(!TLOCK||TLOCK.k!==k){s2.style.minHeight='';TLOCK={k,h:s2.offsetHeight}}
+    s2.style.minHeight=TLOCK.h+'px';
+  }else if(TLOCK){s2.style.minHeight='';TLOCK=null}
   if(moved&&pileGroups.length)pileRefit();
 }
+let TLOCK=null;
 // every player's plays this round, in order, in a framed box on their side of the table (in place of the cards thrown
 // on the table, which the test version does not show): the plays of the trick now on the table are lit, the latest most;
 // once the round is over, what a player was left holding follows, dashed
