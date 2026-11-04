@@ -98,6 +98,8 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .tribinfo{display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--ink);line-height:1.5;white-space:nowrap}
 .tribinfo:empty{display:none}
 .tribinfo{position:relative}
+/* the test version: the 贡 button stands right of the score, clear of the 4号 plate's tags */
+body.test .tribinfo{position:fixed;left:84px;top:22px;z-index:35}
 .tribinfo .tribbtn{font-size:15px;font-weight:700;padding:2px 12px;color:var(--gold);border-color:var(--gold);align-self:flex-start}
 .tribinfo .tribbtn.on{background:var(--gold);color:var(--on-gold)}
 .tribpop{position:absolute;left:0;top:calc(100% + 6px);z-index:40;padding:8px 12px;border-radius:10px;cursor:pointer;
@@ -771,7 +773,11 @@ body.mini #lastPlay{display:none}
 body.test .clock,body.test #prepR{display:none!important}
 .tstep{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;white-space:nowrap}
 .tstep .btn{padding:4px 12px;min-height:0;font-size:14px}
-body.mini .tpb,body.test .tpb{overflow-x:hidden;overflow-y:auto;pointer-events:auto;scrollbar-width:thin}
+body.mini .tpb,body.test .tpb{overflow-x:hidden;overflow-y:auto;pointer-events:auto;scrollbar-width:auto}
+/* a wide bar to grab: 22px, with a clear thumb */
+body.test .tpb::-webkit-scrollbar{width:22px}
+body.test .tpb::-webkit-scrollbar-track{background:rgba(0,0,0,.35);border-radius:11px}
+body.test .tpb::-webkit-scrollbar-thumb{background:var(--gold);border-radius:11px;border:4px solid rgba(0,0,0,.35)}
 /* a pass: a solid frame like the plays, its 过 in the middle with no dashed frame of its own */
 body.mini .tq.pass{border-style:solid}
 body.mini .pchip{border:0;width:auto;align-self:stretch;min-width:calc(var(--mcw)*1.2)}
@@ -847,8 +853,8 @@ body.test #sfBtn{font-size:13px;padding:2px 9px}
 body.test #sfBtn:disabled{opacity:.45;cursor:default}
 body.test #seat0 #readyBtn.atcol{--d:70px;font-size:16px}
 /* 成组 拆开 复原 上一步 and 出牌 提示 过 重选 and 继续: one size */
-body.test #fixBtn,body.test #splitBtn,body.test #sortBtn,body.test #undoBtn,body.test #btns .btn,body.test #goBtn{box-sizing:border-box;width:72px;height:30px;min-width:0;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1;white-space:nowrap;text-align:center}
-body.test #goBtn{position:absolute;margin:0;z-index:7;pointer-events:auto;font:inherit;font-size:14px;font-weight:700;padding:0;border-radius:999px;cursor:pointer;color:var(--on-gold);background:var(--gold);border:1.5px solid var(--gold);box-shadow:0 0 14px rgba(221,176,80,.6);white-space:nowrap}
+body.test #fixBtn,body.test #splitBtn,body.test #sortBtn,body.test #undoBtn,body.test #btns .btn,body.test #goBtn{box-sizing:border-box;width:60px;height:26px;min-width:0;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1;white-space:nowrap;text-align:center}
+body.test #goBtn{position:absolute;margin:0;z-index:7;pointer-events:auto;font:inherit;font-size:12px;font-weight:700;padding:0;border-radius:999px;cursor:pointer;color:var(--on-gold);background:var(--gold);border:1.5px solid var(--gold);box-shadow:0 0 14px rgba(221,176,80,.6);white-space:nowrap}
 body.test #goBtn[hidden]{display:none}
 body.test #fixBtn,body.test #splitBtn,body.test #sortBtn,body.test #undoBtn{position:absolute;margin:0;z-index:7;pointer-events:auto}
 #splitBtn{display:none}
@@ -1910,11 +1916,11 @@ function startRound(e){
 function startShuffle(){
   G.phase='shuffle';
   showDeck();
-  markActor(G.shuffler,'洗牌');
-  slideDeck(actorSpot(G.shuffler));
-  if(isHumanSeat(G.shuffler)){G.clock={who:'deck',seat:G.shuffler,left:DECK_MS,total:DECK_MS};render();return}
+  // (the test version does not shuffle or cut for show: the deal begins at once)
+  if(!TEST){markActor(G.shuffler,'洗牌');slideDeck(actorSpot(G.shuffler))}
+  if(isHumanSeat(G.shuffler)&&!TEST){G.clock={who:'deck',seat:G.shuffler,left:DECK_MS,total:DECK_MS};render();return}
   render();
-  if(isHost())later(()=>act({k:'shuffle'}),1000);
+  if(isHost())later(()=>act({k:'shuffle'}),TEST?0:1000);
 }
 function doShuffle(){
   if(G.phase!=='shuffle'||G.busy)return;
@@ -1923,11 +1929,10 @@ function doShuffle(){
 }
 function startCut(){
   G.phase='cut';
-  markActor(G.cutter,'切牌');
-  slideDeck(actorSpot(G.cutter));
-  if(isHumanSeat(G.cutter)){G.clock={who:'deck',seat:G.cutter,left:DECK_MS,total:DECK_MS};render();return}
+  if(!TEST){markActor(G.cutter,'切牌');slideDeck(actorSpot(G.cutter))}
+  if(isHumanSeat(G.cutter)&&!TEST){G.clock={who:'deck',seat:G.cutter,left:DECK_MS,total:DECK_MS};render();return}
   render();
-  if(isHost())later(()=>act({k:'cut'}),1000);
+  if(isHost())later(()=>act({k:'cut'}),TEST?0:1000);
 }
 function doCut(){
   if(G.phase!=='cut'||G.busy)return;
@@ -1935,7 +1940,7 @@ function doCut(){
   animCut(()=>{
     markActor(-1);
     slideDeck(null);
-    later(()=>{G.busy=false;beginDeal()},520);
+    later(()=>{G.busy=false;beginDeal()},TEST?0:520);
   },actorSpot(G.cutter));
 }
 // where the deck sits when a player handles it: on the table right in front of them
@@ -1969,6 +1974,7 @@ function markActor(p,text){
 function beginDeal(){
   G.phase='deal';G.busy=false;G.clock=null;
   render();
+  if(TEST){later(finishDeal,0);return} // (the test version does not deal card by card: every hand is complete at once)
   later(dealNext,300);
 }
 const DECK_MS=15000; // time you get to shuffle or cut before it is done for you
@@ -3235,14 +3241,13 @@ function renderMsg(){
 const TRIBUI={round:null,open:false};
 function syncTribInfo(){
   const ti=$('#tribInfo'),showTi=!!G&&['play','roundEnd','over'].includes(G.phase)&&!G.tribHold;
-  if(TEST){ti.innerHTML=showTi?tribHtml('tl')+kangHtml(true):'';return}
   if(!showTi||!((G.trib&&G.trib.length)||G.kang)){ti.innerHTML='';TRIBUI.open=false;return}
   if(TRIBUI.round!==G.round){TRIBUI.round=G.round;TRIBUI.open=false}
   ti.innerHTML=`<button class="link tribbtn${TRIBUI.open?' on':''}" title="看进贡还贡">贡</button>`+
     (TRIBUI.open?`<div class="tribpop">${tribHtml('tl')+kangHtml(true)}</div>`:'');
 }
 $('#tribInfo').addEventListener('click',e=>{
-  if(TEST||!e.target.closest('.tribbtn,.tribpop'))return;
+  if(!e.target.closest('.tribbtn,.tribpop'))return;
   e.stopPropagation();TRIBUI.open=!TRIBUI.open;syncTribInfo();
 });
 // one line per pair: who paid whom with which card, and what came back
@@ -3457,7 +3462,8 @@ function drawFixZone(g){
     let y=Math.min(handEl.offsetTop+g.lift-tb.offsetTop,limit-total);
     // the sorting column and the play column beside it must both stay on the screen
     let colLeft=handEl.offsetLeft+g.right+14-tb.offsetLeft;
-    const over=tb.getBoundingClientRect().left+colLeft+72+10+72-(innerWidth-8);
+    colLeft+=24; // (the nine buttons stand a little further right)
+    const over=tb.getBoundingClientRect().left+colLeft+60+10+60+10+60-(innerWidth-8);
     if(over>0)colLeft-=over;
     for(const id of ['#fixBtn','#splitBtn','#sortBtn','#undoBtn']){
       const b=$(id);if(!b)continue;
@@ -3708,9 +3714,9 @@ function placeActionBtns(){
     const fx=colEls[0].getBoundingClientRect(),colR=Math.max(...colEls.map(e=>e.getBoundingClientRect().right));
     const top=fx.top-w.top+'px',left=colR-w.left+10+'px';
     if(b.style.left!==left)b.style.left=left;
-    // 继续 stands over the column, one row above its first button
+    // 继续 stands right of 过 (the third row of the play column)
     const go=$('#goBtn');
-    if(go){go.style.left=left;go.style.top=fx.top-w.top-30-6+'px'}
+    if(go){go.style.left=colR-w.left+10+60+10+'px';go.style.top=fx.top-w.top+(26+6)*2+'px'}
     if(b.style.top!==top){b.style.top=top;if(pileGroups.length&&!b.hidden)pileRefit()}
     for(const id of ['#deckBtn','#readyBtn','#nextBtn']){
       const e=$(id);if(!e)continue;
@@ -3784,7 +3790,7 @@ function tween(dur,step,done){
 function animShuffle(done,at){
   let g=pileGeo();if(at)g={...g,cx:at.x,hy:at.y};
   const deck=$('#deck');
-  if(!deck||reduceMotion()){Sound.play('shuffle');later(done,300);return}
+  if(!deck||reduceMotion()){Sound.play('shuffle');later(done,TEST?0:300);return}
   const layer=pileEl(),cx=g.cx,cy=g.hy,cw=g.cw,tok=G.tok;
   const mk=()=>{const f=document.createElement('div');f.className='flick';f.style.transition='none';layer.appendChild(f);return f};
   const put=(f,x,y,r)=>{f.style.transform=`translate(${x}px,${y}px) rotate(${r}deg)`};
@@ -3812,7 +3818,7 @@ function animShuffle(done,at){
 function animCut(done,at){
   let g=pileGeo();if(at)g={...g,cx:at.x,hy:at.y};
   const deck=$('#deck');
-  if(!deck||reduceMotion()){Sound.play('play');later(done,300);return}
+  if(!deck||reduceMotion()){Sound.play('play');later(done,TEST?0:300);return}
   const top=makeStack(4);top.style.transition='none';stackAt(top,g,0,-4);top.style.zIndex=7050;pileEl().appendChild(top);top.getBoundingClientRect();top.style.transition='';
   const side=g.cw*1.5;
   later(()=>{stackAt(top,g,0,-g.cw*.5,-4);Sound.play('flick')},60);
@@ -5357,6 +5363,7 @@ function testMine(){
   const el=$('#myPw');if(!el)return;
   let t='';
   const rec=curRec();
+  if(G.phase!=='prep'){if(el.textContent)el.textContent='';return}
   if(G.phase==='play'&&rec&&rec.live&&rec.g===G.round)t=`开局${powerText(rec.myPower)}`+(rec.myPower!==rec.power[0]?`　电脑配牌 ${rec.power[0]}`:'');
   else if(testGrouped()&&G.hands[0].length){
     const mine=scorePower(armScore(myUnits())),pc=handPower(G.hands[0],G.L);
@@ -5575,6 +5582,8 @@ function testPeeks(){
     const nsf=edit&&h.length?(straightFlushes(h).length?0:1):0;
     const btns=edit&&h.length?`<span class="tgrp${p===2?'':' low'}"><button class="tgbtn" data-a="sf"${nsf?' disabled':''} title="依次选出这手牌里能组成的同花顺（包括用百搭），再点成组">${nsf?'无同花顺':'同花顺'}</button><button class="tgbtn" data-a="grp"${picked.size>=2?'':' disabled'} title="选中的牌组成一组">成组</button><button class="tgbtn" data-a="split"${picked.size?'':' disabled'} title="选中的牌拆成单张">拆开</button><button class="tgbtn" data-a="reset"${ua?'':' disabled'} title="改回电脑自己的配法">复原</button></span>`:'';
     el.classList.toggle('edit',edit);
+    // the 牌力 lines are for the sorting: once it is done they are put away
+    if(G.phase!=='prep')pw=[];
     // (what 同花顺 found follows, while the cards it picked are still the ones picked)
     if(TSFI&&TSFI.p===p&&TSFI.k===[...picked].join())pw=pw.concat([{sfi:TSFI.text}]);
     // your partner's go beside its name (so the table's middle is clear), the sides' stand under their cards
