@@ -3470,7 +3470,11 @@ function drawFixZone(g){
   }
   const on=!!g;
   z.hidden=t.hidden=$('#fixBtn').hidden=!on;
-  if(!on)return;
+  if(!on){
+    // (the test version: with no cards left in your hand 上一步 stays, and 继续 with it, or the game could not be played on)
+    if(TEST&&G&&['play','roundEnd','over'].includes(G.phase)){const u=$('#undoBtn');if(u)u.hidden=false}
+    return;
+  }
   if(TEST&&!g.test){z.hidden=t.hidden=true;for(const id of ['#fixBtn','#splitBtn','#sortBtn','#undoBtn']){const b=$(id);if(b)b.hidden=true}return}
   for(const id of ['#splitBtn','#sortBtn','#undoBtn']){const b=$(id);if(b)b.hidden=false}
   // the test version's groups need no frame: its 成组, 拆开 and 复原 stand in a column just right of the cards (clear
@@ -3487,6 +3491,12 @@ function drawFixZone(g){
     colLeft+=24; // (the nine buttons stand a little further right)
     const over=tb.getBoundingClientRect().left+colLeft+60+10+60+10+60-(innerWidth-8);
     if(over>0)colLeft-=over;
+    // once the play begins the columns (and 继续 with them) keep the place they have, however narrow the hand gets
+    if(['play','roundEnd','over'].includes(G.phase)){
+      const k=G.round+'|'+innerWidth+'x'+innerHeight;
+      if(!TCOLX||TCOLX.k!==k)TCOLX={k,left:colLeft};
+      colLeft=TCOLX.left;
+    }else TCOLX=null;
     for(const id of ['#fixBtn','#splitBtn','#sortBtn','#undoBtn']){
       const b=$(id);if(!b)continue;
       b.style.left=colLeft+'px';b.style.top=y+'px';
@@ -3734,7 +3744,10 @@ function placeActionBtns(){
     // (the buttons stand in a column right of the sorting column, level with its first button; 继续 right of them)
     const b=$('#btns'),w=$('.handwrap').getBoundingClientRect(),colEls=['#fixBtn','#splitBtn','#sortBtn','#undoBtn'].map(i=>$(i)).filter(Boolean);
     if(!colEls.length)return;
-    const fx=colEls[0].getBoundingClientRect(),colR=Math.max(...colEls.map(e=>e.getBoundingClientRect().right));
+    // the column's top: from its first button that is showing (the first ones go when your hand is empty), 32px a row
+    const vis=colEls.filter(e=>e.offsetHeight&&!e.hidden);
+    if(!vis.length)return;
+    const vr=vis[0].getBoundingClientRect(),fx={top:vr.top-colEls.indexOf(vis[0])*32},colR=Math.max(...vis.map(e=>e.getBoundingClientRect().right));
     const top=fx.top-w.top+'px',left=colR-w.left+10+'px';
     if(b.style.left!==left)b.style.left=left;
     // 继续 stands right of 过 (the third row of the play column)
@@ -5639,7 +5652,7 @@ function testPeeks(){
   }else if(TLOCK){s2.style.minHeight='';TLOCK=null}
   if(moved&&pileGroups.length)pileRefit();
 }
-let TLOCK=null;
+let TLOCK=null,TCOLX=null;
 // every player's plays this round, in order, in a framed box on their side of the table (in place of the cards thrown
 // on the table, which the test version does not show): the plays of the trick now on the table are lit, the latest most;
 // once the round is over, what a player was left holding follows, dashed
@@ -6188,7 +6201,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1104-0842';
+const VERSION='1104-0859';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
