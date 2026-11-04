@@ -206,6 +206,9 @@ html.phone .tribpop{left:auto;right:0}
   font-variant-numeric:tabular-nums;color:var(--felt-deep);background:var(--warn);border-radius:8px;padding:3px 7px 2px;animation:pop .35s ease-out}
 .cnt small{font-family:var(--font-ui);font-size:13px;font-weight:700}
 .cnt:empty{display:none}
+/* the test version: the count stands right beside the name plate, in the row, so no hand or message can cover it */
+html body.test .seat .cnt{position:static!important;translate:none!important;top:auto!important;left:auto!important;right:auto!important;margin:0 0 0 8px;font-size:22px;z-index:3}
+html body.test #seat1 .cnt{margin:0 8px 0 0}
 @keyframes pop{0%{transform:scale(1.6)}100%{transform:scale(1)}}
 /* the finishing place: a large label on the table side of each plate, so the four sit symmetrically around the table */
 .who,.meinfo{position:relative}
@@ -844,18 +847,19 @@ body.test .tview .tvmid{--cw:calc(var(--tcw,40px)*.72)}
 #seat2 .peek{align-items:center}
 #seat1 .peek{align-items:flex-end}
 .peek .pw{font-size:13px;color:var(--muted);line-height:1.2}
-/* the 2号 and 4号 hands: the 牌力 lines stand as columns written downwards at the screen's outer edge, out of the table's middle */
-#peek1,#peek3{flex-direction:row;align-items:flex-start;gap:6px}
-#peek1 .pw,#peek3 .pw{writing-mode:vertical-rl;text-orientation:upright;white-space:nowrap;letter-spacing:.04em;line-height:1.35;flex:none}
+/* the test version has no animation at all (the page already works with it off, as for reduced motion) */
+body.test *,body.test *::before,body.test *::after{animation:none!important;transition:none!important}
 /* their sorting buttons stand under the cards, in a row (two if they do not fit) */
 #peek1 .pbody,#peek3 .pbody{flex-direction:column;gap:6px}
 #peek1 .pbody{align-items:flex-end}
 #peek1 .tgrp,#peek3 .tgrp{flex-direction:row;flex-wrap:wrap;max-width:calc(var(--cw)*5.4);margin-top:0}
 #peek1 .tgrp.low,#peek3 .tgrp.low{margin-top:0}
-#peek1 .pw{order:1}
-#peek3 .pw{order:-1}
-#peek1 .pw div+div,#peek3 .pw div+div{margin-right:4px}
-.tcu{text-combine-upright:all}
+/* the 2号 and 4号 hands: the 牌力 lines stand last, under the cards and the buttons, never wider than the cards (so the table's
+   middle is as free as it can be) */
+#peek1 .pw,#peek3 .pw{order:2;width:0;min-width:100%;margin-top:2px}
+#peek1{align-items:flex-end}
+#peek3{align-items:flex-start}
+#peek1 .pw{text-align:right}
 .pwn{font-size:13px;color:var(--muted);line-height:1.2;margin-left:10px;white-space:nowrap}
 .pwn span+span{margin-left:12px}
 .pwn .sfi{color:var(--gold);font-weight:700}
@@ -1902,7 +1906,7 @@ function actorSpot(p){
 function slideDeck(spot){
   const d=$('#deck');if(!d)return;
   const g=pileGeo(),at=spot||{x:g.cx,y:g.hy};
-  d.style.transition='transform .5s cubic-bezier(.3,.7,.3,1)';
+  d.style.transition=TEST?'none':'transform .5s cubic-bezier(.3,.7,.3,1)';
   d.style.transform=`translate(${at.x}px,${at.y}px)`;
 }
 // the player handling the deck: their plate glows and a large label beside it says what they are doing
@@ -3773,7 +3777,8 @@ function animCut(done,at){
 }
 
 /* ---------- dealing animation ---------- */
-const reduceMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+// (the test version has no animation at all: shuffle, cut, deal, tribute, 接风, crying faces, the celebrations)
+const reduceMotion=()=>TEST||matchMedia('(prefers-reduced-motion: reduce)').matches;
 function fly(p){
   if(reduceMotion())return;
   const a=$('.emblem').getBoundingClientRect();
@@ -3849,7 +3854,8 @@ function dealView(p,c){
 }
 // a count is only announced once a hand is down to 10 or fewer (never while dealing)
 function showCount(el,n){
-  const v=G.phase!=='deal'&&n>0&&n<=10?String(n):'';
+  // (the test version always shows how many cards each player has left)
+  const v=G.phase!=='deal'&&n>0&&(TEST||n<=10)?String(n):'';
   if(el.dataset.n===v)return;
   el.dataset.n=v;
   el.innerHTML=v?`${v}<small>张</small>`:'';
@@ -4030,6 +4036,7 @@ function fxEl(cls,text,x,y){
   const e=document.createElement('div');
   e.className='fx '+cls;e.textContent=text;
   e.style.left=x+'px';e.style.top=y+'px';
+  if(TEST)return e; // (no floating words in the test version)
   document.body.appendChild(e);
   e.addEventListener('animationend',()=>e.remove());
   setTimeout(()=>e.remove(),4000);
@@ -4131,6 +4138,7 @@ function confettiRain(ms){
 // A tap anywhere skips to the result; done (showing the result) runs once either way, unless the game has moved on
 const VICTORY_MS=12000;
 function victory(team,done){
+  if(TEST){done();return}
   const won=team===0,m=$('#table').getBoundingClientRect(),tok=G.tok;
   const bg=document.createElement('div');bg.className=won?'fx-rays':'fx-dusk';document.body.appendChild(bg);
   const b=document.createElement('div');b.className='fx fx-champ'+(won?'':' lost');
@@ -5281,7 +5289,9 @@ function testRegroup(ids,split){
 // your groups laid out like the computer's: in two rows, a small gap between groups
 function testGeo(){
   const el=$('#hand'),probe=el.firstElementChild,W=el.clientWidth,cw=probe.offsetWidth,ch=probe.offsetHeight;
-  const rows=rowsOf(G.fixed.map(gr=>({cards:gr})),2);
+  // two rows; once 14 cards or fewer are left, one row (if they fit in it)
+  const us=G.fixed.map(gr=>({cards:gr})),w1=us.reduce((t,u)=>t+(1.22+.42*(u.cards.length-1)),0)*cw;
+  const rows=rowsOf(us,G.fixed.flat().length<=14&&w1<=W-8?1:2);
   const off=cw*.42,gap=cw*.22,lift=Math.round(ch*.22),rowGap=Math.round(ch*ROW_STEP),fix=new Map();
   let right=0;
   rows.forEach((r,i)=>{
@@ -5500,8 +5510,7 @@ function testPeeks(){
     el.classList.toggle('edit',edit);
     // (what 同花顺 found follows, while the cards it picked are still the ones picked)
     if(TSFI&&TSFI.p===p&&TSFI.k===[...picked].join())pw=pw.concat([{sfi:TSFI.text}]);
-    // your partner's go beside its name (so the table's middle is clear), the sides' stand in columns down the screen's edge
-    // (the 2号 and 4号 hands), written downwards
+    // your partner's go beside its name (so the table's middle is clear), the sides' stand under their cards
     const pwEl=el.querySelector('.pw');
     pwEl.textContent='';
     let host=pwEl;
@@ -5511,14 +5520,13 @@ function testPeeks(){
       host.textContent='';
     }
     for(const x of pw){
-      const d=document.createElement(p===2?'span':'div'),t=p===2?(x.sfi||x):(x.sfi||x).replace(/\s+/g,'');
+      const d=document.createElement(p===2?'span':'div');
       if(x.sfi)d.className='sfi';
-      // (written downwards a number stands as one upright block, not a stack of single digits)
-      if(p===2)d.textContent=t;else d.innerHTML=t.replace(/[0-9]+/g,'<span class="tcu">$&</span>').replace(/[♠♥♦♣]/g,m=>m);
+      d.textContent=x.sfi||x;
       host.appendChild(d);
     }
     const units=ua?seatGroups(p).map(gr=>({cards:gr.map(id=>h.find(c=>c.id===id)),name:''})):handUnits(h,G.L,grouped);
-    el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked,p===2?2:5):'';
+    el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked,p===2?(h.length<=14&&$('#table').clientWidth*.52>=units.reduce((t,u)=>t+(1.22+.42*(u.cards.length-1)),0)*tcwNow()?1:2):5):'';
     const old=el.querySelector('.tgrp');if(old)old.remove();
     if(btns)el.querySelector('.pbody').insertAdjacentHTML('beforeend',btns);
   }
