@@ -78,7 +78,7 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .score>span.playing b{color:#fff;font-size:25px;margin-left:2px}
 .score>span.playing .lvx{color:#ffe08a}
 .bar .acts{display:flex;gap:6px}
-/* 选项: sound, music, card back and 出牌需确认 drop down under one button */
+/* 选项: sound, card back and 出牌需确认 drop down under one button */
 .optwrap{position:relative;display:inline-flex}
 .optwrap>.link{width:100%;justify-content:center}
 .optmenu{position:absolute;z-index:60;top:calc(100% + 6px);right:0;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:8px;
@@ -938,7 +938,7 @@ body.test .tside:not(.open){display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link tog" id="musicBtn" aria-pressed="true">音乐</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="miniBtn" aria-pressed="false" title="已出的牌像测试版那样，按出牌顺序排在桌面中间的一个框里（只有电脑和 iPad）">极简出牌区</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="backBtn" title="看刚走完的这一手（电脑有没有拆牌、拆了哪组），再往前看（键盘 ←）">上一步</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="miniBtn" aria-pressed="false" title="已出的牌像测试版那样，按出牌顺序排在桌面中间的一个框里（只有电脑和 iPad）">极简出牌区</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="backBtn" title="看刚走完的这一手（电脑有没有拆牌、拆了哪组），再往前看（键盘 ←）">上一步</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -3826,10 +3826,10 @@ function showCount(el,n){
 
 /* ---------- sound: everything is synthesised with Web Audio, no files ---------- */
 const Sound=(()=>{
-  const prefs={sfx:true,music:true};
+  const prefs={sfx:true};
   try{Object.assign(prefs,JSON.parse(localStorage.getItem('guandan-audio')||'{}'))}catch(_){}
   const save=()=>{try{localStorage.setItem('guandan-audio',JSON.stringify(prefs))}catch(_){}};
-  let ctx=null,sfxBus,musicBus,musicIn,noise,room,timer=0,now=0;
+  let ctx=null,sfxBus,noise,room,now=0;
 
   function unlock(){
     if(!ctx){
@@ -3840,12 +3840,6 @@ const Sound=(()=>{
       ctx=new AC();
       const master=ctx.createGain();master.gain.value=.9;master.connect(ctx.destination);
       sfxBus=ctx.createGain();sfxBus.gain.value=1;sfxBus.connect(master);
-      musicBus=ctx.createGain();musicBus.gain.value=0;musicBus.connect(master);
-      // a soft echo gives the plucked melody some room
-      musicIn=ctx.createGain();musicIn.connect(musicBus);
-      const dl=ctx.createDelay(1),fb=ctx.createGain(),wet=ctx.createGain();
-      dl.delayTime.value=.38;fb.gain.value=.3;wet.gain.value=.32;
-      musicIn.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(musicBus);
       noise=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate);
       const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
       // a small room, so knocks sound like they happen on a real table rather than inside the speaker
@@ -3860,7 +3854,6 @@ const Sound=(()=>{
       try{const r=ctx.resume();if(r&&r.catch)r.catch(()=>{})}catch(_){}
       try{const b=ctx.createBufferSource();b.buffer=ctx.createBuffer(1,1,22050);b.connect(ctx.destination);b.start(0)}catch(_){}
     }
-    if(prefs.music)startMusic();
   }
   const ready=()=>ctx&&ctx.state==='running';
 
@@ -3987,50 +3980,11 @@ const Sound=(()=>{
     now=ctx.currentTime;fx[name](arg);
   }
 
-  // background music: a slow D-major pentatonic tune over a four-bar bass line, generated on the fly
-  const SCALE=[0,2,4,7,9],BASE=293.66,STEP=.32;
-  const BASS=[73.42,61.74,49,55];
-  const freqOf=deg=>BASE*Math.pow(2,(SCALE[((deg%5)+5)%5]+12*Math.floor(deg/5))/12);
-  let next=0,step=0,pos=5;
-  function scheduleMusic(){
-    while(next<ctx.currentTime+.4){
-      const bar=Math.floor(step/8)%4,beat=step%8,phrase=Math.floor(step/16)%4;
-      if(beat===0){
-        pluck(BASS[bar],next,STEP*7,.16,musicIn);
-        tone(BASS[bar]*3,next,STEP*8,{gain:.022,attack:.6,dest:musicIn});
-      }
-      if(beat===4)pluck(BASS[bar]*1.5,next,STEP*3,.07,musicIn);
-      const busy=phrase===3?.25:.55;
-      if(Math.random()<(beat%2?busy*.6:busy+.15)){
-        pos+=Math.floor(Math.random()*5)-2;
-        if(pos<2)pos=3;if(pos>11)pos=9;
-        pluck(freqOf(pos),next,STEP*(beat%2?2:4),beat===0?.085:.065,musicIn);
-      }
-      next+=STEP;step++;
-    }
-  }
-  function startMusic(){
-    if(!ctx||timer)return;
-    next=ctx.currentTime+.1;
-    musicBus.gain.cancelScheduledValues(ctx.currentTime);
-    musicBus.gain.setTargetAtTime(musicLevel(),ctx.currentTime,.4);
-    timer=setInterval(scheduleMusic,120);
-    scheduleMusic();
-  }
-  // while your microphone is on, the music plays at half its volume
-  let ducked=false;
-  const musicLevel=()=>ducked?.27:.55;
-  function duck(on){ducked=!!on;if(ctx&&timer)musicBus.gain.setTargetAtTime(musicLevel(),ctx.currentTime,.3)}
-  function stopMusic(){
-    if(!ctx||!timer)return;
-    clearInterval(timer);timer=0;
-    musicBus.gain.cancelScheduledValues(ctx.currentTime);
-    musicBus.gain.setTargetAtTime(0,ctx.currentTime,.15);
-  }
+  // (there is no background music: the voice chat's duck() stays as a call that does nothing)
+  function duck(){}
   function toggle(kind){
     prefs[kind]=!prefs[kind];save();
     unlock();
-    if(kind==='music')prefs.music?startMusic():stopMusic();
     return prefs[kind];
   }
   const wake=()=>{if(ctx&&ctx.state!=='running')try{const r=ctx.resume();if(r&&r.catch)r.catch(()=>{})}catch(_){}};
@@ -4038,7 +3992,6 @@ const Sound=(()=>{
 })();
 function syncAudioBtns(){
   $('#sfxBtn').setAttribute('aria-pressed',Sound.prefs.sfx);
-  $('#musicBtn').setAttribute('aria-pressed',Sound.prefs.music);
 }
 
 /* ---------- finishing celebrations ---------- */
@@ -4736,7 +4689,6 @@ function startNextIfReady(){
   else if(G.phase==='over')newGame();
 }
 $('#sfxBtn').onclick=()=>{Sound.toggle('sfx');syncAudioBtns()};
-$('#musicBtn').onclick=()=>{Sound.toggle('music');syncAudioBtns()};
 $('#miniBtn').onclick=()=>{
   miniPlays=!miniPlays;
   try{localStorage.setItem('guandan-mini',miniPlays?'1':'0')}catch(_){}
@@ -5981,7 +5933,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1103-2117';
+const VERSION='1103-2126';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
