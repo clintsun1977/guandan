@@ -820,11 +820,15 @@ body.test #miniBtn,html.phone #miniBtn{display:none}
 .tgrp{display:flex;flex-direction:column;gap:5px;flex:none}
 .tgrp.low{margin-top:calc(var(--cw)*.9)}
 .tgbtn:disabled,body.test #splitBtn:disabled,body.test #sortBtn:disabled,body.test #undoBtn:disabled{opacity:.4;cursor:default;box-shadow:none;background:var(--felt-deep);color:var(--gold)}
-.tgbtn,body.test #fixBtn,body.test #splitBtn,body.test #sortBtn,body.test #undoBtn{font:inherit;font-size:15px;font-weight:700;min-width:4.4em;padding:5px 12px;border-radius:999px;cursor:pointer;
+.tgbtn,body.test #fixBtn,body.test #splitBtn,body.test #sortBtn,body.test #undoBtn{font:inherit;font-size:13px;font-weight:700;min-width:3.6em;padding:3px 9px;border-radius:999px;cursor:pointer;
   color:var(--gold);background:var(--felt-deep);border:1.5px solid var(--gold);line-height:1.2;text-align:center}
 .tgbtn:not(:disabled),body.test #fixBtn:not(:disabled),body.test #splitBtn:not(:disabled),body.test #sortBtn:not(:disabled),body.test #undoBtn:not(:disabled){color:var(--on-gold);background:var(--gold);box-shadow:0 0 12px rgba(221,176,80,.5)}
 body.test #fixBtn:disabled{opacity:.4}
-body.test #goBtn{position:absolute;margin:0;z-index:7;pointer-events:auto;font:inherit;font-size:16px;font-weight:700;padding:8px 20px;border-radius:999px;cursor:pointer;color:var(--on-gold);background:var(--gold);border:1.5px solid var(--gold);box-shadow:0 0 14px rgba(221,176,80,.6);white-space:nowrap}
+/* the player's own 同花顺 beside the name, a little smaller too; 理牌结束 smaller */
+body.test #sfBtn{font-size:13px;padding:2px 9px}
+body.test #sfBtn:disabled{opacity:.45;cursor:default}
+body.test #seat0 #readyBtn.atcol{--d:70px;font-size:16px}
+body.test #goBtn{position:absolute;margin:0;z-index:7;pointer-events:auto;font:inherit;font-size:15px;font-weight:700;padding:6px 16px;border-radius:999px;cursor:pointer;color:var(--on-gold);background:var(--gold);border:1.5px solid var(--gold);box-shadow:0 0 14px rgba(221,176,80,.6);white-space:nowrap}
 body.test #goBtn[hidden]{display:none}
 body.test #fixBtn,body.test #splitBtn,body.test #sortBtn,body.test #undoBtn{position:absolute;margin:0;z-index:7;pointer-events:auto}
 #splitBtn{display:none}
@@ -843,6 +847,11 @@ body.test .tview .tvmid{--cw:calc(var(--tcw,40px)*.72)}
 /* the 2号 and 4号 hands: the 牌力 lines stand as columns written downwards at the screen's outer edge, out of the table's middle */
 #peek1,#peek3{flex-direction:row;align-items:flex-start;gap:6px}
 #peek1 .pw,#peek3 .pw{writing-mode:vertical-rl;text-orientation:upright;white-space:nowrap;letter-spacing:.04em;line-height:1.35;flex:none}
+/* their sorting buttons stand under the cards, in a row (two if they do not fit) */
+#peek1 .pbody,#peek3 .pbody{flex-direction:column;gap:6px}
+#peek1 .pbody{align-items:flex-end}
+#peek1 .tgrp,#peek3 .tgrp{flex-direction:row;flex-wrap:wrap;max-width:calc(var(--cw)*5.4);margin-top:0}
+#peek1 .tgrp.low,#peek3 .tgrp.low{margin-top:0}
 #peek1 .pw{order:1}
 #peek3 .pw{order:-1}
 #peek1 .pw div+div,#peek3 .pw div+div{margin-right:4px}
@@ -3130,6 +3139,8 @@ function renderControls(){
   for(const id in can){const b=$('#'+id);b.disabled=!can[id];b.classList.toggle('primary',can[id])}
   // 同花顺 beside your name while you sort your cards and while you play them
   $('#sfBtn').hidden=!['prep','play'].includes(G.phase)||!G.hands[0].length;
+  // (the test version's button says so when the hand has no straight flush)
+  if(TEST&&!$('#sfBtn').hidden){const none=!straightFlushes().length;$('#sfBtn').disabled=none;$('#sfBtn').textContent=none?'无同花顺':'同花顺'}
   const fb=$('#fixBtn'),fixedNow=new Set((G.fixed||[]).flat());
   fb.disabled=!picked||!G.hands[0].length;
   fb.textContent=testGrouped()?'成组':picked&&[...sel].every(id=>fixedNow.has(id))?'放回':'成组';
@@ -4678,12 +4689,11 @@ $('#sfBtn').onclick=()=>{
   const list=straightFlushes();
   if(!list.length){setMsg('手里的牌组不成同花顺');return}
   // every one has been shown: one more press puts the picked cards down again
-  if(sfIdx>=list.length){sfIdx=0;sel=new Set();renderHand();Sound.play('select');setMsg('同花顺已全部看完，收回');return}
+  if(sfIdx>=list.length){sfIdx=0;sel=new Set();renderHand();Sound.play('select');return}
   const k=sfIdx,f=list[k];sfIdx++;
   sel=new Set(f.cards.map(c=>c.id));
   renderHand();
   Sound.play('select');
-  setMsg(`同花顺 ${k+1}/${list.length}：${displayOrder({type:'sflush',value:f.s,cards:f.cards},G.L).map(cardText).join(' ')}`);
 };
 $('#rulesBtn').onclick=showRules;
 // card backs: the goose photo, or the original red stripes; remembered on this computer
@@ -5161,7 +5171,7 @@ function testCompSF(p){
   const k=sfIdxP[p]||0,f=list[k];sfIdxP[p]=k+1;
   TSEL.p=p;TSEL.ids=new Set(f.cards.map(c=>c.id));
   // the information stands in the computer's own heading, over its cards, never on them
-  TSFI={p,k:[...TSEL.ids].join(),text:`同花顺 ${k+1}/${list.length}：${displayOrder({type:'sflush',value:f.s,cards:f.cards},G.L).map(cardText).join(' ')}`};
+  TSFI=null; // (no words about it: the cards picked are the answer)
   testPeeks();Sound.play('select');
 }
 function testCompGroup(p,split){
@@ -5268,10 +5278,10 @@ function testRegroup(ids,split){
   renderHand();
   Sound.play('play');
 }
-// your groups laid out like the computer's: in three rows, a small gap between groups
+// your groups laid out like the computer's: in two rows, a small gap between groups
 function testGeo(){
   const el=$('#hand'),probe=el.firstElementChild,W=el.clientWidth,cw=probe.offsetWidth,ch=probe.offsetHeight;
-  const rows=rowsOf(G.fixed.map(gr=>({cards:gr})));
+  const rows=rowsOf(G.fixed.map(gr=>({cards:gr})),2);
   const off=cw*.42,gap=cw*.22,lift=Math.round(ch*.22),rowGap=Math.round(ch*ROW_STEP),fix=new Map();
   let right=0;
   rows.forEach((r,i)=>{
@@ -5485,7 +5495,8 @@ function testPeeks(){
     else if(grouped&&h.length)pw=[powerText(rawPower(h,G.L))].concat(ua?[`你改后 ${powerText(handPower(h,G.L))}`]:[]);
     // the sorting buttons: a column beside the rows (never on a card), level with the first row for your partner, a
     // little lower for the sides
-    const btns=edit&&h.length?`<span class="tgrp${p===2?'':' low'}"><button class="tgbtn" data-a="sf" title="依次选出这手牌里能组成的同花顺（包括用百搭），再点成组">同花顺</button><button class="tgbtn" data-a="grp"${picked.size>=2?'':' disabled'} title="选中的牌组成一组">成组</button><button class="tgbtn" data-a="split"${picked.size?'':' disabled'} title="选中的牌拆成单张">拆开</button><button class="tgbtn" data-a="reset"${ua?'':' disabled'} title="改回电脑自己的配法">复原</button></span>`:'';
+    const nsf=edit&&h.length?(straightFlushes(h).length?0:1):0;
+    const btns=edit&&h.length?`<span class="tgrp${p===2?'':' low'}"><button class="tgbtn" data-a="sf"${nsf?' disabled':''} title="依次选出这手牌里能组成的同花顺（包括用百搭），再点成组">${nsf?'无同花顺':'同花顺'}</button><button class="tgbtn" data-a="grp"${picked.size>=2?'':' disabled'} title="选中的牌组成一组">成组</button><button class="tgbtn" data-a="split"${picked.size?'':' disabled'} title="选中的牌拆成单张">拆开</button><button class="tgbtn" data-a="reset"${ua?'':' disabled'} title="改回电脑自己的配法">复原</button></span>`:'';
     el.classList.toggle('edit',edit);
     // (what 同花顺 found follows, while the cards it picked are still the ones picked)
     if(TSFI&&TSFI.p===p&&TSFI.k===[...picked].join())pw=pw.concat([{sfi:TSFI.text}]);
