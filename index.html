@@ -1364,6 +1364,8 @@ const AIP={
   // no group of yours beats, with two bombs or more in hand: bomb it in the middle game, and in the late game always; rSingleLast:
   // leading, a small single is the last choice (bombs aside)
   rTwoBombs:1,rSingleLast:1,
+  // rOneBomb: with just one bomb in hand, it is used only in the late game
+  rOneBomb:1,
   // rKeepWild: late game, a play with a wild card is left when the wild card could make a bomb with a pure three in hand and the partner,
   // still to play, beats it at least keepWildMate likely (not when urgent, or when it goes out)
   rKeepWild:1,keepWildMate:.5,
@@ -2079,6 +2081,8 @@ function aiChoose(p){
   // a group of the arranged hand that fits exactly: the smallest one (no wild cards before the late game)
   const early=ph!=='late';
   const twoBombs=units.filter(isBomb).length>=2;
+  // a single bomb is kept for the late game (the player who played last holding 10 cards or fewer; your own cards do not count)
+  const keepOne=AIP.rOneBomb&&units.filter(isBomb).length===1;
   // a wild card that could make a bomb with a pure three in hand stays when the partner, still to play, is likely to beat it
   const keepWildFor=pl=>{
     if(!AIP.rKeepWild||urgent||!mateAfter||ph!=='late'||pl.cards.length>=hand.length||!pl.cards.some(c=>isWild(c,L)))return false;
@@ -2107,7 +2111,7 @@ function aiChoose(p){
     // (tier 1 also bombs an ace or more), and not when the partner can most likely beat it
     const b=units.filter(u=>isBomb(u)&&!u.wu&&beats(u,cur)).sort((a,b)=>power(a)-power(b))[0];
     const twoMid=AIP.rTwoBombs&&ph==='mid'&&twoBombs&&!isBomb(cur)&&isCtrl(cur);
-    return b&&(restCost(hand,b,L)<=AIP.bombRest||twoMid||t===1&&cur.value>=AIP.bombBigVal&&(!AIP.rMateEvid||ph!=='early'||mateLacks(p,cur)))&&!mateCan()&&!four(b)?b:null;
+    return b&&(restCost(hand,b,L)<=AIP.bombRest||twoMid||t===1&&cur.value>=AIP.bombBigVal&&(!AIP.rMateEvid||ph!=='early'||mateLacks(p,cur)))&&!mateCan()&&!four(b)&&!keepOne?b:null;
   }
   // late game: break groups if need be, in the hint order, and bomb when it matters
   const base=handCost(hand,L);
@@ -6620,7 +6624,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1104-1709';
+const VERSION='1104-1722';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
