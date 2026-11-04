@@ -749,6 +749,10 @@ body.mini #pile .pc,body.mini #pile .ktag{visibility:hidden}
 body.mini #lastPlay{display:none}
 /* a play of several cards is laid close, like the 横式 hand: each card over the one before it, its rank and suit at the left
    corner, so only a strip of every card but the last shows */
+/* the test version has no time limits: no alarm clocks, no countdown numbers */
+body.test .clock,body.test #prepR{display:none!important}
+.tstep{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;white-space:nowrap}
+.tstep .btn{padding:4px 12px;min-height:0;font-size:14px}
 body.mini .tpb{overflow-x:hidden;overflow-y:auto;pointer-events:auto;scrollbar-width:thin}
 /* a pass: a solid frame like the plays, its 过 in the middle with no dashed frame of its own */
 body.mini .tq.pass{border-style:solid}
@@ -1817,7 +1821,7 @@ function startRound(e){
   G.deck=e.deck.map(id=>byId.get(id));
   G.hands=[[],[],[],[]];
   G.trick=null;G.passes=0;G.last=[null,null,null,null];G.out=[];G.fresh=[];G.result=null;
-  G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.seen=[];G.log=[];G.pw=[];G.rest=[];G.myOrder=[];G.fixed=[];pileRebuild();G.dealCount=0;
+  G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.stepWait=null;G.busy=false;G.reveal=0;G.trickPlays=[];G.heapN=0;G.seen=[];G.log=[];G.pw=[];G.rest=[];G.myOrder=[];G.fixed=[];pileRebuild();G.dealCount=0;
   // as at a real table: the last round's first-out cuts and the player before them shuffles
   // (the very first round picks the cutter at random)
   G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
@@ -2084,6 +2088,10 @@ function later(fn,ms){const t=G.tok;setTimeout(()=>{if(G.tok===t)fn()},ms)}
 
 function startTurn(){
   hints=[];hintIdx=0;
+  // the test version stops before every turn, yours as much as a computer's, until the space bar (or 继续) is pressed,
+  // so each step can be looked at and commented on before the next one is made
+  if(TEST&&G.phase==='play'&&G.turn>=0&&!G.stepGo){G.stepWait=G.turn;G.turn=-1;G.nextLeader=-1;G.clock=null;render();return}
+  G.stepGo=false;
   render();
   if(G.phase!=='play')return;
   const p=G.turn;
@@ -2102,7 +2110,7 @@ function startTurn(){
   if(isHumanSeat(p)){G.clock={who:p,left:PLAY_MS,total:PLAY_MS};renderClocks();return}
   // once you are out the computers stop pretending to think so long; only the host's computers actually move
   // the test version gives the computer more time, so each play can be followed
-  const think=TEST?(active(0)?1800+Math.random()*700:900+Math.random()*400):active(0)?AI_THINK_MIN+Math.random()*(AI_THINK_MAX-AI_THINK_MIN):400+Math.random()*300;
+  const think=TEST?0:active(0)?AI_THINK_MIN+Math.random()*(AI_THINK_MAX-AI_THINK_MIN):400+Math.random()*300;
   G.clock={who:p,left:PLAY_MS,total:PLAY_MS,think:isHost()?think:undefined};
   renderClocks();
 }
@@ -2117,6 +2125,7 @@ setInterval(()=>{
   lastTick=now;
   const c=G&&G.clock;
   if(!c||G.paused||(NET.mode==='solo'&&!$('#overlay').hidden)||TV.open||TV.edit)return; // paused, a solo game with a panel open, or looking back or writing a comment in the test version
+  if(TEST&&c.think==null)return; // the test version has no time limits: nobody is hurried, nothing runs out
   const before=c.left;
   c.left-=dt;
   if(c.think==null&&c.left>0&&c.left<=HURRY_MS&&Math.ceil(before/1000)!==Math.ceil(c.left/1000))Sound.play('tick');
@@ -2173,6 +2182,13 @@ function placePrepBig(){
   l.style.left=lx-T.left+'px';r.style.left=rx-T.left+'px';
   l.style.top=y-l.offsetHeight/2+'px';r.style.top=y-r.offsetHeight/2+'px';
   syncTribBox();
+}
+// the test version's step: after a move the game waits here; the next turn begins with the space bar or 继续
+function testStepGo(){
+  if(!TEST||!G||G.phase!=='play'||G.stepWait==null)return false;
+  const p=G.stepWait;G.stepWait=null;G.turn=p;G.stepGo=true;
+  startTurn();
+  return true;
 }
 function renderClocks(){
   const c=G.clock;
@@ -3127,6 +3143,8 @@ function renderMsg(){
     if(owesReturn(0))t+=`<div class="trib">还一张 10 或以下的牌给${NAMES[G.returns.find(x=>x.from===0).to]}</div>`;
   }else if(G.phase==='play'){
     t=G.notice?`<div>${G.notice}</div>`:'';
+    // the test version waiting between two steps
+    if(TEST&&G.stepWait!=null)t+=`<div class="tstep">下一步：${G.stepWait===0?'你':NAMES[G.stepWait]}　<button class="btn primary stepgo" id="stepGo">继续（空格）</button></div>`;
   }
   m.innerHTML=t;
   syncTribBox();
@@ -4758,10 +4776,13 @@ for(const z of ['#mebar','.handwrap'])$(z).addEventListener('click',e=>{if(e.tar
 document.addEventListener('keydown',e=>{
   if(TV.open||TV.edit||!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input,textarea'))return;
   if(TEST&&e.key==='ArrowLeft'){e.preventDefault();testBack();return}
+  // the test version's steps: the space bar lets the game go on to the next turn
+  if(TEST&&e.key===' '&&G&&G.stepWait!=null){e.preventDefault();if(document.activeElement)document.activeElement.blur();testStepGo();return}
   if(e.key==='Enter'){e.preventDefault();G.phase==='return'||G.phase==='tribPick'||owesReturn(0)?onReturn():sel.size?onPlay():onHint()}
   else if(e.key===' '){e.preventDefault();onPass()}
   else if(e.key==='h'||e.key==='H')onHint();
 });
+$('#msg').addEventListener('click',e=>{if(e.target.closest('#stepGo'))testStepGo()});
 let resizeT=0;
 window.addEventListener('resize',()=>{layoutHand();clearTimeout(resizeT);resizeT=setTimeout(()=>{centerRank();placeLastPlay();pileRebuild()},150)});
 // the page can be laid out before it is shown (zero width); lay the hand out again once it gets its real width
@@ -5751,7 +5772,7 @@ function testReplay(rec){
   G.lvlTeam=rec.lvlTeam;G.L=rec.L;
   G.hands=rec.hands.map(h=>sortHand(h.map(c=>byId.get(c.id)),G.L));
   G.deck=[];G.trick=null;G.passes=0;G.last=[null,null,null,null];G.out=[];G.fresh=[];G.result=null;
-  G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.busy=false;G.reveal=0;
+  G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.stepWait=null;G.busy=false;G.reveal=0;
   G.trickPlays=[];G.heapN=0;G.seen=[];G.log=[];G.pw=[];G.rest=[];G.myOrder=[];G.fixed=[];G.ready=[];G.nextReady=[];G.queuedPlay=false;
   G.tgRound=null;G.ua=null;NET.pending=false;sel=new Set();
   removeDeck();pileRebuild();
