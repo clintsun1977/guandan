@@ -3155,7 +3155,7 @@ function renderMsg(){
   }else if(G.phase==='play'){
     t=G.notice?`<div>${G.notice}</div>`:'';
     // the test version waiting between two steps
-    if(TEST&&G.stepWait!=null)t+=`<div class="tstep">下一步：${G.stepWait===0?'你':NAMES[G.stepWait]}　按空格继续</div>`;
+    if(TEST&&G.stepWait!=null)t+=`<div class="tstep">下一步：${G.stepWait===0?'你':NAMES[G.stepWait]}　点“继续”、按空格或点屏幕空白处继续</div>`;
   }
   m.innerHTML=t;
   syncTribBox();
@@ -4751,6 +4751,13 @@ document.addEventListener('keydown',e=>{
   else if(e.key===' '){e.preventDefault();onPass()}
   else if(e.key==='h'||e.key==='H')onHint();
 });
+// the test version's steps: a tap on the empty table lets the game go on too (not on a button, a card, a plate, the hands'
+// area or any panel that is open)
+document.addEventListener('click',e=>{
+  if(!TEST||!G||G.stepWait==null||TV.open||TV.edit)return;
+  if(e.target.closest('button,a,input,textarea,select,label,.card,.peek,.who,.meinfo,#mebar,.handwrap,#tside,#tview,#overlay,.tnbox,.tcount,.optmenu,.tpb,.tq,#fixZone,#fixTags,#tribInfo'))return;
+  testStepGo();
+});
 let resizeT=0;
 window.addEventListener('resize',()=>{layoutHand();clearTimeout(resizeT);resizeT=setTimeout(()=>{centerRank();placeLastPlay();pileRebuild()},150)});
 // the page can be laid out before it is shown (zero width); lay the hand out again once it gets its real width
@@ -4945,7 +4952,7 @@ function enterTest(){
   $('#splitBtn').onclick=()=>{const have=new Set(G.hands[0].map(c=>c.id));testRegroup([...sel].filter(id=>have.has(id)),true)};
   $('#sortBtn').insertAdjacentHTML('afterend','<button class="link" id="undoBtn" title="撤销刚才这一手，回到它之前（游戏画面不变）" disabled>上一步</button>');
   $('#undoBtn').onclick=testUndo;
-  $('#undoBtn').insertAdjacentHTML('afterend','<button class="link" id="goBtn" title="走下一步（空格）" hidden>继续（空格）</button>');
+  $('#undoBtn').insertAdjacentHTML('afterend','<button class="link" id="goBtn" title="走下一步（空格，或点屏幕空白处）" hidden>继续</button>');
   $('#goBtn').onclick=testStepGo;
   $('#fixBtn').title='选中的牌组成一组';$('#sortBtn').title='改回电脑自己的配法';
   const s=document.createElement('aside');
