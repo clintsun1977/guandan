@@ -746,7 +746,12 @@ body.test.fsok:not(.fs) #fsBtn{color:var(--on-gold);background:var(--gold);borde
 body.test #hand,body.test .peek,body.test .tvmid{--cw:var(--tcw,40px)}
 body.test #pile{--cw:calc(var(--tcw,40px)*.9)}
 body.test .table{grid-template-columns:auto minmax(0,1fr) auto}
-@media (min-width:561px){body.test #btns{flex-direction:row}}
+@media (min-width:561px){body.test #btns{flex-direction:column;gap:6px}}
+/* 出牌, 提示, 过, 重选 (and 进贡 / 还贡): one column right of the sorting column, every button the same pill */
+body.test #btns .btn{width:auto;height:auto;min-width:4.4em;padding:5px 14px;border-radius:999px;font:inherit;font-size:13px;font-weight:700;line-height:1.2;
+  color:var(--gold);background:var(--felt-deep);border:1.5px solid var(--gold);animation:none}
+body.test #btns .btn:not(:disabled){color:var(--on-gold);background:var(--gold);box-shadow:0 0 12px rgba(221,176,80,.5)}
+body.test #btns .btn:disabled{opacity:.4;box-shadow:none}
 /* the cards thrown on the table, the level disc and the line under it give way to each player's framed box of plays */
 body.test #pile .pc,body.test #pile .ktag{visibility:hidden}
 body.test .emblem{visibility:hidden}
@@ -760,7 +765,7 @@ body.mini #lastPlay{display:none}
 body.test .clock,body.test #prepR{display:none!important}
 .tstep{display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;white-space:nowrap}
 .tstep .btn{padding:4px 12px;min-height:0;font-size:14px}
-body.mini .tpb{overflow-x:hidden;overflow-y:auto;pointer-events:auto;scrollbar-width:thin}
+body.mini .tpb,body.test .tpb{overflow-x:hidden;overflow-y:auto;pointer-events:auto;scrollbar-width:thin}
 /* a pass: a solid frame like the plays, its 过 in the middle with no dashed frame of its own */
 body.mini .tq.pass{border-style:solid}
 body.mini .pchip{border:0;width:auto;align-self:stretch;min-width:calc(var(--mcw)*1.2)}
@@ -860,6 +865,9 @@ body.test *,body.test *::before,body.test *::after{animation:none!important;tran
 #peek1 .tgrp.low,#peek3 .tgrp.low{margin-top:0}
 /* the 2号 and 4号 hands: the 牌力 lines stand last, under the cards and the buttons, never wider than the cards (so the table's
    middle is as free as it can be) */
+/* the groups of the 2号, 3号 and 4号 hands stand a card's step apart, as a run with one card taken out */
+#peek1 .prow,#peek2 .prow,#peek3 .prow{gap:0}
+#peek1 .grp+.grp,#peek2 .grp+.grp,#peek3 .grp+.grp{margin-left:calc(var(--cw)*-.16)}
 #peek1 .pw,#peek3 .pw{order:2;width:0;min-width:100%;margin-top:2px}
 #peek1{align-items:flex-end}
 #peek3{align-items:flex-start}
@@ -3440,9 +3448,6 @@ function drawFixZone(g){
     // the column starts level with the first row of cards, but no lower than will keep its last button on the hand's area
     const total=col.reduce((s,b)=>s+b.offsetHeight+6,-6),limit=handEl.offsetTop+handEl.offsetHeight-tb.offsetTop;
     let y=Math.min(handEl.offsetTop+g.lift-tb.offsetTop,limit-total);
-    // 继续 stands to the right of the column, level with its first button
-    const go=$('#goBtn');
-    if(go){go.style.left=handEl.offsetLeft+g.right+14-tb.offsetLeft+Math.max(...col.map(b=>b.offsetWidth))+12+'px';go.style.top=y+'px'}
     for(const id of ['#fixBtn','#splitBtn','#sortBtn','#undoBtn']){
       const b=$(id);if(!b)continue;
       b.style.left=handEl.offsetLeft+g.right+14-tb.offsetLeft+'px';b.style.top=y+'px';
@@ -3686,9 +3691,14 @@ function placeActionBtns(){
   {const b=$('#btns');if(!phoneRows())b.style.bottom='';if(!(on&&isPhone()))b.style.columnGap=''}
   // the test version's side hands fill the table's sides, so the buttons stand in a row beside your hand instead
   if(on&&TEST){
-    const b=$('#btns'),top=h.height-b.offsetHeight-6+'px';
-    b.style.setProperty('--d','64px');
-    b.style.left=h.width-b.offsetWidth+'px';
+    // (the buttons stand in a column right of the sorting column, level with its first button; 继续 right of them)
+    const b=$('#btns'),w=$('.handwrap').getBoundingClientRect(),colEls=['#fixBtn','#splitBtn','#sortBtn','#undoBtn'].map(i=>$(i)).filter(Boolean);
+    if(!colEls.length)return;
+    const fx=colEls[0].getBoundingClientRect(),colR=Math.max(...colEls.map(e=>e.getBoundingClientRect().right));
+    const top=fx.top-w.top+'px',left=colR-w.left+10+'px';
+    if(b.style.left!==left)b.style.left=left;
+    const go=$('#goBtn');
+    if(go){go.style.left=(b.hidden||!b.offsetWidth?colR-w.left+10:colR-w.left+10+b.offsetWidth+10)+'px';go.style.top=top}
     if(b.style.top!==top){b.style.top=top;if(pileGroups.length&&!b.hidden)pileRefit()}
     for(const id of ['#deckBtn','#readyBtn','#nextBtn']){
       const e=$(id);if(!e)continue;
@@ -5452,7 +5462,18 @@ function rowsOf(units,k=3){
   for(let r=k,i=n;r>0&&i>0;r--){const b=best[r][i];if(b.same)continue;rows.unshift(units.slice(b.at,i));i=b.at}
   return rows;
 }
-const rowsHTML=(units,L,picked,k)=>rowsOf(units,k).map(r=>`<div class="prow">${
+// the 2号 and 4号 hands: groups in order into rows of at most six cards each (a bomb of more than six stands alone in its row)
+function rowsMax6(units){
+  const rows=[];let cur=[],n=0;
+  for(const u of units){
+    const m=u.cards.length;
+    if(cur.length&&n+m>6){rows.push(cur);cur=[];n=0}
+    cur.push(u);n+=m;
+  }
+  if(cur.length)rows.push(cur);
+  return rows;
+}
+const rowsHTML=(units,L,picked,k)=>(Array.isArray(k)?k:rowsOf(units,k)).map(r=>`<div class="prow">${
   r.map(u=>`<span class="grp"${u.name?` title="${u.name}"`:''}>${u.cards.map(c=>cardHTML(c,L,picked&&picked.has(c.id)?'sel':'')).join('')}</span>`).join('')}</div>`).join('');
 const handRowsHTML=(cards,L,grouped)=>rowsHTML(handUnits(cards,L,grouped),L);
 const curRec=()=>TREC.rounds[TREC.rounds.length-1];
@@ -5553,7 +5574,7 @@ function testPeeks(){
       host.appendChild(d);
     }
     const units=ua?seatGroups(p).map(gr=>({cards:gr.map(id=>h.find(c=>c.id===id)),name:''})):handUnits(h,G.L,grouped);
-    el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked,p===2?(h.length<=14&&$('#table').clientWidth*.52>=units.reduce((t,u)=>t+(1.22+.42*(u.cards.length-1)),0)*tcwNow()?1:2):5):'';
+    el.querySelector('.prows').innerHTML=h.length?rowsHTML(units,G.L,picked,p!==2?rowsMax6(units):(h.length<=14&&$('#table').clientWidth*.52>=units.reduce((t,u)=>t+(1.22+.42*(u.cards.length-1)),0)*tcwNow()?1:2)):'';
     const old=el.querySelector('.tgrp');if(old)old.remove();
     if(btns)el.querySelector('.pbody').insertAdjacentHTML('beforeend',btns);
   }
@@ -5594,23 +5615,24 @@ function testPlays(){
   box.innerHTML=`<div class="tpb" style="left:${R.left}px;top:${R.top}px;width:${R.w}px;height:${R.h}px">${G.log.map((x,i)=>TEST||i>=from?item(x,i):'').join('')}${rest}</div>`;
   // the cards as large as will still fit (in 极简出牌区 never smaller than 24 wide: past that the box scrolls, to the
   // newest play)
-  // (the test version picks a size when the first play of the round lands and keeps it, going smaller only when the box is
-  // full: so the cards do not change size from one play to the next)
+  // (the test version's cards keep one size, whatever is in the box; 极简出牌区 goes smaller as the box fills, to a limit)
   const b=box.firstElementChild;
   let start=72;
   if(TEST){
-    const k=G.round+'|'+R.w+'|'+R.h;
+    // one size for good (until the box itself changes size): a full box scrolls, to the newest play
+    const k=R.w+'|'+R.h;
     if(!TPW||TPW.k!==k)TPW={k,w:Math.max(26,Math.min(44,Math.round(R.w/11)))};
-    start=TPW.w;
+    b.style.setProperty('--mcw',TPW.w+'px');
+    b.scrollTop=b.scrollHeight;
+    return;
   }
   let used=start;
-  for(let w=start;w>=(TEST?12:24);w-=2){
+  for(let w=start;w>=24;w-=2){
     used=w;
     b.style.setProperty('--mcw',w+'px');
     if(b.scrollHeight<=b.clientHeight+1&&b.scrollWidth<=b.clientWidth+1)break;
   }
-  if(TEST)TPW.w=used;
-  if(!TEST)b.scrollTop=b.scrollHeight;
+  b.scrollTop=b.scrollHeight;
 }
 let TPW=null;
 // 极简出牌区: the box is fixed by the screen, not by what is happening round the table (a clock widening a plate, a message,
@@ -6106,7 +6128,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1103-2347';
+const VERSION='1104-0753';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
