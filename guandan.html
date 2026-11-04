@@ -558,6 +558,14 @@ html.phone body:not(.test) #myPlace{margin-bottom:2px}
 .overlay.dock{background:transparent;align-items:flex-end;justify-content:center;pointer-events:none}
 .overlay.dock .panel{pointer-events:auto;width:min(440px,calc(50vw - 72px));gap:10px;padding:16px 20px;box-shadow:0 -8px 32px rgba(0,0,0,.5)}
 .overlay.dock .panel h2{font-size:23px}
+/* the test version's round summary: a small box in the bottom left corner, clear of the played cards */
+body.test .overlay.dock{justify-content:flex-start;padding:0 0 6px 8px;box-sizing:border-box}
+body.test .overlay.dock .panel{width:236px;padding:8px 12px;gap:6px;border-radius:10px}
+body.test .overlay.dock .panel h2{font-size:15px}
+body.test .overlay.dock .panel p{font-size:12px;line-height:1.4}
+body.test .overlay.dock .panel .muted{display:none}
+body.test .overlay.dock .panel .btns{flex-wrap:wrap;gap:6px}
+body.test .overlay.dock .panel .btn:not(.round){font-size:12px;padding:3px 10px;min-height:0}
 .places{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .places span{display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 4px;border-radius:8px;background:var(--shade);border:1px solid var(--line);font-size:14px}
 .places b{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.1em}
