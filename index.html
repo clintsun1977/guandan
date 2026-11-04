@@ -764,9 +764,9 @@ body.mini .tpb{overflow-x:hidden;overflow-y:auto;pointer-events:auto;scrollbar-w
 /* a pass: a solid frame like the plays, its 过 in the middle with no dashed frame of its own */
 body.mini .tq.pass{border-style:solid}
 body.mini .pchip{border:0;width:auto;align-self:stretch;min-width:calc(var(--mcw)*1.2)}
-body.mini .mcs{gap:0}
-body.mini .mc{align-items:flex-start;padding-left:calc(var(--mcw)*.1);box-sizing:border-box}
-body.mini .mc+.mc{margin-left:calc(var(--mcw)*-.34)}
+body.mini .mcs,body.test .tpb .mcs{gap:0}
+body.mini .mc,body.test .tpb .mc{align-items:flex-start;padding-left:calc(var(--mcw)*.1);box-sizing:border-box}
+body.mini .mc+.mc,body.test .tpb .mc+.mc{margin-left:calc(var(--mcw)*-.34)}
 body:not(.test) .tq{pointer-events:none;cursor:default}
 body:not(.test) .tq:hover{outline:none}
 body.test #miniBtn,html.phone #miniBtn{display:none}
@@ -6085,7 +6085,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1103-2323';
+const VERSION='1103-2329';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

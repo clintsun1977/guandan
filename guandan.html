@@ -760,9 +760,9 @@ body.mini .tpb{overflow-x:hidden;overflow-y:auto;pointer-events:auto;scrollbar-w
 /* a pass: a solid frame like the plays, its 过 in the middle with no dashed frame of its own */
 body.mini .tq.pass{border-style:solid}
 body.mini .pchip{border:0;width:auto;align-self:stretch;min-width:calc(var(--mcw)*1.2)}
-body.mini .mcs{gap:0}
-body.mini .mc{align-items:flex-start;padding-left:calc(var(--mcw)*.1);box-sizing:border-box}
-body.mini .mc+.mc{margin-left:calc(var(--mcw)*-.34)}
+body.mini .mcs,body.test .tpb .mcs{gap:0}
+body.mini .mc,body.test .tpb .mc{align-items:flex-start;padding-left:calc(var(--mcw)*.1);box-sizing:border-box}
+body.mini .mc+.mc,body.test .tpb .mc+.mc{margin-left:calc(var(--mcw)*-.34)}
 body:not(.test) .tq{pointer-events:none;cursor:default}
 body:not(.test) .tq:hover{outline:none}
 body.test #miniBtn,html.phone #miniBtn{display:none}
