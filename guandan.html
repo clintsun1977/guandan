@@ -713,6 +713,22 @@ body.test .overlay.dock .panel .btn:not(.round){font-size:12px;padding:3px 10px;
   18%{transform:translate(-50%,-50%) rotate(-4deg)}94%{opacity:1;transform:translate(-50%,-50%) rotate(-4deg)}100%{opacity:0;transform:translate(-50%,-38%) rotate(-6deg)}}
 @keyframes champGlow{50%{box-shadow:0 0 0 3px var(--felt-deep),0 0 0 6px #fff3c4,0 0 120px #ffd56e;filter:brightness(1.12)}}
 .gloom{filter:grayscale(1) brightness(.7);transition:filter .6s}
+/* the match is drawn: eight seconds - the red side glows from the left, the blue side from the right, and a banner half red
+   and half blue sways like a balance over a handshake */
+.fx-tie{position:fixed;inset:0;z-index:88;pointer-events:none;
+  background:radial-gradient(circle at 12% 55%,color-mix(in srgb,var(--red-team) 45%,transparent),transparent 55%),radial-gradient(circle at 88% 55%,color-mix(in srgb,var(--blue-team) 45%,transparent),transparent 55%),rgba(8,22,17,.55);
+  animation:tieFade 8s ease-in-out forwards}
+@keyframes tieFade{0%{opacity:0}8%{opacity:1}92%{opacity:1}100%{opacity:0}}
+.fx-champ.tie{animation:tieIn 8s cubic-bezier(.2,.9,.3,1.2) forwards}
+.fx-champ.tie b{color:#fff;background:linear-gradient(90deg,var(--red-team) 0 50%,var(--blue-team) 50% 100%);padding:10px 34px 10px 50px;
+  box-shadow:0 0 0 3px var(--felt-deep),0 0 0 6px #e9eef2,0 0 50px rgba(255,255,255,.35);animation:none}
+.fx-champ.tie .hs{font-size:clamp(40px,6vw,76px);line-height:1;animation:tieHs 1.2s ease-in-out infinite}
+.fx-champ.tie small{color:#eef3f6;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+@keyframes tieHs{50%{transform:scale(1.18)}}
+@keyframes tieIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-8deg)}7%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(3deg)}
+  12%{transform:translate(-50%,-50%) scale(1) rotate(-3deg)}22%{transform:translate(-50%,-50%) rotate(3deg)}34%{transform:translate(-50%,-50%) rotate(-2deg)}
+  46%{transform:translate(-50%,-50%) rotate(2deg)}60%{transform:translate(-50%,-50%) rotate(-1deg)}74%{transform:translate(-50%,-50%) rotate(0)}
+  94%{opacity:1;transform:translate(-50%,-50%) rotate(0)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)}}
 /* on a computer the header gives its row back to the table: the name and the two sides' levels sit in the
    top-left corner and the sound / rules / new-game buttons in the top-right, both over the felt */
 @media (min-width:700px){
@@ -1082,7 +1098,7 @@ body.test .tside:not(.open){display:none}
     </div>
     <div class="lobby-rules" id="rulesBox">
       <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
-      <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="keep">一直打</button></div>
+      <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="once">一次机会</button></div>
       <div class="rule-note" id="rulesNote"></div>
     </div>
     <div class="lobby-join" id="joinRow" hidden>
@@ -2227,7 +2243,7 @@ function resetGame(){
   // levels start at 2 for both sides; lvlTeam counts from the host's side, so a seat across a gap of one sees it flipped
   G={levels:[2,2],lvlTeam:NET.off%2,L:2,round:0,hands:[[],[],[],[]],trick:null,passes:0,last:[null,null,null,null],
      out:[],prevOut:null,turn:-1,phase:'start',notice:'',fresh:[],returns:[],leader:0,result:null,tok:(G&&G.tok||0)+1,
-     trickPlays:[],heapN:0,ready:[],aFails:[0,0],nextReady:[]};
+     trickPlays:[],heapN:0,ready:[],aFails:[0,0],aOut:null,nextReady:[]};
 }
 function newGame(){
   resetGame();render();
@@ -2677,7 +2693,9 @@ function sortHints(plays){
   const own=[];
   for(const gr of G.fixed){
     const cards=gr.map(id=>hand.find(c=>c.id===id));
-    const r=analyze(cards,L).filter(a=>beats(a,cur)&&(!isBomb(a)||cur&&isBomb(cur))).sort((a,b)=>strength(a)-strength(b))[0];
+    // (a fixed bomb is read from its own cards, so one made with a wild card is found even when the wild card that the
+    // general search would use sits in another fixed group; leading, bombs are left to the bomb tier as before)
+    const r=analyze(cards,L).filter(a=>beats(a,cur)&&(!isBomb(a)||cur)).sort((a,b)=>strength(a)-strength(b))[0];
     if(r)own.push({...r,cards,wu:cards.filter(c=>isWild(c,L)).length});
   }
   const act=hand.filter(c=>!fixed.has(c.id)),ag=handGroups(act,L);
@@ -2802,18 +2820,25 @@ function finishRound(){
   const up=pos===1?3:pos===2?2:1;
   const before=G.levels[team];
   let win=false;
-  const aTeam=G.lvlTeam,atA=G.L===14;
-  if(G.lvlTeam===team&&before===14&&pos<=2)win=true;
+  const aTeam=G.lvlTeam,atA=G.L===14,once=RULES.aFail==='once';
+  // (一次机会: a side that has used its three tries can no longer win by passing A, it only plays on at A)
+  if(G.lvlTeam===team&&before===14&&pos<=2&&!(once&&G.aOut===team))win=true;
   else G.levels[team]=Math.min(14,before+up);
   const after=G.levels[team];
-  // each side gets three tries at A: after the third miss the match is drawn, or that side starts again from 2
-  let aTry=0,draw=false,reset=false;
-  if(atA&&!win&&RULES.aFail!=='keep'){
+  // each side gets three tries at A: after the third miss the match is drawn, or that side starts again from 2, or (一次机会)
+  // the other side gets one round at A when its turn comes: passing it wins the match, missing it draws the match
+  let aTry=0,draw=false,reset=false,spent=false,lastTry=false;
+  if(atA&&!win){
     const f=G.aFails||(G.aFails=[0,0]);
-    aTry=++f[aTeam];
-    if(aTry>=3){if(RULES.aFail==='draw')draw=true;else{G.levels[aTeam]=2;f[aTeam]=0;reset=true}}
+    if(once){
+      if(G.aOut==null){aTry=++f[aTeam];if(aTry>=3){G.aOut=aTeam;spent=true}}
+      else if(aTeam!==G.aOut){draw=true;lastTry=true}
+    }else{
+      aTry=++f[aTeam];
+      if(aTry>=3){if(RULES.aFail==='draw')draw=true;else{G.levels[aTeam]=2;f[aTeam]=0;reset=true}}
+    }
   }
-  G.result={order:G.out.slice(),team,up,before,after,win,draw,reset,aTry,aTeam,playedLevel:G.L};
+  G.result={order:G.out.slice(),team,up,before,after,win,draw,reset,aTry,aTeam,spent,lastTry,aOut:G.aOut,playedLevel:G.L};
   if(TEST)testRoundEnd();
   G.prevOut=G.out.slice();
   G.lvlTeam=team;
@@ -2833,7 +2858,7 @@ function finishRound(){
   for(let k=k0;k<4;k++)later(()=>{G.reveal=k+1;render();showRest(G.out[k]);celebrate(G.out[k],k,dbl)},END_SHOW_MS+700+(k-k0)*500);
   later(()=>{
     if(win)victory(team,showResult);
-    else if(draw){Sound.play('ding');showResult()}
+    else if(draw)tieGame(showResult)
     else{Sound.play(team===0?'win':'lose');showResult()}
   },END_SHOW_MS+700+(4-k0)*500+1400);
 }
@@ -3444,9 +3469,14 @@ function render(){
   phoneRefit();
   syncPauseBtn();
   for(let p=0;p<4;p++){const el=p===0?$('#mebar'):$('#seat'+p);el.classList.toggle('t-red',isRedSeat(p));el.classList.toggle('t-blue',!isRedSeat(p))}
-  $('#lv0').textContent=rankName(G.levels[0]);
-  $('#lv1').textContent=rankName(G.levels[1]);
-  for(const t of [0,1]){const n=(G.aFails||[0,0])[t];$('#lvx'+t).textContent=G.levels[t]===14&&n&&RULES.aFail!=='keep'?`余${3-n}次`:''}
+  // a side playing A shows which try at A it is on: A1, A2 or A3 (the third is the last)
+  for(const t of [0,1]){
+    const n=(G.aFails||[0,0])[t];
+    // (一次机会: once the other side has used its three tries, this side's turn at A is its one last try)
+    const last=G.levels[t]===14&&G.aOut!=null&&G.aOut!==t;
+    $('#lv'+t).textContent=G.levels[t]===14?(last?'A末':`A${Math.min(3,n+1)}`):rankName(G.levels[t]);
+    $('#lvx'+t).textContent='';
+  }
   for(const t of [0,1]){
     const el=$('#team'+t);
     el.classList.toggle('playing',G.lvlTeam===t);
@@ -4600,6 +4630,42 @@ function victory(team,done){
   at(800,()=>addEventListener('pointerdown',end,true));
   setTimeout(end,VICTORY_MS);
 }
+// the match is drawn (A missed on the one last try): eight seconds, neither side's - a banner half red and half blue sways
+// like a balance above a handshake, red confetti arcs in from the left and blue from the right and they meet in the middle,
+// and a bell rings twice. A tap anywhere skips to the result, as with victory
+const TIE_MS=8000;
+function tieGame(done){
+  if(TEST){Sound.play('ding');done();return}
+  const m=$('#table').getBoundingClientRect(),tok=G.tok;
+  const bg=document.createElement('div');bg.className='fx-tie';document.body.appendChild(bg);
+  const b=document.createElement('div');b.className='fx fx-champ tie';
+  b.innerHTML='<b>平局</b><span class="hs">🤝</span><small>双方握手言和</small><i>点任意处看结果</i>';
+  b.style.left=m.left+m.width/2+'px';b.style.top=m.top+m.height*.42+'px';document.body.appendChild(b);
+  let over=false;
+  const at=(ms,fn)=>setTimeout(()=>{if(!over)fn()},ms);
+  Sound.play('ding');at(1800,()=>Sound.play('ding'));at(4200,()=>Sound.play('fanfare'));
+  const css=getComputedStyle(document.documentElement),red=css.getPropertyValue('--red-team').trim()||'#d64545',blue=css.getPropertyValue('--blue-team').trim()||'#3a78d8';
+  particles((ps,age)=>{
+    if(age>TIE_MS-2500)return;
+    for(const side of [-1,1]){
+      for(let i=0;i<2;i++)ps.push({x:side<0?-10:innerWidth+10,y:innerHeight*(.55+Math.random()*.3),vx:-side*(5+Math.random()*6)*innerWidth/900,vy:-(7+Math.random()*7),
+        r:Math.random()*6,vr:(Math.random()-.5)*.4,w:6+Math.random()*6,h:4+Math.random()*5,c:side<0?red:blue,life:1});
+    }
+  },(cx,p)=>{
+    p.vy+=.22;p.vx*=.995;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.life-=.004;
+    cx.save();cx.globalAlpha=Math.max(0,p.life);cx.translate(p.x,p.y);cx.rotate(p.r);
+    cx.fillStyle=p.c;cx.fillRect(-p.w/2,-p.h/2,p.w,p.h*Math.abs(Math.cos(p.r*2)));cx.restore();
+    return p.life>0&&p.y<innerHeight+20;
+  },TIE_MS-1500);
+  const end=()=>{
+    if(over)return;over=true;
+    fxCut=performance.now();bg.remove();b.remove();
+    removeEventListener('pointerdown',end,true);
+    if(G.tok===tok)done();
+  };
+  at(800,()=>addEventListener('pointerdown',end,true));
+  setTimeout(end,TIE_MS);
+}
 // a crying face pops up by the seat and sobs: tears stream down its cheeks and drip off, splashing where they land
 function tears(x,y,ground){
   if(reduceMotion())return;
@@ -4739,7 +4805,10 @@ function showResult(){
   const upText=['','单下，升 1 级','对手二人分列二、三游，升 2 级','双下对手，升 3 级'][r.up];
   const side=t=>t===0?'我方':'对方',next=rankName(G.levels[G.lvlTeam]);
   let head,body;
-  if(r.draw){
+  if(r.draw&&r.lastTry){
+    head='冲 A 没有成功，本场平局';
+    body=`<p>${side(r.aOut)}三次打 A 都没打过，${side(r.aTeam)}轮到打 A 只有一次机会，也没打过。</p><p class="muted">共打了 ${G.round} 局。</p>`;
+  }else if(r.draw){
     head='三次打 A 未过，本场平局';
     body=`<p>${side(r.aTeam)}打 A 三次都没有打过。</p><p class="muted">共打了 ${G.round} 局。</p>`;
   }else if(r.win){
@@ -4752,7 +4821,8 @@ function showResult(){
     head=ours?`我方升级：${rankName(r.before)} → ${rankName(r.after)}`:`对方升级：${rankName(r.before)} → ${rankName(r.after)}`;
     body=`<p>${upText}。下一局打 <b>${next}</b>，${dblText(r)}</p>`;
     if(r.before===14&&r.after===14)body=`<p>${side(r.team)}在 A 级，但队友是末游，没能打过 A。下一局继续打 A，${dblText(r)}</p>`;
-    if(r.reset)body+=`<p>${side(r.aTeam)}三次没打过 A，从 2 重新打。</p>`;
+    if(r.spent)body+=`<p>${side(r.aTeam)}三次打 A 都没打过。${side(1-r.aTeam)}轮到打 A 时只有一次机会：打过 A 赢下整场，没打过算双方平局。</p>`;
+    else if(r.reset)body+=`<p>${side(r.aTeam)}三次没打过 A，从 2 重新打。</p>`;
     else if(r.aTry)body+=`<p>${side(r.aTeam)}打 A 第 ${r.aTry} 次没过，还剩 ${3-r.aTry} 次机会。</p>`;
   }
   showPanel(`<h2>${head}</h2>${body}
@@ -4789,7 +4859,7 @@ function showRules(){
     <li>炸弹从小到大：4 张 &lt; 5 张 &lt; 同花顺 &lt; 6 张 &lt; 7 张 … &lt; 四个王（天王炸）。炸弹可以压任何非炸弹牌型。</li>
     <li>头游一方升级：队友二游升 3 级，三游升 2 级，末游升 1 级。打到 A 并且队友不是末游，赢下整场。</li>
     <li>${RULES.trib?'从第二局起进贡：末游把最大的牌给头游，头游还一张 10 或以下的牌；双下则两人都进贡。要进贡的一方合起来有两张大王（一人两张，或双下时两人各一张）就可以抗贡：这一局不进贡、不还贡，由头游先出。':'本场不进贡：每局由上一局的头游先出。'}</li>
-    <li>${RULES.aFail==='keep'?'打 A 不限次数，一直打到打过为止。':`每一方打 A 有三次机会，三次都没打过${RULES.aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。`}</li>
+    <li>${RULES.aFail==='once'?'每一方打 A 有三次机会。一方三次都没打过后，对方轮到打 A 时只有一次机会：打过算对方赢，没打过算双方平局。':`每一方打 A 有三次机会，三次都没打过${RULES.aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。`}</li>
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
     <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排。理牌方式按钮每点一下，依次换成“横式”、“竖式”、“手持”，按钮上写的是现在用的方式。“竖式”按牌的大小从左到右排，同样点数的牌从下往上按红心、黑桃、方块、梅花叠成一列，一眼就能看出每个点数有几张。按住没选中的牌滑过几张，是连选这些牌；从选中的牌上按住拖动，是把选中的牌一起挪到别处（也可以拖进左边的成组区）。平铺模式也一样。“复原”恢复成按大小排好的样子。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
@@ -5130,10 +5200,12 @@ $('#sfBtn').onclick=()=>{
   const list=straightFlushes();
   if(!list.length){setMsg('手里的牌组不成同花顺');return}
   // every one has been shown: one more press puts the picked cards down again
-  if(sfIdx>=list.length){sfIdx=0;sel=new Set();renderHand();Sound.play('select');return}
+  if(sfIdx>=list.length){sfIdx=0;sel=new Set();renderHand();setMsg(`共 ${list.length} 种同花顺，已放下`);Sound.play('select');return}
   const k=sfIdx,f=list[k];sfIdx++;
   sel=new Set(f.cards.map(c=>c.id));
   renderHand();
+  // (how many there are and which one is lifted, never the ranks or suits)
+  setMsg(`共 ${list.length} 种同花顺，抬起的是第 ${k+1} 种`);
   Sound.play('select');
 };
 $('#rulesBtn').onclick=showRules;
@@ -5777,7 +5849,7 @@ function testRoundEnd(){
   const rec=curRec();
   if(!rec||!rec.live||rec.g!==G.round)return;
   const r=G.result,side=t=>t===0?'我方':'对方';
-  rec.result=r.order.map((p,i)=>PLACE[i]+' '+NAMES[p]).join('，')+'；'+(r.draw?'三次打 A 未过，平局':r.win?`${side(r.team)}打过 A，赢下整场`:
+  rec.result=r.order.map((p,i)=>PLACE[i]+' '+NAMES[p]).join('，')+'；'+(r.draw?(r.lastTry?'冲 A 没有成功，平局':'三次打 A 未过，平局'):r.win?`${side(r.team)}打过 A，赢下整场`:
     r.before===r.after?`${side(r.team)}在 A 级，没能打过`:`${side(r.team)}升 ${r.up} 级（${rankName(r.before)} → ${rankName(r.after)}）`);
   testStore();
 }
