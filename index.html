@@ -481,6 +481,8 @@ html:not(.phone) body:not(.test) .seat .who,html:not(.phone) body:not(.test) #me
 html:not(.phone) body:not(.test) .seat .who .name,html:not(.phone) body:not(.test) #myName{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 html:not(.phone) body:not(.test) .seat .who .vc,html:not(.phone) body:not(.test) #mebar .meinfo .vc{position:absolute;top:auto;bottom:calc(100% + 2px);right:2px;z-index:6}
 html:not(.phone) body:not(.test) #seat2 .whorow>.clock{position:absolute;left:calc(100% + 10px);top:50%;translate:0 -50%;margin:0}
+/* your partner's count of cards stands right of the plate after the clock, as yours does */
+html:not(.phone) body:not(.test) #seat2 .whorow>.cnt{left:calc(100% + 60px);top:50%;translate:0 -50%}
 html:not(.phone) body:not(.test) #mebar{position:relative;display:block;height:38px;min-height:38px}
 html:not(.phone) body:not(.test) #mebar .left{position:static;display:block}
 html:not(.phone) body:not(.test) #mebar .whorow{position:absolute;left:50%;top:0;translate:-50% 0;gap:0}
@@ -6794,7 +6796,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1105-0900';
+const VERSION='1105-0947';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
