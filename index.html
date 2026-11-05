@@ -465,6 +465,11 @@ html.phone body:not(.test) #pile{--cw:clamp(54px,min(18vw,15vh),88px)}
 html:not(.phone) .seat .cnt{position:absolute;top:calc(100% + 6px)}
 html:not(.phone) #seat3 .cnt{left:0}
 html:not(.phone) #seat1 .cnt{right:0}
+/* the side players' alarm clock hangs under the name plate (under the card count too, when it shows) instead of beside the
+   plate, so the plate stays narrow and the table's cards have the room; it is centred under the plate, which is wider than it
+   (not on a phone: its plates are laid out as before) */
+html:not(.phone) #seat3 .whorow>.clock,html:not(.phone) #seat1 .whorow>.clock{position:absolute;top:calc(100% + 10px);left:50%;translate:-50% 0;margin:0}
+html:not(.phone) #seat3 .whorow:has(>.cnt:not(:empty))>.clock,html:not(.phone) #seat1 .whorow:has(>.cnt:not(:empty))>.clock{top:calc(100% + 10px + 46px)}
 html:not(.phone) #seat2 .cnt{left:50%;translate:-50% 0}
 /* a computer or tablet's score: each side's level as a white number on its colour, the side being played ringed in gold */
 html:not(.phone) .score .tn{display:none}
@@ -621,6 +626,20 @@ body.test .overlay.dock .panel .btn:not(.round){font-size:12px;padding:3px 10px;
 .seat-btn:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .lobby-ver{font-size:13px;color:var(--muted);opacity:.7}
 .lobby-go{font-size:23px;padding:10px 20px;border-radius:14px}
+/* 选级: the button in the middle of the lobby table, and the picker laid over the table */
+.lobby-table{position:relative}
+.lobby-felt{display:flex;align-items:center;justify-content:center;padding:4px}
+.level-btn{font:inherit;font-size:20px;font-weight:700;padding:8px 10px;border-radius:12px;cursor:pointer;background:rgba(0,0,0,.25);color:var(--gold);border:2px solid var(--gold);white-space:nowrap}
+.level-btn.on{background:var(--gold);color:var(--on-gold)}
+.level-pick{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:8px 8px;border-radius:14px;background:var(--felt);border:2px solid var(--gold);box-shadow:0 8px 28px rgba(0,0,0,.55)}
+.level-pick[hidden]{display:none}
+.level-pick h3{margin:0;font-size:20px;color:var(--gold);text-align:center}
+.level-row{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center}
+.level-k{font-size:16px;color:var(--muted);margin-right:4px}
+.level-pick .rule-btn{min-width:34px;padding:4px 5px;font-size:16px}
+.level-pick .lv-red{border-color:#c8514b}.level-pick .lv-blue{border-color:#4f86c6}
+.level-pick .rule-btn.on.lv-red{background:#c8514b;border-color:#c8514b;color:#fff}
+.level-pick .rule-btn.on.lv-blue{background:#4f86c6;border-color:#4f86c6;color:#fff}
 /* the table rules: chosen by whoever plays alone or opens the room, shown greyed to friends who join */
 .lobby-rules{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--shade)}
 .rule-row{display:grid;grid-template-columns:116px;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;align-items:center}
@@ -1115,9 +1134,10 @@ body.test .tside:not(.open){display:none}
     <div class="lobby-table" id="lobbyTable">
       <button class="seat-btn t-red" data-seat="N" style="grid-area:n"><b>北</b><span>空位</span></button>
       <button class="seat-btn t-blue" data-seat="W" style="grid-area:w"><b>西</b><span>空位</span></button>
-      <div class="lobby-felt" style="grid-area:c"></div>
+      <div class="lobby-felt" style="grid-area:c"><button class="level-btn" id="levelBtn" type="button">选级</button></div>
       <button class="seat-btn t-blue" data-seat="E" style="grid-area:e"><b>东</b><span>空位</span></button>
       <button class="seat-btn t-red" data-seat="S" style="grid-area:s"><b>南</b><span>空位</span></button>
+      <div class="level-pick" id="levelPick" hidden></div>
     </div>
     <button class="btn primary lobby-go" id="sitBtn" disabled>坐下开始</button>
     <div class="lobby-ver" id="verTag"></div>
@@ -2254,7 +2274,7 @@ const TV={open:false};
 const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),lobby:{S:null,E:null,N:null,W:null},mics:{}};
 const isHost=()=>NET.mode!=='guest';
 // table rules, chosen in the lobby (online, by the host): tribute on or off, and what happens after three failed tries at A
-const RULES={trib:true,aFail:'draw'};
+const RULES={trib:true,aFail:'draw',startLevel:2,startSide:''};
 const isHumanSeat=p=>NET.humans.has(p);
 const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
 let hints=[],hintIdx=0;
@@ -2265,6 +2285,14 @@ function resetGame(){
   G={levels:[2,2],lvlTeam:NET.off%2,L:2,round:0,hands:[[],[],[],[]],trick:null,passes:0,last:[null,null,null,null],
      out:[],prevOut:null,turn:-1,phase:'start',notice:'',fresh:[],returns:[],leader:0,result:null,tok:(G&&G.tok||0)+1,
      trickPlays:[],heapN:0,ready:[],aFails:[0,0],aOut:null,nextReady:[]};
+  // 选级: the level chosen in the lobby is played from the first round, by the side chosen (seats are named by direction, so
+  // each page works out which side that is from where it sits)
+  const sl=RULES.startLevel||2,side=RULES.startSide;
+  const hd=NET.mode==='solo'?myDir:NET.hostDir;
+  if((sl!==2||side)&&DIRS.includes(hd)){
+    const team=side?toLocal(absOf(side[0],hd))%2:NET.off%2;
+    G.levels[team]=sl;G.lvlTeam=team;G.L=sl;
+  }
 }
 function newGame(){
   resetGame();render();
@@ -3042,6 +3070,12 @@ function applyEvt(e){
     case'humans':
       setHumans(e.list.map(toLocal),e.names);
       if(e.left)playerLeft(e.left,e.how);
+      if(e.back){
+        setMsg(`${e.back} 回到了游戏`);
+        // the seat was the computer's a moment ago: if it was thinking about its move, the player gets the turn now
+        const c=G.clock;
+        if(G.phase==='play'&&c&&typeof c.who==='number'&&c.think!=null&&isHumanSeat(c.who)){G.clock={who:c.who,left:PLAY_MS,total:PLAY_MS};renderClocks()}
+      }
       setTimeout(startNextIfReady,0);
       return true;
     case'play':case'pass':{
@@ -5369,8 +5403,8 @@ function showStart(){
 }
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
-  Object.assign(RULES,{trib:true,aFail:'draw'});
-  try{Object.assign(RULES,JSON.parse(localStorage.getItem('guandan-rules')||'{}'))}catch(_){}
+  Object.assign(RULES,{trib:true,aFail:'draw',startLevel:2,startSide:''});
+  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){
@@ -5380,11 +5414,46 @@ function renderRules(){
     b.disabled=!mine;
   }
   $('#rulesNote').textContent=mine?'':'规则由房主选定';
+  renderLevel();
 }
+// 选级: what level is played from the first round, and which side plays it (the side of the south and north seats, or of the
+// east and west seats; none chosen means the side of whoever plays alone or opens the room, as before)
+const SIDE_NAME={SN:'南北',EW:'东西'};
+function renderLevel(){
+  const mine=lobbyMode!=='join',lv=RULES.startLevel||2,side=RULES.startSide||'',chosen=lv!==2||!!side;
+  const b=$('#levelBtn');
+  b.textContent=chosen?`打${rankName(lv)}${side?'·'+SIDE_NAME[side]:''}`:'选级';
+  b.classList.toggle('on',chosen);
+  const pk=$('#levelPick');
+  if(pk.hidden)return;
+  const lvBtns=[];for(let n=2;n<=14;n++)lvBtns.push(`<button type="button" class="rule-btn${n===lv?' on':''}" data-lv="${n}"${mine?'':' disabled'}>${rankName(n)}</button>`);
+  pk.innerHTML=`<div class="level-row"><span class="level-k">打几</span>${lvBtns.join('')}</div>
+    <div class="level-row"><span class="level-k">哪一方</span>
+      <button type="button" class="rule-btn lv-red${side==='SN'?' on':''}" data-side="SN"${mine?'':' disabled'}>南北</button>
+      <button type="button" class="rule-btn lv-blue${side==='EW'?' on':''}" data-side="EW"${mine?'':' disabled'}>东西</button>
+      ${mine?'<button type="button" class="rule-btn" data-lvreset="1">还原</button>':''}<button type="button" class="rule-btn" data-lvdone="1">好</button></div>
+    ${mine?'':'<div class="rule-note" style="text-align:center">由房主选定</div>'}`;
+}
+$('#levelBtn').onclick=()=>{
+  Sound.unlock();Sound.play('select');
+  const pk=$('#levelPick');pk.hidden=!pk.hidden;renderLevel();
+};
+$('#levelPick').addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.lvdone){$('#levelPick').hidden=true;renderLevel();return}
+  if(lobbyMode==='join')return;
+  if(t.dataset.lv)RULES.startLevel=+t.dataset.lv;
+  else if(t.dataset.side)RULES.startSide=RULES.startSide===t.dataset.side?'':t.dataset.side;
+  else if(t.dataset.lvreset){RULES.startLevel=2;RULES.startSide=''}
+  else return;
+  Sound.play('select');
+  renderLevel();
+  if(lobbyMode==='host')broadcastLobby();
+});
 ruleBtns.forEach(b=>b.addEventListener('click',()=>{
   if(lobbyMode==='join')return;
   if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else RULES.aFail=b.dataset.val;
-  try{localStorage.setItem('guandan-rules',JSON.stringify(RULES))}catch(_){}
+  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail}))}catch(_){}
   Sound.unlock();Sound.play('select');
   renderRules();
   if(lobbyMode==='host')broadcastLobby();
@@ -5406,7 +5475,7 @@ function setMode(m){
 function renderLobby(){
   const nick=nickNow(),solo=lobbyMode==='solo';
   for(const b of seatBtns){
-    const d=b.dataset.seat,me=d===myDir,who=NET.lobby[d],taken=!solo&&!!who&&!me;
+    const d=b.dataset.seat,me=d===myDir,who=NET.lobby[d],taken=!solo&&!!who&&!me&&!(NET.resumeMode&&who===nick);
     b.classList.toggle('mine',me);
     b.classList.toggle('bot',solo&&!!myDir&&!me);
     b.classList.toggle('taken',taken);
@@ -6636,7 +6705,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1104-1933';
+const VERSION='1104-2123';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -6792,8 +6861,9 @@ function openRoom(){
   peer.on('call',c=>VC.incoming(c));
   peer.on('connection',conn=>{
     conn.on('open',()=>{
-      if(NET.started){conn.send({t:'full'});setTimeout(()=>conn.close(),500);return}
       NET.conns.set(conn.peer,{conn,dir:'',name:'',seen:Date.now()});
+      // the game is on: a player who dropped out may come back to their seat (see hostResume)
+      if(NET.started){conn.send(resumeLobby());return}
       conn.send({t:'lobby',seats:NET.lobby,you:'',rules:RULES,ver:VERSION});
     });
     conn.on('data',d=>hostOnData(conn,d));
@@ -6815,6 +6885,7 @@ function hostOnData(conn,d){
     broadcastLobby();renderLobby();
     if(d.ver&&d.ver!==VERSION)lobbyStatus(`${info.name}的页面版本不同（${d.ver}），请他刷新页面`);
   }
+  if(d.t==='sit'&&NET.started){hostResume(conn,info,d);return}
   if(d.t==='act'&&NET.started&&info.dir&&!hostGuestAct(absOf(info.dir,NET.hostDir),d.e||{})&&conn.open)conn.send({t:'nope',k:(d.e||{}).k});
 }
 // a friend's move: only for their own seat, and a play must be legal, exactly what their own buttons check
@@ -6845,6 +6916,88 @@ function hostGuestAct(seat,e){
   act(e);
   return true;
 }
+/* ---------- coming back after a drop: the room number again, then the same seat, with the table as it stands ---------- */
+// the seats as a returning player sees them: a name where someone sits (or the computer plays for a player who never was),
+// empty where a player dropped out
+function resumeLobby(){
+  const seats={};
+  for(const d of DIRS){
+    const a=absOf(d,NET.hostDir);
+    seats[d]=a===0?(NET.names[0]||'房主'):NET.names[a]?(NET.humans.has(a)?NET.names[a]:null):'电脑';
+  }
+  return{t:'lobby',seats,you:'',rules:RULES,ver:VERSION,started:true};
+}
+// a player asks for a seat: free (the player dropped out), or held by a line that has gone quiet under the same name
+function hostResume(conn,info,d){
+  const dir=d.dir,name=String(d.name||'').replace(/[<>&"']/g,'').slice(0,8)||'玩家';
+  const a=DIRS.includes(dir)?absOf(dir,NET.hostDir):-1;
+  const holder=[...NET.conns.values()].find(v=>v!==info&&v.dir===dir);
+  const ok=a>0&&NET.names[a]&&(!NET.humans.has(a)||(holder&&holder.name===name));
+  if(!ok||info.dir){if(conn.open)conn.send(resumeLobby());return}
+  if(holder){holder.dir='';NET.conns.delete(holder.conn.peer);try{holder.conn.close()}catch(_){}}
+  info.dir=dir;info.name=name;NET.names[a]=name;
+  (NET.resumeQ||(NET.resumeQ=[])).push({conn,info,a});
+}
+// the table is still while it waits for the next step; a snapshot is only taken then
+function tableStill(){
+  if(!G||G.busy||G.stepWait!=null)return false;
+  switch(G.phase){
+    case'tribPick':case'return':case'prep':return true;
+    case'play':return G.turn>=0&&!G.tribHold;
+    case'roundEnd':case'over':return G.reveal>=4;
+  }
+  return false;
+}
+const REJ_SKIP=new Set(['inf','replay','ua','tgLock','tgKey','tgRound','stepGo','stepWait','myOrder','fixed','rest','fresh','pw','tribHold']);
+function snapG(){
+  return JSON.stringify(G,function(k,v){
+    if(this===G&&REJ_SKIP.has(k))return undefined;
+    if(v&&typeof v==='object'&&!Array.isArray(v)&&typeof v.id==='number'&&typeof v.r==='number')return{__c:v.id};
+    return v;
+  });
+}
+// the host's picture of the table turned to the view of the seat k places further round (seat 0 is always yourself, and the
+// two sides swap places when k is odd)
+function rotateG(g,k){
+  const f=i=>typeof i==='number'&&i>=0?(i-k+4)%4:i;
+  const fl=a=>Array.isArray(a)?a.map(f):a;
+  const perm=a=>{if(!Array.isArray(a))return a;const o=[];for(let i=0;i<4;i++)o[f(i)]=a[i];return o};
+  const keyed=o=>{if(!o||typeof o!=='object')return o;const r={};for(const q in o)r[f(+q)]=o[q];return r};
+  const tm=t=>typeof t==='number'?(t+k)%2:t;
+  const swap=a=>Array.isArray(a)&&k%2?[a[1],a[0]]:a;
+  g.hands=perm(g.hands);g.last=perm(g.last);
+  for(const q of['out','prevOut','ready','nextReady','tribGivers'])g[q]=fl(g[q]);
+  for(const q of['turn','nextLeader','leader','firstLeader','cutter','shuffler','dealIdx','pausedBy'])if(q in g)g[q]=f(g[q]);
+  if(g.trick)g.trick.player=f(g.trick.player);
+  for(const t of g.trickPlays||[])t.p=f(t.p);
+  g.tribPick=keyed(g.tribPick);g.retPick=keyed(g.retPick);
+  for(const t of g.trib||[]){t.g=f(t.g);t.r=f(t.r)}
+  for(const t of[...(g.returns||[]),...(g.gives||[])]){t.from=f(t.from);t.to=f(t.to)}
+  if(g.kang){for(const x of g.kang.has||[])x.g=f(x.g);g.kang.leader=f(g.kang.leader)}
+  if(g.clock){const c=g.clock;if(typeof c.who==='number')c.who=f(c.who);if('seat'in c)c.seat=f(c.seat);if(c.seats)c.seats=fl(c.seats)}
+  if(g.result){const r=g.result;r.order=fl(r.order);r.team=tm(r.team);r.aTeam=tm(r.aTeam);r.aOut=tm(r.aOut)}
+  for(const e of g.log||[])e.p=f(e.p);
+  g.levels=swap(g.levels);g.aFails=swap(g.aFails);g.lvlTeam=tm(g.lvlTeam);g.aOut=tm(g.aOut);
+  return g;
+}
+function loadSnap(str,k){
+  const byId=new Map(makeDeck().map(c=>[c.id,c]));
+  return rotateG(JSON.parse(str,(key,v)=>v&&typeof v==='object'&&v.__c!==undefined?byId.get(v.__c):v),k);
+}
+// every half second: a returning player is sent the table as soon as it is still
+setInterval(()=>{
+  const q=NET.resumeQ;
+  if(NET.mode!=='host'||!q||!q.length||!tableStill())return;
+  for(const r of q.splice(0)){
+    if(!r.conn.open||NET.conns.get(r.conn.peer)!==r.info)continue;
+    const list=[...new Set([...NET.humans,r.a])];
+    const peers={0:NET.peer.id};
+    for(const v of NET.conns.values())if(v.dir)peers[absOf(v.dir,NET.hostDir)]=v.conn.peer;
+    r.conn.send({t:'resume',dir:r.info.dir,hostDir:NET.hostDir,names:NET.names,rules:RULES,peers,humans:list,snap:snapG()});
+    // after the picture, so the events that follow reach the returning page behind it
+    act({k:'humans',list,names:NET.names,back:r.info.name});
+  }
+},500);
 function hostOnClose(conn,how='drop'){
   const info=NET.conns.get(conn.peer);if(!info)return;
   NET.conns.delete(conn.peer);
@@ -6875,7 +7028,7 @@ function startOnline(){
   VC.start(peers);
 }
 function enterOnline(mode,hostDir,names){
-  NET.mode=mode;NET.off=absOf(myDir,hostDir);
+  NET.mode=mode;NET.hostDir=hostDir;NET.off=absOf(myDir,hostDir);
   setHumans(Object.keys(names).map(a=>toLocal(+a)),names);
   $('#myName').textContent=myNick;
   $('#lobby').hidden=true;
@@ -6884,6 +7037,7 @@ function enterOnline(mode,hostDir,names){
 function joinRoom(code){
   if(!peerReady())return;
   leaveNet();
+  NET.resumeSent=false;
   lobbyStatus('正在连接…');
   const peer=new Peer();
   NET.peer=peer;
@@ -6895,7 +7049,7 @@ function joinRoom(code){
     conn.on('open',()=>{NET.hostSeen=Date.now();lobbyStatus('选一个空座位');$('#roomCodeShow').textContent=code;$('#roomInfo').hidden=false;renderLobby()});
     conn.on('data',guestOnData);
     // (only the current line's closing counts: an old one closed on the way back in must not start another round)
-    conn.on('close',()=>{if(NET.hostConn===conn)hostGone()});
+    conn.on('close',()=>{if(NET.hostConn===conn)hostGone(true)});
   });
   peer.on('error',err=>{
     if(NET.peer!==peer)return;
@@ -6908,7 +7062,7 @@ function guestOnData(d){
   if(!d)return;
   NET.hostSeen=Date.now();
   if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
-  if(d.t==='bye'){hostGone();return}
+  if(d.t==='bye'){hostGone(false);return}
   if(d.t==='mics'){NET.mics=d.m||{};VC.paint();return}
   // the host turned a move down: stop waiting for it and let the player try again
   if(d.t==='nope'){NET.pending=false;if(['play','pass','return','tribute'].includes(d.k))setMsg('这一步没有成功，请再试一次',true);render();return}
@@ -6918,7 +7072,14 @@ function guestOnData(d){
     // back in after a broken line: the seat held before is taken again if it is still free
     else if(NET.rejoinDir&&!d.seats[NET.rejoinDir]){const r=NET.rejoinDir;NET.rejoinDir=null;sendSit(r)}
     if(d.rules)Object.assign(RULES,d.rules);
-    if(d.ver&&d.ver!==VERSION)lobbyStatus(OLD_PAGE);else lobbyStatus(myDir?'已坐下，等待房主开始':'选一个空座位',!!myDir);
+    NET.resumeMode=!!d.started;
+    if(d.ver&&d.ver!==VERSION)lobbyStatus(OLD_PAGE);
+    else if(d.started){
+      // the game is on: the seat that was yours is free (or still held by your old line, under your name)
+      const nick=nickNow(),mine=DIRS.filter(x=>d.seats[x]===null||d.seats[x]===nick&&x!==myDir);
+      if(!NET.resumeSent&&mine.length===1){NET.resumeSent=true;lobbyStatus('正在回到游戏…',true);sendSit(mine[0])}
+      else lobbyStatus(mine.length?'游戏已经开始，选你原来的座位':'游戏已经开始，没有空座位可以回去');
+    }else lobbyStatus(myDir?'已坐下，等待房主开始':'选一个空座位',!!myDir);
     renderLobby();
   }else if(d.t==='full'){
     NET.refused=true;lobbyStatus('这个房间已经开始打了');
@@ -6932,15 +7093,46 @@ function guestOnData(d){
     VC.start(d.peers);
   }else if(d.t==='evt'){
     NET.inbox.push(d.e);
+  }else if(d.t==='resume'){
+    resumeGame(d);
   }
 }
-function hostGone(){
+// back at the table after a drop: the host's picture of it, turned to this seat, and the game goes on from there
+function resumeGame(d){
+  myDir=d.dir;myNick=nickNow();
+  try{localStorage.setItem('guandan-nick',myNick)}catch(_){}
+  if(d.rules)Object.assign(RULES,d.rules);
+  NET.resumeSent=false;NET.resumeMode=false;NET.gone=false;NET.resumeAt=Date.now();
+  enterOnline('guest',d.hostDir,d.names);
+  resetGame();
+  Object.assign(G,loadSnap(d.snap,NET.off),{tok:G.tok+1,myOrder:[],fixed:[],rest:[],fresh:[],pw:[],busy:false,stepWait:null});
+  setHumans(d.humans.map(toLocal),d.names);
+  NET.inbox=[];NET.pending=false;sel=new Set();
+  hideOverlay();pileRebuild();
+  if(G.phase==='tribPick'){G.clock=null;tribWait()}
+  else if(G.phase==='return')retWait();
+  else if(G.phase==='play')startTurn();
+  else if(G.phase==='roundEnd'||G.phase==='over'){G.reveal=4;render();showResult()}
+  else render();
+  VC.start(d.peers);
+}
+// lost: the line broke (the host may still be there, so the table can be rejoined); otherwise the host said goodbye
+function hostGone(lost){
   if(NET.gone)return;
   VC.stop();
   if(NET.mode==='guest'){
     NET.gone=true;
-    showPanel(`<h2>房主退出了游戏</h2><p class="muted">可以和电脑继续打完这一场，也可以退出。</p>
-      <div class="btns"><button class="btn primary" id="soloOnBtn">和电脑继续打</button><button class="btn" id="backBtn">退出游戏</button></div>`);
+    const back=lost&&NET.lastCode;
+    showPanel(`<h2>${back?'和房主的连接断了':'房主退出了游戏'}</h2><p class="muted">${back?'可以重新回到游戏，或者':'可以'}和电脑继续打完这一场，也可以退出。</p>
+      <div class="btns">${back?'<button class="btn primary" id="rejoinBtn">回到游戏</button>':''}<button class="btn${back?'':' primary'}" id="soloOnBtn">和电脑继续打</button><button class="btn" id="backBtn">退出游戏</button></div>`);
+    if(back)$('#rejoinBtn').onclick=()=>{
+      // the same room number again; the host sends the table back to this seat. If nothing has come back in 15 seconds, ask again
+      hideOverlay();NET.gone=false;
+      const t0=Date.now();
+      setMsg('正在重新连接…');
+      joinRoom(NET.lastCode);
+      setTimeout(()=>{if((NET.resumeAt||0)<t0){NET.hostConn=null;hostGone(true)}},15000);
+    };
     $('#soloOnBtn').onclick=goSolo;
     $('#backBtn').onclick=()=>location.reload();
   }else if(lobbyMode==='join'){
@@ -6985,7 +7177,7 @@ setInterval(()=>{
     if(v.conn.open)v.conn.send({t:'ping'});
   }
   if(NET.hostConn&&NET.hostSeen&&now-NET.hostSeen>SILENT_MS){
-    const c=NET.hostConn;NET.hostSeen=0;try{c.close()}catch(_){}hostGone();
+    const c=NET.hostConn;NET.hostSeen=0;try{c.close()}catch(_){}hostGone(true);
   }
 },2000);
 window.claude?.hot?.snapshot?.(()=>({G}));
