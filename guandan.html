@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>掼蛋</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <!-- added to a phone's home screen, the page opens full screen, without the browser's bars (the way an iPhone gets it) -->
@@ -5492,12 +5492,30 @@ function checkRotate(){
   if(!G)return;
   renderHand();render();layoutHand();symPlates();centerRank();placeLastPlay();pileRebuild();
 }
-const rotSoon=()=>{for(const ms of [0,120,350,800,1500])setTimeout(checkRotate,ms)};
+// An iPad's browser (Safari, or Chrome on it) turned on its side keeps the page laid out at the old width and scales it to fit instead
+// (so the picture stays as it was, and its edge and buttons are cut off): the page's width is told again to the browser, which
+// then lays it out afresh. (The scale is fixed at 1 in the viewport above for the same reason)
+const VP_CONTENT=document.querySelector('meta[name=viewport]')?document.querySelector('meta[name=viewport]').content:'';
+function refreshViewport(){
+  const m=document.querySelector('meta[name=viewport]');
+  if(!m||TEST)return;
+  m.content='width=device-width, initial-scale=1';
+  setTimeout(()=>{m.content=VP_CONTENT},60);
+}
+const rotSoon=()=>{refreshViewport();setTimeout(refreshViewport,300);for(const ms of [0,120,350,800,1500])setTimeout(checkRotate,ms)};
 addEventListener('orientationchange',rotSoon);
 addEventListener('resize',rotSoon);
 if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener('change',rotSoon);
 if(window.visualViewport)visualViewport.addEventListener('resize',rotSoon);
 setInterval(checkRotate,1000);
+// the device held one way but the page laid out the other (checked a few times only: a keyboard or a split window can also do it)
+let shapeFix=0;
+setInterval(()=>{
+  const held=screen.orientation&&screen.orientation.type?screen.orientation.type.startsWith('landscape'):null;
+  if(held===null||!matchMedia('(pointer: coarse)').matches)return;
+  if(held===(innerWidth>innerHeight)){shapeFix=0;return}
+  if(shapeFix++<4)refreshViewport();
+},1500);
 // the page can be laid out before it is shown (zero width); lay the hand out again once it gets its real width
 let handW=0;
 if(window.ResizeObserver)new ResizeObserver(()=>{const w=handEl.clientWidth;if(w&&w!==handW){handW=w;layoutHand()}}).observe(handEl);
