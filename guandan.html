@@ -664,6 +664,17 @@ body.test .overlay.dock .panel .btn:not(.round){font-size:12px;padding:3px 10px;
 .level-pick .lv-red{border-color:#c8514b}.level-pick .lv-blue{border-color:#4f86c6}
 .level-pick .rule-btn.on.lv-red{background:#c8514b;border-color:#c8514b;color:#fff}
 .level-pick .rule-btn.on.lv-blue{background:#4f86c6;border-color:#4f86c6;color:#fff}
+/* 观战: once you are out, the cards each of the others still holds, face up in the groups they were arranged in, beside their plate
+   (the sides' under it, your partner's to the left of it) */
+.watchbox{position:absolute;z-index:4;display:flex;flex-wrap:wrap;gap:4px 5px;padding:4px 5px;border-radius:10px;background:rgba(0,0,0,.4);border:1px solid var(--line);pointer-events:none}
+.watchbox[hidden]{display:none}
+#seat3 .watchbox{top:calc(100% + 96px);left:0;width:152px}
+#seat1 .watchbox{top:calc(100% + 96px);right:0;width:152px;justify-content:flex-end}
+#seat2 .watchbox{top:0;right:calc(100% + 104px);width:min(320px,calc(50vw - 270px));justify-content:flex-end}
+.watchbox .wg{display:inline-flex;gap:1px;padding:1px;border-radius:6px;background:rgba(255,255,255,.1)}
+.watchbox .wc{font-style:normal;font-size:14px;line-height:1.3;padding:0 3px;border-radius:4px;background:var(--card);color:#222;min-width:1.7em;text-align:center}
+.watchbox .wc.red{color:var(--red)}
+.watchbox .wc.wild{box-shadow:0 0 0 1.5px var(--gold)}
 /* the table rules: chosen by whoever plays alone or opens the room, shown greyed to friends who join */
 .lobby-rules{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--shade)}
 .rule-row{display:grid;grid-template-columns:116px;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;align-items:center}
@@ -856,6 +867,7 @@ body.test #btns .btn:disabled{opacity:.4;box-shadow:none}
 body.test #pile .pc,body.test #pile .ktag{visibility:hidden}
 body.test .emblem{visibility:hidden}
 body.test #lastPlay{display:none}
+body.test #watchBtn,html.phone #watchBtn{display:none}
 /* 极简出牌区 (an option on a computer or tablet): the same framed box of plays in the middle of the table */
 body.mini #pile .pc,body.mini #pile .ktag{visibility:hidden}
 body.mini #lastPlay{display:none}
@@ -1084,7 +1096,7 @@ body.test .tside:not(.open){display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹、无（无：一轮打完，牌直接消失，不收牌）">牌背：<span id="backName">大雁</span></button><button class="link tog" id="watchBtn" aria-pressed="false" title="自己打完这一局后，能看到其他人手里的牌">观战</button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -3443,7 +3455,8 @@ function pileSweep(){
   pileGroups=[];TS=1;
   layer.querySelectorAll('.ktag').forEach(e=>e.remove());
   // a phone keeps no heap, nor does 极简出牌区: the finished trick simply goes, with no turning over
-  if(isPhone()||miniMode()){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return}
+  // (nor does the card back 无: no turning over, no heap)
+  if(isPhone()||miniMode()||cardBack==='none'){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return}
   layer.querySelectorAll('.pc.cur,.pc.old').forEach(el=>{
     el.classList.remove('cur','old');
     el.style.transitionDelay=(Math.random()*120|0)+'ms';
@@ -3456,7 +3469,7 @@ function pileRebuild(){
   const layer=pileEl(),g=pileGeo();
   layer.querySelectorAll('.pc,.ktag').forEach(e=>e.remove());
   pileZ=1000;heapZ=1;pileGroups=[];TS=1;
-  for(let i=0;i<(isPhone()?0:G.heapN||0);i++){
+  for(let i=0;i<(isPhone()||cardBack==='none'?0:G.heapN||0);i++){
     const el=document.createElement('div');
     el.className='pc';el.innerHTML='<div class="bk"></div>';
     el.style.zIndex=++heapZ;el.style.transform=heapSpot(g);
@@ -3602,14 +3615,14 @@ function render(){
   renderMsg();
   renderClocks();
   if(TEST)testRender();else{syncMini();testPlays()}
-  symPlates();
+  symPlates();renderWatch();
 }
 // the line under the disc: the play now on the table and who made it, or who leads when the table is clear
 function renderLastPlay(){
   let t='';
   if(G.phase==='play'&&G.trick){
     const p=G.trick.player,pl=G.trick.play;
-    t=`${TEST?`<small>第 ${G.log.filter(e=>e.cards).length} 手</small> `:''}${p===0?'你':NAMES[p]} 出 ${displayOrder(pl,G.L).map(cardTag).join('')}<small>${pl.type==='bomb'?pl.n+'张炸弹':TYPE_NAME[pl.type]}</small>`;
+    t=`${TEST?`<small>第 ${G.log.filter(e=>e.cards).length} 手</small> `:''}${p===0?'你':NAMES[p]} 出 ${displayOrder(pl,G.L).map(rankTag).join('')}<small>${pl.type==='bomb'?pl.n+'张炸弹':TYPE_NAME[pl.type]}</small>`;
   }else if(G.phase==='play'&&G.turn>=0)t=`${G.turn===0?'你':NAMES[G.turn]} 先出`;
   const el=$('#lastPlay');
   if(el.dataset.t!==t){el.dataset.t=t;el.innerHTML=t}
@@ -3627,7 +3640,7 @@ function placeLastPlay(){
   // just under the disc; when that leaves the near player too little room for a row of cards, it rides up over the
   // disc's lower edge (below the figure) to give some back
   const cw=$('#pile .probe').offsetWidth||48;
-  let y=e.bottom+6-T.top;
+  let y=e.bottom+16-T.top;
   const short=cw*CR*.75-(nearBottom()-T.top-(y+el.offsetHeight)-2*PASS_Y);
   if(short>0)y=Math.max(e.top+e.height*.74-T.top,y-short);
   const top=y+'px';
@@ -3732,6 +3745,8 @@ $('#tribInfo').addEventListener('click',e=>{
 });
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
+// the line under the disc names the ranks only, no suits
+const rankTag=c=>`<b class="ct${c.r===17?' red':''}">${c.r===16?'小王':c.r===17?'大王':rankName(c.r)}</b>`;
 // 抗贡: just whose big jokers they are (short: the line kept in the corner while the round is played)
 function kangHtml(short){
   const k=G.kang;if(!k)return'';
@@ -5312,7 +5327,7 @@ $('#sfBtn').onclick=()=>{
 $('#rulesBtn').onclick=showRules;
 // card backs: the goose photo, or the original red stripes; remembered on this computer
 // card backs, in the order a click steps through them: the goose photo, the maple leaf, the original red stripes
-const BACKS=[['goose','大雁'],['maple','枫叶'],['stripes','花纹']];
+const BACKS=[['goose','大雁'],['maple','枫叶'],['stripes','花纹'],['none','无']];
 let cardBack='goose';
 try{const v=localStorage.getItem('guandan-back');if(BACKS.some(b=>b[0]===v))cardBack=v}catch(_){}
 function syncBack(){
@@ -5323,6 +5338,8 @@ $('#cardBackBtn').onclick=()=>{
   cardBack=BACKS[(BACKS.findIndex(b=>b[0]===cardBack)+1)%BACKS.length][0];
   try{localStorage.setItem('guandan-back',cardBack)}catch(_){}
   syncBack();
+  // the heap of finished tricks goes, or comes back, with the card back
+  if(G){pileRebuild();render()}
 };
 syncBack();
 $('#readyBtn').onclick=()=>act({k:'ready',p:toAbs(0)});
@@ -5337,6 +5354,30 @@ function startNextIfReady(){
 $('#sfxBtn').onclick=()=>{Sound.toggle('sfx');syncAudioBtns()};
 if(window.ResizeObserver)new ResizeObserver(()=>{if(G&&miniMode())testPlays()}).observe($('#table'));
 $('#confirmBtn').setAttribute('aria-pressed',confirmPlay);
+// 观战: once you are out of the round, the cards the others still hold are shown, face up, where your own hand was
+let watchOn=false;
+try{watchOn=localStorage.getItem('guandan-watch')==='1'}catch(_){}
+$('#watchBtn').setAttribute('aria-pressed',watchOn);
+$('#watchBtn').onclick=()=>{
+  watchOn=!watchOn;
+  try{localStorage.setItem('guandan-watch',watchOn?'1':'0')}catch(_){}
+  $('#watchBtn').setAttribute('aria-pressed',watchOn);
+  renderWatch();
+};
+function renderWatch(){
+  const on=watchOn&&!TEST&&!isPhone()&&G&&G.phase==='play'&&G.out.includes(0);
+  for(const p of [1,2,3]){
+    let box=$('#watch'+p);
+    if(!on||!G.hands[p].length){if(box&&!box.hidden){box.hidden=true;box.innerHTML='';box.dataset.k=''}continue}
+    if(!box){box=document.createElement('div');box.id='watch'+p;box.className='watchbox';$('#seat'+p+' .whorow').appendChild(box)}
+    box.hidden=false;
+    const h=G.hands[p],k=h.map(c=>c.id).join()+'|'+G.L;
+    if(box.dataset.k===k)continue;
+    box.dataset.k=k;
+    // each group as the player had arranged it (a computer's own arrangement; a person's cannot be seen, so that is used for them too)
+    box.innerHTML=handUnits(h,G.L,true).map(u=>`<span class="wg">${u.cards.map(c=>`<i class="wc${c.r===17||c.s==='H'||c.s==='D'?' red':''}${isWild(c,G.L)?' wild':''}">${cardText(c)}</i>`).join('')}</span>`).join('');
+  }
+}
 $('#confirmBtn').onclick=()=>{
   confirmPlay=!confirmPlay;
   try{localStorage.setItem('guandan-confirm',confirmPlay?'1':'0')}catch(_){}
