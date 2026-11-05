@@ -1366,6 +1366,9 @@ const AIP={
   rTwoBombs:1,rSingleLast:1,
   // rOneBomb: with just one bomb in hand, it is used only in the late game
   rOneBomb:1,
+  // rLastGroup: leading with only bombs and one other group in hand, the group goes first, unless an opponent holds as many cards as
+  // the group or four cards
+  rLastGroup:1,
   // rKeepWild: late game, a play with a wild card is left when the wild card could make a bomb with a pure three in hand and the partner,
   // still to play, beats it at least keepWildMate likely (not when urgent, or when it goes out)
   rKeepWild:1,keepWildMate:.5,
@@ -1855,6 +1858,15 @@ function plainBomb(list,L){
 }
 function aiLead(p,units,plays,ph){
   const hand=G.hands[p],L=G.L;
+  // nothing in hand but bombs and one other group: that group goes first, unless an opponent holds as many cards as the group
+  // or four cards
+  if(AIP.rLastGroup){
+    const rest=units.filter(u=>!isBomb(u));
+    if(rest.length===1&&units.some(isBomb)){
+      const oc=[(p+1)%4,(p+3)%4].map(i=>G.hands[i].length).filter(n=>n>0);
+      if(!oc.some(n=>n===rest[0].n||n===4))return rest[0];
+    }
+  }
   // two plays from going out: lead the one nobody can beat, then the other
   if(hand.length<=16){
     let o;
@@ -6624,7 +6636,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1104-1722';
+const VERSION='1104-1933';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
