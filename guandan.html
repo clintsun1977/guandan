@@ -2673,7 +2673,7 @@ function startTurn(){
 }
 
 /* ---------- clocks: one ticker drives turn limits, computer thinking and the pre-play countdown ---------- */
-const PLAY_MS=60000,TRIB_MS=30000,RET_MS=20000,PREP_MS=90000,HURRY_MS=5000;
+const PLAY_MS=60000,TRIB_MS=30000,RET_MS=20000,PREP_MS=90000,HURRY_MS=10000;
 // computer "thinking" time per move; shortened for testing (the full-feel setting was 2000-5000)
 const AI_THINK_MIN=500,AI_THINK_MAX=1000;
 let lastTick=performance.now();
@@ -2691,32 +2691,23 @@ setInterval(()=>{
   renderClocks();
 },100);
 // a clock ran out (host only): the computer makes the move for whoever's turn it was
-// 超时: what the system plays for a player whose clock ran out. In this order, the first that exists: from the active zone (the
-// cards not set in a group), the smallest single, pair, three, three with a pair, straight, pairs in a row, plates (each without
-// wild cards if it can, and out of the cards that are not part of a bomb); else a play that is not a bomb from the group zone (the
-// smallest); else the smallest bomb; else any play at random. Following, a play has to beat the table's (so only the type of
-// the table's play, or a bomb, can come), and nothing is bombed over a partner's play; no play at all is a pass
+// 超时: what the system plays for a player whose clock ran out. Following, it is always a pass. Leading, in this order, the first that
+// exists: from the active zone (the cards not set in a group), the smallest single, pair, three, three with a pair, straight,
+// pairs in a row, plate, each made of whole groups only (a lone card is a single; a pair is never split into two singles) and
+// without wild cards; else a play that is not a bomb from the group zone (the smallest); else the smallest bomb; else any play
+// at random
 const TIMEOUT_TYPES=['single','pair','triple','full','straight','pairs3','trip2'];
 function timeoutPlay(who){
-  const hand=G.hands[who],L=G.L,cur=G.trick?G.trick.play:null;
-  if(!hand.length)return null;
-  const partnerLed=!!G.trick&&G.trick.player===(who+2)%4;
-  const ok=pl=>beats(pl,cur)&&!(partnerLed&&isBomb(pl));
+  const hand=G.hands[who],L=G.L;
+  if(!hand.length||G.trick)return null;
   const small=(a,b)=>a.value-b.value||cardSum(a,L)-cardSum(b,L);
   // the group zone is the player's own: only the player's own page knows it
   const fixed=new Set(who===0?(G.fixed||[]).flat():[]);
   const act=hand.filter(c=>!fixed.has(c.id));
-  // the active cards that are not in a bomb of four or more of a rank (or the four jokers)
-  const cnt={};
-  for(const c of act)if(!isWild(c,L)&&c.r<16)cnt[c.r]=(cnt[c.r]||0)+1;
-  const jk=act.filter(c=>c.r>=16).length;
-  const pool=act.filter(c=>c.r>=16?jk<4:isWild(c,L)||cnt[c.r]<4);
-  if(pool.length){
-    const plays=genPlays(pool,L).concat(fullHouses(pool,L));
+  if(act.length){
+    const ag=handGroups(act,L),plays=genPlays(act,L).concat(fullHouses(act,L)).filter(pl=>!pl.wu&&hintTier(pl,ag)===0);
     for(const t of TIMEOUT_TYPES){
-      const of=plays.filter(pl=>pl.type===t&&ok(pl));
-      const pure=of.filter(pl=>!pl.wu);
-      const pick=(pure.length?pure:of).sort(small)[0];
+      const pick=plays.filter(pl=>pl.type===t).sort(small)[0];
       if(pick)return pick;
     }
   }
@@ -2726,11 +2717,11 @@ function timeoutPlay(who){
     for(const gr of G.fixed){
       const cards=gr.map(id=>hand.find(c=>c.id===id)).filter(Boolean);
       if(!cards.length)continue;
-      for(const a of analyze(cards,L))if(!isBomb(a)&&ok(a))own.push({...a,cards,wu:cards.filter(c=>isWild(c,L)).length});
+      for(const a of analyze(cards,L))if(!isBomb(a))own.push({...a,cards,wu:cards.filter(c=>isWild(c,L)).length});
     }
     if(own.length)return own.sort(small)[0];
   }
-  const all=genPlays(hand,L).concat(fullHouses(hand,L)).filter(ok);
+  const all=genPlays(hand,L).concat(fullHouses(hand,L));
   const bombs=all.filter(isBomb).sort((a,b)=>power(a)-power(b));
   if(bombs.length)return bombs[0];
   return all.length?all[Math.floor(Math.random()*all.length)]:null;
@@ -5025,7 +5016,7 @@ function showRules(){
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
     <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排。理牌方式按钮每点一下，依次换成“横式”、“竖式”、“手持”，按钮上写的是现在用的方式。“竖式”按牌的大小从左到右排，同样点数的牌从下往上按红心、黑桃、方块、梅花叠成一列，一眼就能看出每个点数有几张。按住没选中的牌滑过几张，是连选这些牌；从选中的牌上按住拖动，是把选中的牌一起挪到别处（也可以拖进左边的成组区）。平铺模式也一样。“复原”恢复成按大小排好的样子。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
-    <li>发完牌先进贡（最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒），有抗贡也在这时亮出；然后有 90 秒理牌时间（理好了点“理牌结束”），理完再还贡（限时 20 秒）。每次出牌限时 60 秒，最后 5 秒倒计时会闪烁，超时由系统代你出牌：先出活动区里最小的单张、对子、三张、三带二、顺子、连对、钢板，没有就出成组区里不是炸弹的一手，再没有出最小的炸弹，都没有就随机出（出不了就过）。</li>
+    <li>发完牌先进贡（最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒），有抗贡也在这时亮出；然后有 90 秒理牌时间（理好了点“理牌结束”），理完再还贡（限时 20 秒）。每次出牌限时 60 秒，最后 10 秒倒计时会闪烁，超时由系统代你出牌：跟牌时一律过；领出时先出活动区里最小的单张、对子、三张、三带二、顺子、连对、钢板（都按整组出，不拆对子），没有就出成组区里不是炸弹的一手，再没有出最小的炸弹，都没有就随机出。</li>
   </ul>
   <p class="muted">点选牌，双击任意一张牌直接出牌，“提示”会依次给出能出的牌，“过”是这一轮不要。</p>
   <div class="btns"><button class="btn primary" id="closeBtn">知道了</button></div>`);
