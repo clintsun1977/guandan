@@ -5482,6 +5482,27 @@ document.addEventListener('click',e=>{
 });
 let resizeT=0;
 window.addEventListener('resize',()=>{layoutHand();symPlates();clearTimeout(resizeT);resizeT=setTimeout(()=>{centerRank();placeLastPlay();pileRebuild()},150)});
+// 转屏: an iPad turned from landscape to upright (or back) reports its new size late, in pieces, or at times not by a resize event at
+// all, so the page was left laid out for the old shape. The size is checked on every signal the browser gives (turning, the screen's
+// orientation, the visible viewport, a resize) and again a moment after, and once more every second: whenever it differs from what
+// the page was laid out for, everything is laid out again, from the state, as for a new size
+let rotKey=innerWidth+'x'+innerHeight;
+function checkRotate(){
+  const k=innerWidth+'x'+innerHeight;
+  if(k===rotKey)return;
+  rotKey=k;
+  if(TEST)return;
+  window.scrollTo(0,0);
+  phoneSwitch();
+  if(!G)return;
+  renderHand();render();layoutHand();symPlates();centerRank();placeLastPlay();pileRebuild();
+}
+const rotSoon=()=>{for(const ms of [0,120,350,800,1500])setTimeout(checkRotate,ms)};
+addEventListener('orientationchange',rotSoon);
+addEventListener('resize',rotSoon);
+if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener('change',rotSoon);
+if(window.visualViewport)visualViewport.addEventListener('resize',rotSoon);
+setInterval(checkRotate,1000);
 // the page can be laid out before it is shown (zero width); lay the hand out again once it gets its real width
 let handW=0;
 if(window.ResizeObserver)new ResizeObserver(()=>{const w=handEl.clientWidth;if(w&&w!==handW){handW=w;layoutHand()}}).observe(handEl);
@@ -6881,7 +6902,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1105-1237';
+const VERSION='1105-1301';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
