@@ -3,7 +3,7 @@
 <head>
 <style>html,body{margin:0}[hidden]{display:none!important}</style>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>掼蛋</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <!-- added to a phone's home screen, the page opens full screen, without the browser's bars (the way an iPhone gets it) -->
@@ -5497,30 +5497,33 @@ function checkRotate(){
   if(!G)return;
   renderHand();render();layoutHand();symPlates();centerRank();placeLastPlay();pileRebuild();
 }
-// An iPad's browser (Safari, or Chrome on it) turned on its side keeps the page laid out at the old width and scales it to fit instead
-// (so the picture stays as it was, and its edge and buttons are cut off): the page's width is told again to the browser, which
-// then lays it out afresh. (The scale is fixed at 1 in the viewport above for the same reason)
-const VP_CONTENT=document.querySelector('meta[name=viewport]')?document.querySelector('meta[name=viewport]').content:'';
-function refreshViewport(){
-  const m=document.querySelector('meta[name=viewport]');
-  if(!m||TEST)return;
-  m.content='width=device-width, initial-scale=1';
-  setTimeout(()=>{m.content=VP_CONTENT},60);
-}
-const rotSoon=()=>{refreshViewport();setTimeout(refreshViewport,300);for(const ms of [0,120,350,800,1500])setTimeout(checkRotate,ms)};
+// (The page's own part: laid out again whenever its size is seen to change, never by touching the viewport setting: that made the
+// browser lay the page out again, which made another resize, which went round and round - the screen shook when 全屏 was pressed)
+const rotSoon=()=>{for(const ms of [0,120,350,800,1500])setTimeout(checkRotate,ms)};
 addEventListener('orientationchange',rotSoon);
 addEventListener('resize',rotSoon);
 if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener('change',rotSoon);
 if(window.visualViewport)visualViewport.addEventListener('resize',rotSoon);
 setInterval(checkRotate,1000);
-// the device held one way but the page laid out the other (checked a few times only: a keyboard or a split window can also do it)
-let shapeFix=0;
-setInterval(()=>{
-  const held=screen.orientation&&screen.orientation.type?screen.orientation.type.startsWith('landscape'):null;
-  if(held===null||!matchMedia('(pointer: coarse)').matches)return;
-  if(held===(innerWidth>innerHeight)){shapeFix=0;return}
-  if(shapeFix++<4)refreshViewport();
-},1500);
+// 诊断: with #debug at the end of the address, a small box in the corner shows what the browser tells the page about its size and
+// how the device is held, live (to find out why a turned iPad is not laid out afresh)
+if(location.hash==='#debug'){
+  const d=document.createElement('pre');
+  d.style.cssText='position:fixed;left:4px;bottom:4px;z-index:9999;margin:0;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,.78);color:#8f8;font:12px/1.35 ui-monospace,Menlo,monospace;pointer-events:none;white-space:pre';
+  document.body.appendChild(d);
+  let rs=0,rt='-',os=0;
+  addEventListener('resize',()=>{rs++;rt=new Date().toLocaleTimeString()});
+  addEventListener('orientationchange',()=>{os++});
+  const root=document.documentElement,vv=window.visualViewport;
+  setInterval(()=>{
+    const r=root.getBoundingClientRect(),so=screen.orientation;
+    d.textContent=['inner '+innerWidth+'x'+innerHeight,'client '+root.clientWidth+'x'+root.clientHeight+'  scroll '+root.scrollWidth+'x'+root.scrollHeight,
+      'visual '+(vv?Math.round(vv.width)+'x'+Math.round(vv.height)+' scale '+vv.scale.toFixed(2)+' off '+Math.round(vv.offsetLeft)+','+Math.round(vv.offsetTop):'none'),
+      'screen '+screen.width+'x'+screen.height+' dpr '+devicePixelRatio,'orient '+(so?so.type:'-')+' / '+window.orientation,
+      'resize x'+rs+' ('+rt+')  orientationchange x'+os,'html '+Math.round(r.width)+'x'+Math.round(r.height),
+      (/Macintosh/.test(navigator.userAgent)?'UA Macintosh (desktop site)':'UA mobile'),'v '+document.querySelector('meta[name=viewport]').content].join(String.fromCharCode(10));
+  },400);
+}
 // the page can be laid out before it is shown (zero width); lay the hand out again once it gets its real width
 let handW=0;
 if(window.ResizeObserver)new ResizeObserver(()=>{const w=handEl.clientWidth;if(w&&w!==handW){handW=w;layoutHand()}}).observe(handEl);
@@ -6920,7 +6923,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1105-1309';
+const VERSION='1105-1319';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
