@@ -465,11 +465,14 @@ html.phone body:not(.test) #pile{--cw:clamp(54px,min(18vw,15vh),88px)}
 html:not(.phone) .seat .cnt{position:absolute;top:calc(100% + 6px)}
 html:not(.phone) #seat3 .cnt{left:0}
 html:not(.phone) #seat1 .cnt{right:0}
-/* the side players' alarm clock hangs under the name plate (under the card count too, when it shows) instead of beside the
-   plate, so the plate stays narrow and the table's cards have the room; it is centred under the plate, which is wider than it
-   (not on a phone: its plates are laid out as before) */
-html:not(.phone) #seat3 .whorow>.clock,html:not(.phone) #seat1 .whorow>.clock{position:absolute;top:calc(100% + 10px);left:50%;translate:-50% 0;margin:0}
-html:not(.phone) #seat3 .whorow:has(>.cnt:not(:empty))>.clock,html:not(.phone) #seat1 .whorow:has(>.cnt:not(:empty))>.clock{top:calc(100% + 10px + 46px)}
+/* the side players: the alarm clock stands above the name plate, and under it the status tag (准备出牌, 已出牌 ...) with the
+   card count below that, so the plate stays narrow and the table's cards have the room. The clock is centred over the plate
+   (wider than it); the 洗牌/切牌 tag moves up over the clock when there is one. Not on a phone, nor in the test version */
+html:not(.phone) body:not(.test) #seat3 .whorow>.clock,html:not(.phone) body:not(.test) #seat1 .whorow>.clock{position:absolute;bottom:calc(100% + 10px);top:auto;left:50%;translate:-50% 0;margin:0}
+html:not(.phone) body:not(.test) #seat3 .stat,html:not(.phone) body:not(.test) #seat1 .stat{top:calc(100% + 6px);bottom:auto}
+html:not(.phone) body:not(.test) #seat3 .cnt,html:not(.phone) body:not(.test) #seat1 .cnt{top:calc(100% + 36px)}
+html:not(.phone) body:not(.test) #seat3 .actlbl,html:not(.phone) body:not(.test) #seat1 .actlbl{bottom:calc(100% + 10px)}
+html:not(.phone) body:not(.test) #seat3 .whorow:has(>.clock:not(:empty)) .actlbl,html:not(.phone) body:not(.test) #seat1 .whorow:has(>.clock:not(:empty)) .actlbl{bottom:calc(100% + 64px)}
 html:not(.phone) #seat2 .cnt{left:50%;translate:-50% 0}
 /* a computer or tablet's score: each side's level as a white number on its colour, the side being played ringed in gold */
 html:not(.phone) .score .tn{display:none}
@@ -6705,7 +6708,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1104-2123';
+const VERSION='1104-2131';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
