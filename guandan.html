@@ -469,6 +469,27 @@ html:not(.phone) body:not(.test) #seat3 .stat,html:not(.phone) body:not(.test) #
 html:not(.phone) body:not(.test) #seat3 .cnt,html:not(.phone) body:not(.test) #seat1 .cnt{top:calc(100% + 36px)}
 html:not(.phone) body:not(.test) #seat3 .actlbl,html:not(.phone) body:not(.test) #seat1 .actlbl{bottom:calc(100% + 10px)}
 html:not(.phone) body:not(.test) #seat3 .whorow:has(>.clock:not(:empty)) .actlbl,html:not(.phone) body:not(.test) #seat1 .whorow:has(>.clock:not(:empty)) .actlbl{bottom:calc(100% + 64px)}
+/* a computer or tablet: the four name plates are one size that never changes, set symmetrically about the middle of the screen (the
+   top and bottom plates on the middle line, the side plates at the same height halfway between them, the same distance from
+   each edge). Whatever else there is stands outside a plate: the turn clock, the count of cards, the status tag and the
+   microphone mark. Not on a phone, nor in the test version, which has its own plates */
+html:not(.phone) body:not(.test) .seat .who,html:not(.phone) body:not(.test) #mebar .meinfo{box-sizing:border-box;width:108px;height:38px;padding:0 8px;justify-content:center;gap:6px;font-size:16px}
+html:not(.phone) body:not(.test) .seat .who .name,html:not(.phone) body:not(.test) #myName{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html:not(.phone) body:not(.test) .seat .who .vc,html:not(.phone) body:not(.test) #mebar .meinfo .vc{position:absolute;top:auto;bottom:calc(100% + 2px);right:2px;z-index:6}
+html:not(.phone) body:not(.test) #seat2 .whorow>.clock{position:absolute;left:calc(100% + 10px);top:50%;translate:0 -50%;margin:0}
+html:not(.phone) body:not(.test) #mebar{position:relative;display:block;height:38px;min-height:38px}
+html:not(.phone) body:not(.test) #mebar .left{position:static;display:block}
+html:not(.phone) body:not(.test) #mebar .whorow{position:absolute;left:50%;top:0;translate:-50% 0;gap:0}
+html:not(.phone) body:not(.test) #mebar .whorow>.clock{position:absolute;left:calc(100% + 10px);top:50%;translate:0 -50%;margin:0}
+html:not(.phone) body:not(.test) #mebar .whorow>.cnt{position:absolute;left:calc(100% + 60px);top:50%;translate:0 -50%}
+html:not(.phone) body:not(.test) #mebar #sfBtn{position:absolute;left:calc(50% + 54px + 126px);top:50%;translate:0 -50%}
+html:not(.phone) body:not(.test) #mebar #fixBtn{position:absolute!important;left:calc(50% + 54px + 126px + 82px);top:50%;translate:0 -50%}
+/* a narrow screen (a tablet held upright): 同花顺 and 成组 move to the left of the plate, beyond the status tag, since the play buttons
+   stand in a column at the right */
+@media (max-width:900px){
+html:not(.phone) body:not(.test) #mebar #sfBtn{left:auto;right:calc(50% + 54px + 100px + 66px)}
+html:not(.phone) body:not(.test) #mebar #fixBtn{left:auto;right:calc(50% + 54px + 100px)}
+}
 html:not(.phone) #seat2 .cnt{left:50%;translate:-50% 0}
 /* a computer or tablet's score: each side's level as a white number on its colour, the side being played ringed in gold */
 html:not(.phone) .score .tn{display:none}
@@ -628,14 +649,16 @@ body.test .overlay.dock .panel .btn:not(.round){font-size:12px;padding:3px 10px;
 /* 选级: the button in the middle of the lobby table, and the picker laid over the table */
 .lobby-table{position:relative}
 .lobby-felt{display:flex;align-items:center;justify-content:center;padding:4px}
-.level-btn{font:inherit;font-size:20px;font-weight:700;padding:8px 10px;border-radius:12px;cursor:pointer;background:rgba(0,0,0,.25);color:var(--gold);border:2px solid var(--gold);white-space:nowrap}
+.level-btn{font:inherit;font-size:17px;line-height:1.25;font-weight:700;padding:6px 8px;border-radius:12px;cursor:pointer;background:rgba(0,0,0,.25);color:var(--gold);border:2px solid var(--gold);white-space:nowrap}
 .level-btn.on{background:var(--gold);color:var(--on-gold)}
-.level-pick{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:8px 8px;border-radius:14px;background:var(--felt);border:2px solid var(--gold);box-shadow:0 8px 28px rgba(0,0,0,.55)}
-.level-pick[hidden]{display:none}
-.level-pick h3{margin:0;font-size:20px;color:var(--gold);text-align:center}
-.level-row{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center}
-.level-k{font-size:16px;color:var(--muted);margin-right:4px}
-.level-pick .rule-btn{min-width:34px;padding:4px 5px;font-size:16px}
+[hidden].level-pick{display:none}
+.level-pick{position:fixed;inset:0;z-index:140;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:10px;overflow:auto}
+.level-card{width:min(600px,100%);margin:auto;display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:16px;background:var(--felt);border:2px solid var(--gold);box-shadow:0 10px 36px rgba(0,0,0,.6)}
+.level-card h3{margin:0;font-size:22px;color:var(--gold);text-align:center}
+.level-card .hint{font-size:14px;color:var(--muted);text-align:center;line-height:1.35}
+.level-row{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;align-items:center}
+.level-k{font-size:16px;color:var(--muted);margin-right:2px;min-width:5.4em;text-align:right}
+.level-pick .rule-btn{min-width:28px;padding:4px 3px;font-size:16px}
 .level-pick .lv-red{border-color:#c8514b}.level-pick .lv-blue{border-color:#4f86c6}
 .level-pick .rule-btn.on.lv-red{background:#c8514b;border-color:#c8514b;color:#fff}
 .level-pick .rule-btn.on.lv-blue{background:#4f86c6;border-color:#4f86c6;color:#fff}
@@ -853,7 +876,6 @@ body.mini .mc,body.test .tpb .mc{align-items:flex-start;padding-left:calc(var(--
 body.mini .mc+.mc,body.test .tpb .mc+.mc{margin-left:calc(var(--mcw)*-.34)}
 body:not(.test) .tq{pointer-events:none;cursor:default}
 body:not(.test) .tq:hover{outline:none}
-body.test #miniBtn,html.phone #miniBtn{display:none}
 #tplays{position:absolute;inset:0;z-index:1;pointer-events:none}
 .tpb{position:absolute;--mcw:30px;border-radius:10px;background:rgba(0,0,0,.16);padding:6px;
   display:flex;flex-wrap:wrap;align-content:flex-start;align-items:flex-end;gap:calc(var(--mcw)*.2) calc(var(--mcw)*.22);overflow:hidden}
@@ -1060,7 +1082,7 @@ body.test .tside:not(.open){display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="miniBtn" aria-pressed="false" title="已出的牌像测试版那样，按出牌顺序排在桌面中间的一个框里（只有电脑和 iPad）">极简出牌区</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹">牌背：<span id="backName">大雁</span></button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -1135,11 +1157,11 @@ body.test .tside:not(.open){display:none}
       <div class="lobby-felt" style="grid-area:c"><button class="level-btn" id="levelBtn" type="button">选级</button></div>
       <button class="seat-btn t-blue" data-seat="E" style="grid-area:e"><b>东</b><span>空位</span></button>
       <button class="seat-btn t-red" data-seat="S" style="grid-area:s"><b>南</b><span>空位</span></button>
-      <div class="level-pick" id="levelPick" hidden></div>
     </div>
     <button class="btn primary lobby-go" id="sitBtn" disabled>坐下开始</button>
     <div class="lobby-ver" id="verTag"></div>
   </div>
+  <div class="level-pick" id="levelPick" hidden></div>
   <div class="lobby-testbox">
     <button class="link lobby-test" id="testBtn">测试版</button>
     <div class="lobby-join" id="testRow" hidden>
@@ -2272,7 +2294,7 @@ const TV={open:false};
 const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),lobby:{S:null,E:null,N:null,W:null},mics:{}};
 const isHost=()=>NET.mode!=='guest';
 // table rules, chosen in the lobby (online, by the host): tribute on or off, and what happens after three failed tries at A
-const RULES={trib:true,aFail:'draw',startLevel:2,startSide:''};
+const RULES={trib:true,aFail:'draw',lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
 const isHumanSeat=p=>NET.humans.has(p);
 const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
 let hints=[],hintIdx=0;
@@ -2283,14 +2305,25 @@ function resetGame(){
   G={levels:[2,2],lvlTeam:NET.off%2,L:2,round:0,hands:[[],[],[],[]],trick:null,passes:0,last:[null,null,null,null],
      out:[],prevOut:null,turn:-1,phase:'start',notice:'',fresh:[],returns:[],leader:0,result:null,tok:(G&&G.tok||0)+1,
      trickPlays:[],heapN:0,ready:[],aFails:[0,0],aOut:null,nextReady:[]};
-  // 选级: the level chosen in the lobby is played from the first round, by the side chosen (seats are named by direction, so
-  // each page works out which side that is from where it sits)
-  const sl=RULES.startLevel||2,side=RULES.startSide;
+  applyStart();
+}
+// 选级: the state chosen in the lobby is the first match's start: each side's level, the side whose level is played, the order the
+// last round ended in (so the tribute is paid straight away) and the tries at A already missed. Seats are named by direction, so
+// each page works out for itself which of its own seats and sides they are. It is used once; a new match starts from 2
+function levelChosen(){
+  return(RULES.lvSN||2)!==2||(RULES.lvEW||2)!==2||!!RULES.playSide||(RULES.order||[]).some(Boolean)||(RULES.aSN||0)>0||(RULES.aEW||0)>0;
+}
+function applyStart(){
+  if(NET.startDone||!levelChosen())return;
   const hd=NET.mode==='solo'?myDir:NET.hostDir;
-  if((sl!==2||side)&&DIRS.includes(hd)){
-    const team=side?toLocal(absOf(side[0],hd))%2:NET.off%2;
-    G.levels[team]=sl;G.lvlTeam=team;G.L=sl;
-  }
+  if(!DIRS.includes(hd))return;
+  const tl=d=>toLocal(absOf(d,hd)),tOf=side=>tl(side[0])%2;
+  G.levels[tOf('SN')]=RULES.lvSN||2;G.levels[tOf('EW')]=RULES.lvEW||2;
+  const o=RULES.order||[],full=o.length===4&&o.every(Boolean);
+  const side=RULES.playSide||(full?('SN'.includes(o[0])?'SN':'EW'):('SN'.includes(hd)?'SN':'EW'));
+  G.lvlTeam=tOf(side);G.L=G.levels[G.lvlTeam];
+  G.aFails=[0,0];G.aFails[tOf('SN')]=RULES.aSN||0;G.aFails[tOf('EW')]=RULES.aEW||0;
+  if(full)G.prevOut=o.map(tl);
 }
 function newGame(){
   resetGame();render();
@@ -2314,7 +2347,7 @@ function lopsided(deck){
   return false;
 }
 function startRound(e){
-  if(e.reset)resetGame();
+  if(e.reset){resetGame();NET.startDone=true}
   if(G.paused)setPaused(false);
   G.tok++;
   G.round++;
@@ -2369,6 +2402,8 @@ function doCut(){
 // where the deck sits when a player handles it: on the table right in front of them
 function actorSpot(p){
   const g=pileGeo();
+  // a computer or tablet: the deck is shuffled and cut in the middle of the table, whoever does it (their plate still lights up)
+  if(!isPhone())return{x:g.cx,y:g.cy};
   if(p===0)return{x:g.cx,y:g.bottom-g.ch*.8};
   if(p===2)return{x:g.cx,y:g.top+g.ch*.8};
   if(p===3)return{x:g.left+g.cw*1.9,y:g.sideY[3]};
@@ -2941,13 +2976,12 @@ let confirmPlay=false,cfm=null;
 try{confirmPlay=localStorage.getItem('guandan-confirm')==='1'}catch(_){}
 // 极简出牌区 (an option, computer and tablet only): this player's table shows the plays the way the test version does, in
 // one framed box in the middle, in the order they were made, instead of the cards thrown down by each player
-let miniPlays=false;
-try{miniPlays=localStorage.getItem('guandan-mini')==='1'}catch(_){}
+// (the 极简出牌区 option is gone: the table's cards lie in front of each player, as in the first versions; the test version keeps its own box)
+const miniPlays=false;
 function miniMode(){return miniPlays&&!TEST&&!isPhone()}
 function syncMini(){
   const on=miniMode(),b=document.body;
   if(b.classList.contains('mini')!==on){b.classList.toggle('mini',on);if(!on){const t=$('#tplays');if(t){t.innerHTML='';t.dataset.k=''}}}
-  $('#miniBtn').setAttribute('aria-pressed',miniPlays);
 }
 const selKey=()=>[...sel].sort((a,b)=>a-b).join(',');
 function askConfirm(){
@@ -3566,6 +3600,7 @@ function render(){
   renderMsg();
   renderClocks();
   if(TEST)testRender();else{syncMini();testPlays()}
+  symPlates();
 }
 // the line under the disc: the play now on the table and who made it, or who leads when the table is clear
 function renderLastPlay(){
@@ -3956,6 +3991,17 @@ const isPhone=()=>!TEST&&(PHONE_MQ.matches||phoneDevice());
 // it for the right-hand player, whose plate is on the right of its row
 for(const q of [1,2,3]){const w=$('#seat'+q+' .who'),c=w.querySelector('.clock');if(q===1)w.before(c);else w.after(c)}
 $('#mebar .meinfo').after($('#myClock'));
+// the side plates stand at the same height, halfway between the top plate and your own (the middle of the screen); see the CSS
+function symPlates(){
+  if(TEST||isPhone()||!G)return;
+  const t=$('#seat2 .who'),m=$('#mebar .meinfo'),w=$('#seat3 .who'),seat=$('#seat3'),tab=$('#table');
+  if(!t||!m||!w||!t.offsetHeight||!m.offsetHeight||!w.offsetHeight)return;
+  const tr=t.getBoundingClientRect(),mr=m.getBoundingClientRect(),wr=w.getBoundingClientRect();
+  const want=(tr.top+tr.height/2+mr.top+mr.height/2)/2,c=wr.top+wr.height/2;
+  if(Math.abs(want-c)<.5)return;
+  const cur=new DOMMatrix(getComputedStyle(seat).transform).m42;
+  tab.style.setProperty('--mid-drop',(cur+want-c)+'px');
+}
 // a phone is played upright only: turned on its side it asks to be turned back
 const phoneSideways=()=>!TEST&&phoneDevice()&&heldSideways();
 function syncRotateTip(){
@@ -5287,12 +5333,6 @@ function startNextIfReady(){
   else if(G.phase==='over')newGame();
 }
 $('#sfxBtn').onclick=()=>{Sound.toggle('sfx');syncAudioBtns()};
-$('#miniBtn').onclick=()=>{
-  miniPlays=!miniPlays;
-  try{localStorage.setItem('guandan-mini',miniPlays?'1':'0')}catch(_){}
-  syncMini();
-  if(G){testPlays();pileRefit()}
-};
 if(window.ResizeObserver)new ResizeObserver(()=>{if(G&&miniMode())testPlays()}).observe($('#table'));
 $('#confirmBtn').setAttribute('aria-pressed',confirmPlay);
 $('#confirmBtn').onclick=()=>{
@@ -5349,7 +5389,7 @@ document.addEventListener('click',e=>{
   testStepGo();
 });
 let resizeT=0;
-window.addEventListener('resize',()=>{layoutHand();clearTimeout(resizeT);resizeT=setTimeout(()=>{centerRank();placeLastPlay();pileRebuild()},150)});
+window.addEventListener('resize',()=>{layoutHand();symPlates();clearTimeout(resizeT);resizeT=setTimeout(()=>{centerRank();placeLastPlay();pileRebuild()},150)});
 // the page can be laid out before it is shown (zero width); lay the hand out again once it gets its real width
 let handW=0;
 if(window.ResizeObserver)new ResizeObserver(()=>{const w=handEl.clientWidth;if(w&&w!==handW){handW=w;layoutHand()}}).observe(handEl);
@@ -5401,7 +5441,7 @@ function showStart(){
 }
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
-  Object.assign(RULES,{trib:true,aFail:'draw',startLevel:2,startSide:''});
+  Object.assign(RULES,{trib:true,aFail:'draw',lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
   try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
@@ -5414,35 +5454,70 @@ function renderRules(){
   $('#rulesNote').textContent=mine?'':'规则由房主选定';
   renderLevel();
 }
-// 选级: what level is played from the first round, and which side plays it (the side of the south and north seats, or of the
-// east and west seats; none chosen means the side of whoever plays alone or opens the room, as before)
-const SIDE_NAME={SN:'南北',EW:'东西'};
+// 选级: the state to start the first match from (see applyStart): so a table that cannot get back to a game it dropped out of can go
+// on from where it was
+const SIDE_NAME={SN:'南北',EW:'东西'},DIR_NAME={S:'南',E:'东',N:'北',W:'西'},RANK_NAME=['头游','二游','三游','末游'];
+const dirSide=d=>'SN'.includes(d)?'SN':'EW';
 function renderLevel(){
-  const mine=lobbyMode!=='join',lv=RULES.startLevel||2,side=RULES.startSide||'',chosen=lv!==2||!!side;
+  const mine=lobbyMode!=='join',chosen=levelChosen();
   const b=$('#levelBtn');
-  b.textContent=chosen?`打${rankName(lv)}${side?'·'+SIDE_NAME[side]:''}`:'选级';
+  b.innerHTML=chosen?`南北${rankName(RULES.lvSN||2)}<br>东西${rankName(RULES.lvEW||2)}`:'选级';
   b.classList.toggle('on',chosen);
   const pk=$('#levelPick');
   if(pk.hidden)return;
-  const lvBtns=[];for(let n=2;n<=14;n++)lvBtns.push(`<button type="button" class="rule-btn${n===lv?' on':''}" data-lv="${n}"${mine?'':' disabled'}>${rankName(n)}</button>`);
-  pk.innerHTML=`<div class="level-row"><span class="level-k">打几</span>${lvBtns.join('')}</div>
-    <div class="level-row"><span class="level-k">哪一方</span>
-      <button type="button" class="rule-btn lv-red${side==='SN'?' on':''}" data-side="SN"${mine?'':' disabled'}>南北</button>
-      <button type="button" class="rule-btn lv-blue${side==='EW'?' on':''}" data-side="EW"${mine?'':' disabled'}>东西</button>
-      ${mine?'<button type="button" class="rule-btn" data-lvreset="1">还原</button>':''}<button type="button" class="rule-btn" data-lvdone="1">好</button></div>
-    ${mine?'':'<div class="rule-note" style="text-align:center">由房主选定</div>'}`;
+  const dis=mine?'':' disabled';
+  const lvRow=(side,cls,key)=>{
+    const cur=RULES[key]||2;let h='';
+    for(let n=2;n<=14;n++)h+=`<button type="button" class="rule-btn ${cls}${n===cur?' on':''}" data-lvk="${key}" data-lv="${n}"${dis}>${rankName(n)}</button>`;
+    return`<div class="level-row"><span class="level-k">${SIDE_NAME[side]}打</span>${h}</div>`;
+  };
+  const o=RULES.order&&RULES.order.length===4?RULES.order:['','','',''];
+  const ordRows=RANK_NAME.map((nm,i)=>`<div class="level-row"><span class="level-k">${nm}</span>${DIRS.map(d=>
+    `<button type="button" class="rule-btn ${dirSide(d)==='SN'?'lv-red':'lv-blue'}${o[i]===d?' on':''}" data-ord="${i}" data-d="${d}"${dis}>${DIR_NAME[d]}</button>`).join('')}</div>`).join('');
+  let pay='';
+  if(o.every(Boolean)){
+    const dbl=dirSide(o[0])===dirSide(o[1]);
+    pay=dbl?`双下：${DIR_NAME[o[2]]}、${DIR_NAME[o[3]]}进贡，${DIR_NAME[o[0]]}、${DIR_NAME[o[1]]}收`:`${DIR_NAME[o[3]]}进贡给${DIR_NAME[o[0]]}`;
+    pay='进贡：'+pay;
+  }else if(o.some(Boolean))pay='名次没选全';
+  const ps=RULES.playSide||'';
+  const aRow=(side,cls,key)=>`<div class="level-row"><span class="level-k">${SIDE_NAME[side]}打A不过</span>${[0,1,2].map(n=>`<button type="button" class="rule-btn ${cls}${(RULES[key]||0)===n?' on':''}" data-ak="${key}" data-an="${n}"${dis}>${n} 次</button>`).join('')}</div>`;
+  pk.innerHTML=`<div class="level-card">
+    <h3>选级（接着之前的牌局）</h3>
+    ${lvRow('SN','lv-red','lvSN')}${lvRow('EW','lv-blue','lvEW')}
+    <div class="level-row"><span class="level-k">这一局打谁的级</span>
+      <button type="button" class="rule-btn lv-red${ps==='SN'?' on':''}" data-side="SN"${dis}>南北</button>
+      <button type="button" class="rule-btn lv-blue${ps==='EW'?' on':''}" data-side="EW"${dis}>东西</button>
+      <button type="button" class="rule-btn${ps?'':' on'}" data-side=""${dis}>自动</button></div>
+    <div class="hint">上一局的名次（决定谁进贡，不选就是第一局，不进贡）</div>
+    ${ordRows}
+    <div class="hint">${pay||'&nbsp;'}</div>
+    ${aRow('SN','lv-red','aSN')}${aRow('EW','lv-blue','aEW')}
+    <div class="level-row">${mine?'<button type="button" class="rule-btn" data-lvreset="1">还原</button>':'<span class="rule-note">由房主选定</span>'}<button type="button" class="rule-btn" data-lvdone="1">好</button></div>
+  </div>`;
 }
 $('#levelBtn').onclick=()=>{
   Sound.unlock();Sound.play('select');
   const pk=$('#levelPick');pk.hidden=!pk.hidden;renderLevel();
 };
 $('#levelPick').addEventListener('click',e=>{
+  if(e.target===$('#levelPick')){$('#levelPick').hidden=true;renderLevel();return}
   const t=e.target.closest('button');if(!t)return;
   if(t.dataset.lvdone){$('#levelPick').hidden=true;renderLevel();return}
   if(lobbyMode==='join')return;
-  if(t.dataset.lv)RULES.startLevel=+t.dataset.lv;
-  else if(t.dataset.side)RULES.startSide=RULES.startSide===t.dataset.side?'':t.dataset.side;
-  else if(t.dataset.lvreset){RULES.startLevel=2;RULES.startSide=''}
+  const d=t.dataset;
+  if(d.lvk)RULES[d.lvk]=+d.lv;
+  else if(d.side!==undefined)RULES.playSide=RULES.playSide===d.side?'':d.side;
+  else if(d.ak)RULES[d.ak]=+d.an;
+  else if(d.ord!==undefined){
+    const i=+d.ord,o=RULES.order&&RULES.order.length===4?RULES.order.slice():['','','',''];
+    if(o[i]===d.d)o[i]='';
+    else{for(let j=0;j<4;j++)if(o[j]===d.d)o[j]='';o[i]=d.d}
+    // three named: the fourth place is the one left
+    if(o.filter(Boolean).length===3)o[o.indexOf('')]=DIRS.find(x=>!o.includes(x));
+    RULES.order=o;
+  }
+  else if(d.lvreset){Object.assign(RULES,{lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0})}
   else return;
   Sound.play('select');
   renderLevel();
@@ -5459,7 +5534,7 @@ ruleBtns.forEach(b=>b.addEventListener('click',()=>{
 function setMode(m){
   leaveNet();
   loadRules();
-  lobbyMode=m;myDir='';NET.lastCode=null;NET.rejoinDir=null;
+  lobbyMode=m;myDir='';NET.lastCode=null;NET.rejoinDir=null;NET.clintTries=0;
   NET.lobby={S:null,E:null,N:null,W:null};
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
   $('#joinRow').hidden=m!=='join';
@@ -5492,6 +5567,17 @@ $('#nick').addEventListener('input',()=>{
   if(myDir&&lobbyMode==='host'){NET.lobby[myDir]=nickNow()||'房主';broadcastLobby()}
   if(myDir&&lobbyMode==='join')sendSit(myDir);
   renderLobby();
+  // a room is Clint's (8888) or not by the nickname at the time: if the nickname changes across that line while the room is open
+  // and the game has not started, the room is opened again under the right number
+  if(lobbyMode==='host'){
+    clearTimeout(NET.renameT);
+    NET.renameT=setTimeout(()=>{
+      if(lobbyMode!=='host'||NET.started||!NET.peerOpen||isClint()===(NET.code==='8888'))return;
+      const dir=myDir;leaveNet();NET.peerOpen=false;NET.code=null;NET.clintTries=0;
+      $('#roomInfo').hidden=true;myDir=dir;
+      openRoom();
+    },700);
+  }
 });
 $('#nick').addEventListener('keydown',e=>{if(e.key==='Enter'&&!$('#sitBtn').disabled&&!$('#sitBtn').hidden)$('#sitBtn').click()});
 // a phone goes full screen as its player takes a seat (a tap is needed for that); 选项 has the way back
@@ -5517,7 +5603,7 @@ $('#sitBtn').onclick=()=>{
   phoneFull();
   try{localStorage.setItem('guandan-nick',myNick)}catch(_){}
   Sound.unlock();
-  if(lobbyMode==='host')startOnline();
+  if(lobbyMode==='host'){if(isClint()!==(NET.code==='8888')){lobbyStatus('房间号正在更换，请稍等');return}startOnline()}
   else{
     NET.mode='solo';NET.off=0;setHumans([0]);
     $('#myName').textContent=myNick;
@@ -6838,9 +6924,13 @@ function leaveNet(){
   NET.peer=null;NET.peerOpen=false;NET.hostConn=null;NET.refused=false;NET.conns=new Map();NET.inbox=[];
 }
 // the host: claims a free room number and keeps the seat list
+// the room number 8888 belongs to Clint: whoever opens a room under that nickname gets 8888 (and only 8888), and nobody else is given it
+const isClint=()=>nickNow().toLowerCase()==='clint';
 function openRoom(){
   if(!peerReady())return;
-  const code=String(1000+(Math.random()*9000|0));
+  const clint=isClint();
+  let code=clint?'8888':String(1000+(Math.random()*9000|0));
+  while(!clint&&code==='8888')code=String(1000+(Math.random()*9000|0));
   const peer=new Peer(ROOM_PREFIX+code);
   NET.peer=peer;
   lobbyStatus('正在开房间…');
@@ -6853,7 +6943,14 @@ function openRoom(){
   });
   peer.on('error',err=>{
     if(NET.peer!==peer)return;
-    if(err.type==='unavailable-id'){peer.destroy();openRoom();return}
+    if(err.type==='unavailable-id'){
+      if(!clint){peer.destroy();openRoom();return}
+      // 8888 is still held (the last room's number is let go a few seconds after its page closed): wait and ask again
+      peer.destroy();
+      if((NET.clintTries=(NET.clintTries||0)+1)<=6){lobbyStatus('8888 号房间还被占用，正在重试…');setTimeout(()=>{if(lobbyMode==='host'&&!NET.started&&!NET.peerOpen)openRoom()},2500)}
+      else lobbyStatus('8888 号房间被占用，请稍后再试（关掉旧的房间页面）');
+      return;
+    }
     lobbyStatus('开房间失败，请检查网络后重试');
   });
   peer.on('call',c=>VC.incoming(c));
