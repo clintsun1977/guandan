@@ -2691,6 +2691,50 @@ setInterval(()=>{
   renderClocks();
 },100);
 // a clock ran out (host only): the computer makes the move for whoever's turn it was
+// 超时: what the system plays for a player whose clock ran out. In this order, the first that exists: from the active zone (the
+// cards not set in a group), the smallest single, pair, three, three with a pair, straight, pairs in a row, plates (each without
+// wild cards if it can, and out of the cards that are not part of a bomb); else a play that is not a bomb from the group zone (the
+// smallest); else the smallest bomb; else any play at random. Following, a play has to beat the table's (so only the type of
+// the table's play, or a bomb, can come), and nothing is bombed over a partner's play; no play at all is a pass
+const TIMEOUT_TYPES=['single','pair','triple','full','straight','pairs3','trip2'];
+function timeoutPlay(who){
+  const hand=G.hands[who],L=G.L,cur=G.trick?G.trick.play:null;
+  if(!hand.length)return null;
+  const partnerLed=!!G.trick&&G.trick.player===(who+2)%4;
+  const ok=pl=>beats(pl,cur)&&!(partnerLed&&isBomb(pl));
+  const small=(a,b)=>a.value-b.value||cardSum(a,L)-cardSum(b,L);
+  // the group zone is the player's own: only the player's own page knows it
+  const fixed=new Set(who===0?(G.fixed||[]).flat():[]);
+  const act=hand.filter(c=>!fixed.has(c.id));
+  // the active cards that are not in a bomb of four or more of a rank (or the four jokers)
+  const cnt={};
+  for(const c of act)if(!isWild(c,L)&&c.r<16)cnt[c.r]=(cnt[c.r]||0)+1;
+  const jk=act.filter(c=>c.r>=16).length;
+  const pool=act.filter(c=>c.r>=16?jk<4:isWild(c,L)||cnt[c.r]<4);
+  if(pool.length){
+    const plays=genPlays(pool,L).concat(fullHouses(pool,L));
+    for(const t of TIMEOUT_TYPES){
+      const of=plays.filter(pl=>pl.type===t&&ok(pl));
+      const pure=of.filter(pl=>!pl.wu);
+      const pick=(pure.length?pure:of).sort(small)[0];
+      if(pick)return pick;
+    }
+  }
+  // the group zone: a group set as it is, not a bomb, the smallest
+  if(who===0&&G.fixed&&G.fixed.length){
+    const own=[];
+    for(const gr of G.fixed){
+      const cards=gr.map(id=>hand.find(c=>c.id===id)).filter(Boolean);
+      if(!cards.length)continue;
+      for(const a of analyze(cards,L))if(!isBomb(a)&&ok(a))own.push({...a,cards,wu:cards.filter(c=>isWild(c,L)).length});
+    }
+    if(own.length)return own.sort(small)[0];
+  }
+  const all=genPlays(hand,L).concat(fullHouses(hand,L)).filter(ok);
+  const bombs=all.filter(isBomb).sort((a,b)=>power(a)-power(b));
+  if(bombs.length)return bombs[0];
+  return all.length?all[Math.floor(Math.random()*all.length)]:null;
+}
 function timeUp(c){
   const who=c.who;
   if(who==='prep'){act({k:'begin'});return}
@@ -2712,7 +2756,7 @@ function timeUp(c){
     return;
   }
   if(typeof who==='number'&&G.phase==='play'&&G.turn===who){
-    const pl=aiDecide(who)||(G.trick||who!==0?null:hints[0]);
+    const pl=timeoutPlay(who);
     if(who===0){sel=new Set();setMsg(pl?'时间到，已自动出牌':'时间到，自动过')}
     act(playEvt(who,pl));
   }
@@ -3212,9 +3256,11 @@ function pileGeo(){
     // (with the count of cards under the plate, where a computer shows it)
     let a=R('#seat'+p+' .whorow');
     const add=b=>{a={left:Math.min(a.left,b.left),right:Math.max(a.right,b.right),bottom:Math.max(a.bottom,b.bottom)}};
-    const c=$('#seat'+p+' .cnt'),k=TEST&&$('#peek'+p);
+    const c=$('#seat'+p+' .cnt'),k=TEST&&$('#peek'+p),w=p?$('#watch'+p):null;
     if(c&&c.offsetHeight)add(c.getBoundingClientRect());
     if(k&&k.offsetHeight)add(k.getBoundingClientRect());
+    // (and, when watching, the face-up hands beside the plates)
+    if(w&&!w.hidden&&w.offsetHeight)add(w.getBoundingClientRect());
     return a;
   };
   const top=P(2).bottom-L.top;
@@ -3263,6 +3309,8 @@ function zoneFor(p,g){
     :p===1?{x0:mx1,x1:g.right-PASS_X,y0:g.top+PASS_Y,y1:g.bottom-PASS_Y}
     :p===2?{x0:mx0,x1:mx1,y0:g.top+PASS_Y,y1:g.cy}
     :{x0:mx0,x1:mx1,y0:g.near-g.lp-2*PASS_Y>=g.ch*.74?Math.max(g.cy,g.lp+PASS_Y):g.cy,y1:g.near-PASS_Y};
+  // watching: your partner's hand lies face up under their plate, so their plays go to the middle of the table instead of in front of it
+  if(p===2&&watching()){z.y0=Math.max(z.y0,g.cy-g.ch*.3);z.y1=Math.max(z.y1,z.y0+g.ch*1.8)}
   // a side player's cards also stop above the line where it reaches into their part of the table (a narrow screen)
   if((p===1||p===3)&&g.lpBox.r>z.x0&&g.lpBox.l<z.x1&&g.lpBox.t-PASS_Y-z.y0>g.ch)z.y1=Math.min(z.y1,g.lpBox.t-PASS_Y);
   // the right-hand player's cards stop above the action column, so they never lie under the buttons
@@ -3407,7 +3455,7 @@ function pileThrow(p,play,origins,animate){
   const cards=displayOrder(play,G.L),n=cards.length,base=(Math.random()-.5)*8;
   const gr={p,play,n,els:[],latest:true,sc:BIG,rot:cards.map(()=>base+(Math.random()-.5)*4),dy:cards.map(()=>(Math.random()-.5)*4)};
   // a phone shows the cards straight away in their places, without the flight and the turn
-  const anim=animate&&!reduceMotion()&&!isPhone();
+  const anim=animate&&!reduceMotion()&&!isPhone()&&!watching();
   const seat=relPoint(seatPoint(p),g);
   cards.forEach((c,i)=>{
     const el=document.createElement('div');
@@ -3456,7 +3504,7 @@ function pileSweep(){
   layer.querySelectorAll('.ktag').forEach(e=>e.remove());
   // a phone keeps no heap, nor does 极简出牌区: the finished trick simply goes, with no turning over
   // (nor does the card back 无: no turning over, no heap)
-  if(isPhone()||miniMode()||cardBack==='none'){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return}
+  if(isPhone()||miniMode()||cardBack==='none'||watching()){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return}
   layer.querySelectorAll('.pc.cur,.pc.old').forEach(el=>{
     el.classList.remove('cur','old');
     el.style.transitionDelay=(Math.random()*120|0)+'ms';
@@ -3469,7 +3517,7 @@ function pileRebuild(){
   const layer=pileEl(),g=pileGeo();
   layer.querySelectorAll('.pc,.ktag').forEach(e=>e.remove());
   pileZ=1000;heapZ=1;pileGroups=[];TS=1;
-  for(let i=0;i<(isPhone()||cardBack==='none'?0:G.heapN||0);i++){
+  for(let i=0;i<(isPhone()||cardBack==='none'||watching()?0:G.heapN||0);i++){
     const el=document.createElement('div');
     el.className='pc';el.innerHTML='<div class="bk"></div>';
     el.style.zIndex=++heapZ;el.style.transform=heapSpot(g);
@@ -3620,9 +3668,9 @@ function render(){
 // the line under the disc: the play now on the table and who made it, or who leads when the table is clear
 function renderLastPlay(){
   let t='';
+  // (what each player has just played is no longer written out here: the cards are on the table to be seen)
   if(G.phase==='play'&&G.trick){
-    const p=G.trick.player,pl=G.trick.play;
-    t=`${TEST?`<small>第 ${G.log.filter(e=>e.cards).length} 手</small> `:''}${p===0?'你':NAMES[p]} 出 ${displayOrder(pl,G.L).map(rankTag).join('')}<small>${pl.type==='bomb'?pl.n+'张炸弹':TYPE_NAME[pl.type]}</small>`;
+    t='';
   }else if(G.phase==='play'&&G.turn>=0)t=`${G.turn===0?'你':NAMES[G.turn]} 先出`;
   const el=$('#lastPlay');
   if(el.dataset.t!==t){el.dataset.t=t;el.innerHTML=t}
@@ -3745,8 +3793,6 @@ $('#tribInfo').addEventListener('click',e=>{
 });
 // one line per pair: who paid whom with which card, and what came back
 const cardTag=c=>`<b class="ct${c.r===17||c.s==='H'||c.s==='D'?' red':''}">${cardText(c)}</b>`;
-// the line under the disc names the ranks only, no suits
-const rankTag=c=>`<b class="ct${c.r===17?' red':''}">${c.r===16?'小王':c.r===17?'大王':rankName(c.r)}</b>`;
 // 抗贡: just whose big jokers they are (short: the line kept in the corner while the round is played)
 function kangHtml(short){
   const k=G.kang;if(!k)return'';
@@ -4979,7 +5025,7 @@ function showRules(){
     <li>出完牌后若其他人都不要，由队友接风出牌。</li>
     <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排。理牌方式按钮每点一下，依次换成“横式”、“竖式”、“手持”，按钮上写的是现在用的方式。“竖式”按牌的大小从左到右排，同样点数的牌从下往上按红心、黑桃、方块、梅花叠成一列，一眼就能看出每个点数有几张。按住没选中的牌滑过几张，是连选这些牌；从选中的牌上按住拖动，是把选中的牌一起挪到别处（也可以拖进左边的成组区）。平铺模式也一样。“复原”恢复成按大小排好的样子。</li>
     <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
-    <li>发完牌先进贡（最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒），有抗贡也在这时亮出；然后有 90 秒理牌时间（理好了点“理牌结束”），理完再还贡（限时 20 秒）。每次出牌限时 60 秒，最后 5 秒倒计时会闪烁，超时由电脑代你出牌。</li>
+    <li>发完牌先进贡（最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒），有抗贡也在这时亮出；然后有 90 秒理牌时间（理好了点“理牌结束”），理完再还贡（限时 20 秒）。每次出牌限时 60 秒，最后 5 秒倒计时会闪烁，超时由系统代你出牌：先出活动区里最小的单张、对子、三张、三带二、顺子、连对、钢板，没有就出成组区里不是炸弹的一手，再没有出最小的炸弹，都没有就随机出（出不了就过）。</li>
   </ul>
   <p class="muted">点选牌，双击任意一张牌直接出牌，“提示”会依次给出能出的牌，“过”是这一轮不要。</p>
   <div class="btns"><button class="btn primary" id="closeBtn">知道了</button></div>`);
@@ -5364,8 +5410,11 @@ $('#watchBtn').onclick=()=>{
   $('#watchBtn').setAttribute('aria-pressed',watchOn);
   renderWatch();
 };
+// watching: out of the round, with 观战 on. Then the face-down heap and the turning over of the cards are done without
+const watching=()=>!!(watchOn&&!TEST&&!isPhone()&&G&&G.phase==='play'&&G.out.includes(0));
+let watchWas=false;
 function renderWatch(){
-  const on=watchOn&&!TEST&&!isPhone()&&G&&G.phase==='play'&&G.out.includes(0);
+  const on=watching();
   for(const p of [1,2,3]){
     let box=$('#watch'+p);
     if(!on||!G.hands[p].length){if(box&&!box.hidden){box.hidden=true;box.innerHTML='';box.dataset.k=''}continue}
@@ -5379,6 +5428,8 @@ function renderWatch(){
       const units=handUnits(h,G.L,true);
       box.innerHTML=`<div class="prows">${rowsHTML(units,G.L,null,p!==2?rowsMax6(units):rowsOf(units,h.length<=14?1:2))}</div>`;
   }
+  // watching starts or stops: the cards on the table are laid again (no heap, partner's plays in the middle, or the other way)
+  if(on!==watchWas){watchWas=on;if(G&&pileEl())pileRebuild()}
 }
 $('#confirmBtn').onclick=()=>{
   confirmPlay=!confirmPlay;
