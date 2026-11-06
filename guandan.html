@@ -1435,6 +1435,18 @@ const AIP={
   // is unlikely (at most mateCantMax) to beat, with a bomb in hand: bomb it
   rInfer:1,rMateCant:1,mateCantMax:.1,inferSamples:100,infAEarly:.9,infAMid:.6,infALate:.2,infB:.5,infBLate:.8,infC:.7,
   rPureFit:1,rUrgentLate:1,rMateEvid:1,rBombPlain:1,bombPlainGap:6,rLeadPartner:1,
+  // rSingleAlong: on a single (the partner's or an opponent's), a lone single of yours of singleAlongMax (an ace) or below that beats
+  // it always goes, the smallest one; rLevelFirst: on an opponent's single that a level card beats, if no such lone single can,
+  // a level card of yours (not the wild heart) goes, a pair of them broken if need be, so the jokers stay in hand
+  rSingleAlong:1,singleAlongMax:14,rLevelFirst:1,
+  // rMateTypeLead: leading, after the partner led a pair, three-with-a-pair or straight that an opponent beat and the partner did
+  // not take back (the latest such kind first): the smallest play of that kind in hand, ahead of the lead rules of the partner's
+  // help, the dry kinds and the usual lead, behind the defence against an opponent down to one, two or five cards
+  rMateTypeLead:1,
+  // rMateFirstJoker: the first single an opponent plays this round, the partner yet to play to the trick, the single not the small
+  // joker, and no single of yours beats it but the big joker: the big joker stays, the partner tries first (unless the tribute
+  // shows the partner holds no small joker: he paid a card below it)
+  rMateFirstJoker:1,
 };
 // how good each kind of play is to hold, by its value (runs: their lowest card, 1 = A played low), from self-play in
 // 07-guandan-ai (stats.js): how often it wins the lead back, and how often an opponent's smaller one of its kind comes
@@ -1910,6 +1922,25 @@ function plainBomb(list,L){
   const lv=bombLevels(L),i=lv.indexOf(power(b));
   return list.find(u=>!u.wu&&lv.indexOf(power(u))-i<=AIP.bombPlainGap)||b;
 }
+// rMateTypeLead: the kinds (pair, full, straight) the partner led in a trick that an opponent won, the partner making no
+// play after his lead (he passed, or never got the turn); latest first, each once
+function mateBeatenKinds(p){
+  const m=(p+2)%4,lg=G.log||[],out=[];
+  let lead=null,mateAgain=false,win=null;
+  const close=()=>{
+    if(lead&&!mateAgain&&win&&win.p%2!==m%2&&(lead.type==='pair'||lead.type==='full'||lead.type==='straight')){
+      const i=out.indexOf(lead.type);if(i>=0)out.splice(i,1);
+      out.unshift(lead.type);
+    }
+  };
+  for(const e of lg){
+    if(e.cards&&e.lead){close();lead=e.p===m?e:null;mateAgain=false;win=e;continue}
+    if(!lead)continue;
+    if(e.cards){win=e;if(e.p===m)mateAgain=true}
+  }
+  close(); // the last trick is over when you lead
+  return out;
+}
 function aiLead(p,units,plays,ph){
   const hand=G.hands[p],L=G.L;
   // nothing in hand but bombs and one other group: that group goes first, unless an opponent holds as many cards as the group
@@ -1952,6 +1983,14 @@ function aiLead(p,units,plays,ph){
     const other=pool.filter(u=>u.type!==t);
     if(other.length)return pickLead(other,p);
     return of(t).reduce((m,u)=>u.value>m.value?u:m);
+  }
+  // the partner led a pair, three-with-a-pair or straight, an opponent beat it and the partner did not take it back: the
+  // partner most likely holds a big one of that kind still, so lead the smallest of it (the latest such kind first)
+  if(AIP.rMateTypeLead&&mateLeft){
+    for(const t of mateBeatenKinds(p)){
+      const c=of(t).sort((a,b)=>a.value-b.value||b.n-a.n)[0];
+      if(c)return c;
+    }
   }
   const st=AIP.rLeadMate||AIP.rDry?passStats():null;
   // a weak hand with a stronger partner helps the partner; then a kind the opponents pass on; then the usual lead
@@ -2074,10 +2113,16 @@ function feedMate(p,cur){
   if(xn===5&&(couldMake(pool,'full',0)||couldMake(pool,'straight',0)))return null;
   return pick(['full','straight']);
 }
+// rSingleAlong: on a single, the smallest lone single of the arranged hand (no wild card, not a bomb) that beats it and is
+// singleAlongMax (an ace) or below; null when there is none
+function smallSingle(units,cur){
+  if(!cur||cur.type!=='single')return null;
+  return units.filter(u=>u.type==='single'&&!isBomb(u)&&!u.wu&&u.value<=AIP.singleAlongMax&&beats(u,cur)).sort((a,b)=>a.value-b.value)[0]||null;
+}
 function aiChoose(p){
   const hand=G.hands[p],L=G.L,cur=G.trick?G.trick.play:null;
   tierOf(p); // fixed on the hand as dealt, before the first play
-  const plays=genPlays(hand,L).filter(pl=>beats(pl,cur));
+  let plays=genPlays(hand,L).filter(pl=>beats(pl,cur));
   if(!plays.length)return null;
   const fin=plays.find(pl=>pl.cards.length===hand.length);
   // going out wins, except when the way out is the last bomb and your partner's play on the table cannot be beaten: the
@@ -2102,6 +2147,8 @@ function aiChoose(p){
       const top=plays.filter(x=>x.type===cur.type&&x.n===cur.n&&!isBomb(x)&&!x.wu&&x.value>=14&&x.value<=15).sort((a,b)=>a.value-b.value)[0];
       if(top)return top;
     }
+    // your partner's single: a lone single of yours up to an ace that beats it always goes along (the ace too)
+    if(AIP.rSingleAlong){const s=smallSingle(units,cur);if(s)return s}
     // your partner's play is on the table: a big one needs no help, but a group of yours that fits exactly and is not a big
     // one (no wild card in it) always goes along, e.g. their 5, the opponent before you passed, your J
     if(AIP.rGoAlong){
@@ -2137,8 +2184,31 @@ function aiChoose(p){
   // an opponent left with 4 cards: no bomb on his play, unless it is bigger than any bomb that can be out there and it leaves
   // one play in the hand
   const four=b=>AIP.rFourBomb&&winLeft===4&&!(isTop(b,out())&&restCost(hand,b,L)<=1);
+  // the first single an opponent plays this round, the partner yet to play to this trick, the table's single not the small joker,
+  // and nothing of yours beats it but the big joker (unless the tribute shows the partner holds no small joker): the big joker
+  // stays in hand, the partner tries first
+  if(AIP.rMateFirstJoker&&cur.type==='single'&&cur.value<16&&mateYet()){
+    const mine=cur.cards||[];
+    const firstSingle=!(G.log||[]).some(e=>e.cards&&e.type==='single'&&e.p%2!==p%2&&!e.cards.some(c=>mine.some(x=>x.id===c.id)));
+    const m=(p+2)%4;
+    // a payer pays the biggest card they hold (wild cards aside): one below the small joker means no jokers at all
+    const mateNoSmall=(G.trib||[]).some(t=>t.g===m&&t.tc&&val(t.tc,L)<16);
+    const singles=plays.filter(x=>x.type==='single');
+    if(firstSingle&&!mateNoSmall&&singles.length&&singles.every(x=>x.cards[0].r===17)){
+      plays=plays.filter(x=>x.type!=='single'||x.cards[0].r!==17);
+      units=units.filter(u=>u.type!=='single'||u.cards[0].r!==17);
+      if(!plays.length)return null;
+    }
+  }
   // an opponent's bomb: the bomb rules from the player's comments decide first (the older rules only where they say nothing)
   if(AIP.rBombBack&&isBomb(cur)){const d=bombBack(p,units,cur,winLeft,ph,mateYet);if(d)return d.pl&&four(d.pl)?null:d.pl||null}
+  // an opponent's single: a lone single of yours up to an ace that beats it always goes (the smallest); failing that a level card
+  // goes before any joker, at any phase and however many cards or level cards are in hand
+  if(AIP.rSingleAlong){const s=smallSingle(units,cur);if(s)return s}
+  if(AIP.rLevelFirst&&cur.type==='single'&&cur.value<15){
+    const lv=plays.find(x=>x.type==='single'&&x.cards.length===1&&x.cards[0].r===L&&!isWild(x.cards[0],L));
+    if(lv)return lv;
+  }
   // a pure group that fits exactly and is not a big one always goes along, at any phase
   if(AIP.rPureFit){
     const pure=units.filter(u=>!isBomb(u)&&!u.wu&&u.type===cur.type&&u.n===cur.n&&beats(u,cur)&&!isCtrl(u)).sort((a,b)=>a.value-b.value)[0];
