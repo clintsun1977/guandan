@@ -15,5 +15,9 @@ function boot(data){
     if(G.phase==='play'){
       startTurn();
     }else{if(G.phase==='roundEnd'||G.phase==='over')G.reveal=4;render();if(G.phase==='roundEnd'||G.phase==='over')showResult()}
-  }else showStart();
+  }else{
+    showStart();
+    // the host's table from before a refresh or a closed page: straight back to it (network/host-restore.js)
+    if(hrLoad())hrRestore();
+  }
 }

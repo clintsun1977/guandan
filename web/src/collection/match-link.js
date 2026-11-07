@@ -40,21 +40,16 @@ function mlRoundEnd(){
   for(const t of [0,1]){const s=mlSide(t);st['lv'+s]=G.levels[t];st['a'+s]=(G.aFails||[0,0])[t]}
   mlStore({id:ML.id,seats:ML.seats,nextRound:ML.base+G.round+1,state:st,savedAt:Date.now()});
 }
-// 「继续上一把」 in the lobby, for whoever plays alone or opens the room
-function mlRenderBtn(){
-  const b=$('#contBtn'),m=lobbyMode!=='join'?mlLoad():null;
-  b.hidden=!m;
-  if(!m)return;
+// 选级's own first line, for whoever plays alone or opens the room: 「填入上一把的级数」 fills 选级 with where the match stopped
+function mlLevelHtml(dis){
+  const m=lobbyMode!=='join'?mlLoad():null;
+  if(!m)return'';
   const s=m.state,on=mlSame(RULES,s);
-  b.textContent=on?`已接上一把：南北打${rankName(s.lvSN)}，东西打${rankName(s.lvEW)}`:`继续上一把（南北打${rankName(s.lvSN)}，东西打${rankName(s.lvEW)}）`;
-  b.classList.toggle('on',on);
+  return`<button type="button" class="link level-cont${on?' on':''}" data-mlcont="1"${dis}>${on?'已填入上一把':'填入上一把的级数'}（南北打${rankName(s.lvSN)}，东西打${rankName(s.lvEW)}）</button>`;
 }
-$('#contBtn').onclick=()=>{
+function mlApply(){
   const m=mlLoad();
-  if(!m||lobbyMode==='join')return;
+  if(!m)return;
   const s=m.state;
   Object.assign(RULES,{lvSN:s.lvSN,lvEW:s.lvEW,aSN:s.aSN,aEW:s.aEW,playSide:s.playSide,order:s.order.slice()});
-  Sound.unlock();Sound.play('select');
-  renderRules();
-  if(lobbyMode==='host')broadcastLobby();
-};
+}

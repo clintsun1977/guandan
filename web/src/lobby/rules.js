@@ -11,7 +11,6 @@ function renderRules(){
     b.disabled=!mine;
   }
   $('#rulesNote').textContent=mine?'':'规则由房主选定';
-  mlRenderBtn();
   // 牌谱采集: said to everyone in a room before they sit down
   $('#collectNote').textContent=lobbyMode==='solo'?'':'两名以上真人时，每局牌谱匿名上传到 guandanai，用于 AI 训练（不含昵称、房间号、语音）';
   renderLevel();
@@ -45,7 +44,7 @@ function renderLevel(){
   const ps=RULES.playSide||'';
   const aRow=(side,cls,key)=>`<div class="level-row"><span class="level-k">${SIDE_NAME[side]}打A不过</span>${[0,1,2].map(n=>`<button type="button" class="rule-btn ${cls}${(RULES[key]||0)===n?' on':''}" data-ak="${key}" data-an="${n}"${dis}>${n} 次</button>`).join('')}</div>`;
   pk.innerHTML=`<div class="level-card">
-    <h3>选级（接着之前的牌局）</h3>
+    <h3>选级（接着之前的牌局）</h3>${mlLevelHtml(dis)}
     ${lvRow('SN','lv-red','lvSN')}${lvRow('EW','lv-blue','lvEW')}
     <div class="level-row"><span class="level-k">这一局打谁的级</span>
       <button type="button" class="rule-btn lv-red${ps==='SN'?' on':''}" data-side="SN"${dis}>南北</button>
@@ -80,6 +79,7 @@ $('#levelPick').addEventListener('click',e=>{
     RULES.order=o;
   }
   else if(d.lvreset){Object.assign(RULES,{lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0})}
+  else if(d.mlcont)mlApply();
   else return;
   Sound.play('select');
   renderLevel();

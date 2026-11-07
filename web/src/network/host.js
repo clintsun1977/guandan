@@ -33,6 +33,10 @@ function openRoom(){
     }
     lobbyStatus('开房间失败，请检查网络后重试');
   });
+  hostListen(peer);
+}
+// the room's peer answers voice calls and takes friends' connections (also for a room taken up again, see host-restore.js)
+function hostListen(peer){
   peer.on('call',c=>VC.incoming(c));
   peer.on('connection',conn=>{
     conn.on('open',()=>{

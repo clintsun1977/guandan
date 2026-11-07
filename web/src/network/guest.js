@@ -1,5 +1,6 @@
 // the host starts: everyone learns where everyone sits, then the first deal goes out
 function startOnline(){
+  hrClear();
   NET.started=true;NET.hostDir=myDir;
   const names={};
   for(const d of DIRS)if(NET.lobby[d])names[absOf(d,myDir)]=NET.lobby[d];

@@ -110,7 +110,7 @@ function askQuit(){
 }
 function quitGame(){
   try{
-    if(NET.mode==='host')broadcast({t:'bye'});
+    if(NET.mode==='host'){broadcast({t:'bye'});hrForget()} // left on purpose: nothing to come back to
     if(NET.mode==='guest'&&NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'bye'});
   }catch(_){}
   // a moment for the goodbye to go out, then back to the lobby
