@@ -14,8 +14,38 @@
 房主的页面要一直开着，房主关掉页面，这局就结束了。朋友中途掉线，他的座位由电脑接着打。
 联机是浏览器之间直接连接（PeerJS），个别网络环境可能连不上。
 
-## 文件
+## 电脑
 
-- `index.html`：可以直接放到网页上的游戏页面（由 `build.py` 生成）。
-- `guandan.html`：游戏源文件。
-- `build.py`：修改 `guandan.html` 后运行 `python build.py`，重新生成 `index.html`。
+大厅「电脑」一行选择电脑怎么打，由单人玩家或房主选定，进房间的朋友只能看：
+
+| 选项 | 说明 |
+| --- | --- |
+| **danMCai**（默认） | 神经网络 `danMCai-v000855042`，来自 [guandanai](https://github.com/stevensun1005/guandanai) 的 danMCai 现任冠军 |
+| Clint | Clint 的规则机器人 |
+| GuanZero | 神经网络 `guanzero-adp-io48-229609`，guandanai 最新发布的 GuanZero |
+
+神经网络在房主的浏览器里运行（onnxruntime-web），只看自己的手牌和公开信息；进贡、还贡仍按 Clint 规则。
+模型加载失败时，牌桌会提示一次，电脑改用 Clint 规则继续打。
+
+## 目录
+
+```text
+index.html          网站页面（由 web/build.py 生成，GitHub Pages 直接发布）
+web/                网页端
+  guandan.html      游戏源文件：牌桌、大厅、联机、训练
+  build.py          把 web/ 和 bot/ 合成根目录的 index.html
+bot/                电脑玩家
+  models.json       大厅里可选的电脑：名称、文件、SHA-256、来源
+  clint/            Clint 规则机器人与残局搜索
+  neural/           神经网络电脑：特征编码、候选出牌、残局求解、ONNX 推理
+  danmcai/          danMCai 权重
+  guanzero/         GuanZero 权重
+```
+
+修改 `web/` 或 `bot/` 后运行：
+
+```bash
+python web/build.py
+```
+
+本地试玩（模型需要通过 http 加载）：在仓库根目录运行 `python -m http.server 8000`，打开 http://localhost:8000/ 。

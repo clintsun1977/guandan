@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "defaultId": "danmcai",
+  "models": [
+    {
+      "id": "clint",
+      "name": "Clint",
+      "label": "Clint 规则机器人",
+      "kind": "rules",
+      "path": "clint/clint-bot.js"
+    },
+    {
+      "id": "danmcai",
+      "name": "danMCai",
+      "label": "danMCai-v000855042",
+      "kind": "onnx",
+      "path": "danmcai/danmcai-v000855042.onnx",
+      "file": "danmcai-v000855042.onnx",
+      "sha256": "462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7",
+      "bytes": 5368650,
+      "config": { "stateFeatures": 513, "actionFeatures": 54 },
+      "source": {
+        "repo": "stevensun1005/guandanai",
+        "release": "web-model-017",
+        "run": "mac-20261105",
+        "version": "v000855042",
+        "step": 855042,
+        "note": "guandanai 网页默认的 danMCai 现任门控冠军（归档 017）"
+      }
+    },
+    {
+      "id": "guanzero",
+      "name": "GuanZero",
+      "label": "guanzero-adp-io48-229609",
+      "kind": "onnx",
+      "path": "guanzero/guanzero-adp-io48-229609.onnx",
+      "file": "guanzero-adp-io48-229609.onnx",
+      "sha256": "43d72b65e773fb5acb6b8f86baed16a69a1977a97fb6fddf4fe5f23ee25261bc",
+      "bytes": 6346014,
+      "config": { "stateFeatures": 513, "actionFeatures": 54, "history": "guanzero-v1" },
+      "source": {
+        "repo": "stevensun1005/guandanai",
+        "release": "web-model-021",
+        "run": "guanzero-adp-io48",
+        "version": "model-000000229609",
+        "step": 229609,
+        "note": "guandanai 最新发布的 GuanZero（归档 021）"
+      }
+    }
+  ]
+}
