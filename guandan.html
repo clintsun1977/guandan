@@ -826,9 +826,10 @@ body.spec #pauseBtn,body.spec #tsBtn,body.spec #tside,body.spec #tview,body.spec
 body.spec .tgrp,body.spec .tnbox,body.spec #readyBtn,body.spec #deckBtn,body.spec #prep,body.spec #prepBig,body.spec .clock,
 body.spec #myClock,body.spec #cardBackBtn,body.spec #watchBtn,body.spec #confirmBtn,body.spec #overlay .btn:not(.keep){display:none!important}
 body.spec #hand{pointer-events:none}
-/* a spectator's plates are written in black (the team colour on the team-coloured plate was hard to read); a pass in the record is the word 过 alone, centred */
-body.spec .seat .who .name,body.spec #myName{color:#000!important}
-body.spec .pchip{border:0;width:auto;align-self:stretch;min-width:calc(var(--mcw)*1.2)}
+/* in the training version and for a spectator the plates are written in black (the team colour on the team-coloured plate was hard to read);
+   a pass in the record is the word 过 alone, centred */
+body.test .seat .who .name,body.test #myName{color:#000!important}
+body.test .pchip{border:0;width:auto;align-self:stretch;min-width:calc(var(--mcw)*1.2)}
 /* spectating is for computers and iPads, not phones */
 html.phone #specBtn,html.phone #specRow{display:none!important}
 body.test{--tside-w:340px}
