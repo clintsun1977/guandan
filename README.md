@@ -16,12 +16,12 @@
 
 ## 电脑
 
-大厅「电脑」一行选择电脑怎么打，由单人玩家或房主选定，进房间的朋友只能看：
+大厅「电脑模型」一行选择电脑怎么打，由单人玩家或房主选定，进房间的朋友只能看：
 
 | 选项 | 说明 |
 | --- | --- |
-| **danMCai**（默认） | 神经网络 `danMCai-v000855042`，**引用自 [guandanai](https://github.com/stevensun1005/guandanai)** 的 danMCai 现任冠军 |
-| Clint | Clint 的规则机器人（本项目自己的） |
+| **默认** | Clint 的规则机器人（本项目自己的），开局默认选中 |
+| **danMCai** | 神经网络 `danMCai-v000855042`，**引用自 [guandanai](https://github.com/stevensun1005/guandanai)** 的 danMCai 现任冠军 |
 | GuanZero | 神经网络 `guanzero-adp-io48-229609`，**引用自 guandanai** 最新发布的 GuanZero |
 
 神经网络在房主的浏览器里运行（onnxruntime-web），只看自己的手牌和公开信息；进贡、还贡仍按 Clint 规则。

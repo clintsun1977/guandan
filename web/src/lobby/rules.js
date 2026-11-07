@@ -1,13 +1,13 @@
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
-  Object.assign(RULES,{trib:true,aFail:'draw',bot:'danmcai',coach:true,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
+  Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
   try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.bot==='clint'||NeuralBot.has(r.bot))RULES.bot=r.bot;if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){
   const mine=lobbyMode!=='join';
   for(const b of ruleBtns){
-    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'danmcai'):b.dataset.rule==='coach'?(RULES.coach===false?'0':'1'):RULES.aFail));
+    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'clint'):b.dataset.rule==='coach'?(RULES.coach?'1':'0'):RULES.aFail));
     b.disabled=!mine;
   }
   $('#rulesNote').textContent=mine?'':'规则由房主选定';

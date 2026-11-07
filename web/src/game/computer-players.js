@@ -5,7 +5,7 @@
 // the Clint rules
 const BOT_WAIT_MS=30000;
 const botId=()=>RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
-const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'danmcai'));return m?m.label:'Clint 规则机器人'};
+const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'clint'));return m?m.label:'Clint 规则机器人'};
 let botFailed='';
 const BOT_USED=[]; // which computer actually made each seat's last move (for the round records)
 function botPreload(){const id=botId();if(id&&isHost()&&botFailed!==id)NeuralBot.preload(id).catch(e=>console.warn('电脑模型没能加载',e))}

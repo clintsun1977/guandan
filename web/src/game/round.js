@@ -30,7 +30,7 @@ function startRound(e){
   // (the very first round picks the cutter at random)
   G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
   G.shuffler=(G.cutter+3)%4;
-  G.dealIdx=G.cutter;G.ready=[];G.nextReady=[];NET.pending=false;G.queuedPlay=false;
+  G.dealIdx=G.cutter;G.ready=[];G.nextReady=[];NET.pending=false;
   sel=new Set();
   hideOverlay();
   removeDeck();

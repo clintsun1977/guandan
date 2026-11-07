@@ -132,7 +132,7 @@ function testReplay(rec){
   G.hands=rec.hands.map(h=>sortHand(h.map(c=>byId.get(c.id)),G.L));
   G.deck=[];G.trick=null;G.passes=0;G.last=[null,null,null,null];G.out=[];G.fresh=[];G.result=null;
   G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.stepWait=null;G.busy=false;G.reveal=0;
-  G.trickPlays=[];G.heapN=0;G.seen=[];G.log=[];G.pw=[];G.rest=[];G.myOrder=[];G.fixed=[];G.ready=[];G.nextReady=[];G.queuedPlay=false;
+  G.trickPlays=[];G.heapN=0;G.seen=[];G.log=[];G.pw=[];G.rest=[];G.myOrder=[];G.fixed=[];G.ready=[];G.nextReady=[];
   G.tgRound=null;G.ua=null;NET.pending=false;sel=new Set();
   removeDeck();pileRebuild();
   G.replay={of:rec.replayOf||rec.no,trib:rec.trib,kang:rec.kang};

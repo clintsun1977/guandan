@@ -41,8 +41,6 @@ function startTurn(){
     Sound.play('turn');
     G.clock={who:0,left:PLAY_MS,total:PLAY_MS};
     render();
-    // 出牌 was pressed while the last trick was still on show
-    if(G.queuedPlay){G.queuedPlay=false;if(sel.size)onPlay()}
     return;
   }
   // a friend's turn: their clock runs here too, and their move arrives as an event

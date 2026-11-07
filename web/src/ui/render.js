@@ -97,8 +97,6 @@ function statusOf(p){
 }
 function renderControls(){
   const my=G.phase==='play'&&G.turn===0;
-  // leading next while the finished trick is still on show: 出牌 can already be pressed
-  const soon=G.phase==='play'&&G.turn===-1&&G.nextLeader===0&&G.hands[0].length>0;
   const pay=G.phase==='tribPick'&&G.tribGivers.includes(0)&&G.tribPick[0]==null;
   const ret=owesReturn(0)||pay;
   $('#playBtn').hidden=ret;$('#passBtn').hidden=ret;$('#hintBtn').hidden=ret;
@@ -111,7 +109,9 @@ function renderControls(){
   // 出牌 once the picked cards make a play that may go out now (beats the table, or any combination when you are
   // about to lead), 提示 on your turn, 过 when there is something on the table to pass on, 重选 while any cards are picked
   const picked=sel.size>0,cur=my&&G.trick?G.trick.play:null;
-  const playable=(my||soon)&&picked&&analyze(selectedCards(),G.L).some(r=>beats(r,cur));
+  // (出牌 stays dim until your turn really starts, that is after the finished trick has been gathered up: a lit button while the
+  // cards are still on show made players press it again and again)
+  const playable=my&&picked&&analyze(selectedCards(),G.L).some(r=>beats(r,cur));
   const can={playBtn:playable,hintBtn:my,passBtn:my&&!!G.trick,clearBtn:picked};
   if(cfm&&(!playable||cfm!==selKey()))cfm=null;
   $('#playBtn').textContent=cfm?'确认':'出牌';

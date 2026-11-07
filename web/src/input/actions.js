@@ -4,12 +4,8 @@ function selectedCards(){return G.hands[0].filter(c=>sel.has(c.id))}
 const waitingHost=()=>NET.pending&&Date.now()-(NET.pendingAt||0)<4000;
 function onPlay(){
   if(ENDG)return;
-  // you lead next but the finished trick is still on show: the play goes out the moment your turn starts
-  if(G.phase==='play'&&G.turn===-1&&G.nextLeader===0){
-    if(!selectedCards().length){setMsg('先选几张牌',true);return}
-    if(askConfirm())return;
-    G.queuedPlay=true;setMsg('这一轮的牌收起后马上出');return;
-  }
+  // you lead next but the finished trick is still being gathered up: nothing goes out yet
+  if(G.phase==='play'&&G.turn===-1&&G.nextLeader===0){setMsg('这一轮的牌还在收，收完再出',true);return}
   if(G.phase!=='play')return;
   if(G.turn!==0){setMsg('还没轮到你出牌',true);return}
   const cards=selectedCards();

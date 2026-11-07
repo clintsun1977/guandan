@@ -3325,7 +3325,7 @@ class EsSolver{
     return mcOver(S)?{line:out,S,value:v}:null;
   }
 }
-const BOT_MODELS={"schema":1,"defaultId":"danmcai","models":[{"id":"clint","name":"Clint","label":"Clint 规则机器人","kind":"rules","path":"clint/clint-bot.js"},{"id":"danmcai","name":"danMCai","label":"danMCai-v000855042","kind":"onnx","path":"danmcai/danmcai-v000855042.onnx","file":"danmcai-v000855042.onnx","sha256":"462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7","bytes":5368650,"config":{"stateFeatures":513,"actionFeatures":54},"source":{"repo":"stevensun1005/guandanai","release":"web-model-017","run":"mac-20261105","version":"v000855042","step":855042,"note":"guandanai 网页默认的 danMCai 现任门控冠军（归档 017）"},"guandanaiId":"017"},{"id":"guanzero","name":"GuanZero","label":"guanzero-adp-io48-229609","kind":"onnx","path":"guanzero/guanzero-adp-io48-229609.onnx","file":"guanzero-adp-io48-229609.onnx","sha256":"43d72b65e773fb5acb6b8f86baed16a69a1977a97fb6fddf4fe5f23ee25261bc","bytes":6346014,"config":{"stateFeatures":513,"actionFeatures":54,"history":"guanzero-v1"},"source":{"repo":"stevensun1005/guandanai","release":"web-model-021","run":"guanzero-adp-io48","version":"model-000000229609","step":229609,"note":"guandanai 最新发布的 GuanZero（归档 021）"},"guandanaiId":"021"}]};
+const BOT_MODELS={"schema":1,"defaultId":"clint","models":[{"id":"clint","name":"Clint","label":"Clint 规则机器人","kind":"rules","path":"clint/clint-bot.js"},{"id":"danmcai","name":"danMCai","label":"danMCai-v000855042","kind":"onnx","path":"danmcai/danmcai-v000855042.onnx","file":"danmcai-v000855042.onnx","sha256":"462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7","bytes":5368650,"config":{"stateFeatures":513,"actionFeatures":54},"source":{"repo":"stevensun1005/guandanai","release":"web-model-017","run":"mac-20261105","version":"v000855042","step":855042,"note":"guandanai 网页默认的 danMCai 现任门控冠军（归档 017）"},"guandanaiId":"017"},{"id":"guanzero","name":"GuanZero","label":"guanzero-adp-io48-229609","kind":"onnx","path":"guanzero/guanzero-adp-io48-229609.onnx","file":"guanzero-adp-io48-229609.onnx","sha256":"43d72b65e773fb5acb6b8f86baed16a69a1977a97fb6fddf4fe5f23ee25261bc","bytes":6346014,"config":{"stateFeatures":513,"actionFeatures":54,"history":"guanzero-v1"},"source":{"repo":"stevensun1005/guandanai","release":"web-model-021","run":"guanzero-adp-io48","version":"model-000000229609","step":229609,"note":"guandanai 最新发布的 GuanZero（归档 021）"},"guandanaiId":"021"}]};
 /* ---------- neural computer players: danMCai and GuanZero (bot/models.json), run in the browser with onnxruntime-web ---------- */
 // Taken from stevensun1005/guandanai (https://github.com/stevensun1005/guandanai), not written for this project: ported from its web/src/ai (encoding.mjs, history.mjs, candidates.js, observation.js, endgame.js,
 // policy-inference.mjs, table-policy.mjs), keeping the exact inputs the networks were trained on. A network sees only its
@@ -3689,7 +3689,7 @@ const TV={open:false};
 const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),specs:new Map(),lobby:{S:null,E:null,N:null,W:null},mics:{}};
 const isHost=()=>NET.mode!=='guest';
 // table rules, chosen in the lobby (online, by the host): tribute on or off, and what happens after three failed tries at A
-const RULES={trib:true,aFail:'draw',bot:'danmcai',coach:true,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
+const RULES={trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
 const isHumanSeat=p=>NET.humans.has(p);
 const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
 let hints=[],hintIdx=0;
@@ -3757,7 +3757,7 @@ function startRound(e){
   // (the very first round picks the cutter at random)
   G.cutter=toLocal(e.cutter);G.firstLeader=toLocal(e.first);
   G.shuffler=(G.cutter+3)%4;
-  G.dealIdx=G.cutter;G.ready=[];G.nextReady=[];NET.pending=false;G.queuedPlay=false;
+  G.dealIdx=G.cutter;G.ready=[];G.nextReady=[];NET.pending=false;
   sel=new Set();
   hideOverlay();
   removeDeck();
@@ -4114,8 +4114,6 @@ function startTurn(){
     Sound.play('turn');
     G.clock={who:0,left:PLAY_MS,total:PLAY_MS};
     render();
-    // 出牌 was pressed while the last trick was still on show
-    if(G.queuedPlay){G.queuedPlay=false;if(sel.size)onPlay()}
     return;
   }
   // a friend's turn: their clock runs here too, and their move arrives as an event
@@ -4139,7 +4137,7 @@ const AI_THINK_MIN=500,AI_THINK_MAX=1000;
 // the Clint rules
 const BOT_WAIT_MS=30000;
 const botId=()=>RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
-const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'danmcai'));return m?m.label:'Clint 规则机器人'};
+const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'clint'));return m?m.label:'Clint 规则机器人'};
 let botFailed='';
 const BOT_USED=[]; // which computer actually made each seat's last move (for the round records)
 function botPreload(){const id=botId();if(id&&isHost()&&botFailed!==id)NeuralBot.preload(id).catch(e=>console.warn('电脑模型没能加载',e))}
@@ -4510,12 +4508,8 @@ function selectedCards(){return G.hands[0].filter(c=>sel.has(c.id))}
 const waitingHost=()=>NET.pending&&Date.now()-(NET.pendingAt||0)<4000;
 function onPlay(){
   if(ENDG)return;
-  // you lead next but the finished trick is still on show: the play goes out the moment your turn starts
-  if(G.phase==='play'&&G.turn===-1&&G.nextLeader===0){
-    if(!selectedCards().length){setMsg('先选几张牌',true);return}
-    if(askConfirm())return;
-    G.queuedPlay=true;setMsg('这一轮的牌收起后马上出');return;
-  }
+  // you lead next but the finished trick is still being gathered up: nothing goes out yet
+  if(G.phase==='play'&&G.turn===-1&&G.nextLeader===0){setMsg('这一轮的牌还在收，收完再出',true);return}
   if(G.phase!=='play')return;
   if(G.turn!==0){setMsg('还没轮到你出牌',true);return}
   const cards=selectedCards();
@@ -5226,8 +5220,6 @@ function statusOf(p){
 }
 function renderControls(){
   const my=G.phase==='play'&&G.turn===0;
-  // leading next while the finished trick is still on show: 出牌 can already be pressed
-  const soon=G.phase==='play'&&G.turn===-1&&G.nextLeader===0&&G.hands[0].length>0;
   const pay=G.phase==='tribPick'&&G.tribGivers.includes(0)&&G.tribPick[0]==null;
   const ret=owesReturn(0)||pay;
   $('#playBtn').hidden=ret;$('#passBtn').hidden=ret;$('#hintBtn').hidden=ret;
@@ -5240,7 +5232,9 @@ function renderControls(){
   // 出牌 once the picked cards make a play that may go out now (beats the table, or any combination when you are
   // about to lead), 提示 on your turn, 过 when there is something on the table to pass on, 重选 while any cards are picked
   const picked=sel.size>0,cur=my&&G.trick?G.trick.play:null;
-  const playable=(my||soon)&&picked&&analyze(selectedCards(),G.L).some(r=>beats(r,cur));
+  // (出牌 stays dim until your turn really starts, that is after the finished trick has been gathered up: a lit button while the
+  // cards are still on show made players press it again and again)
+  const playable=my&&picked&&analyze(selectedCards(),G.L).some(r=>beats(r,cur));
   const can={playBtn:playable,hintBtn:my,passBtn:my&&!!G.trick,clearBtn:picked};
   if(cfm&&(!playable||cfm!==selKey()))cfm=null;
   $('#playBtn').textContent=cfm?'确认':'出牌';
@@ -7078,7 +7072,7 @@ const CO={turn:null,last:null,hidden:false,topOpen:null};
 const coachKey=()=>G.tok+':'+G.log.length;
 const coachTop5=()=>TOP5_NAMES.includes((myNick||'').trim().toLowerCase());
 const coachDeck=makeDeck();
-const coachShown=()=>(RULES.coach!==false||coachTop5())&&!CO.hidden&&!TEST&&!SPEC&&!ENDG&&NeuralBot.has(COACH_ID)&&isHumanSeat(0)&&!!G&&
+const coachShown=()=>(RULES.coach===true||coachTop5())&&!CO.hidden&&!TEST&&!SPEC&&!ENDG&&NeuralBot.has(COACH_ID)&&isHumanSeat(0)&&!!G&&
   ['play','roundEnd','over'].includes(G.phase);
 // the table as you see it at the start of your turn; the other hands go in only as counts
 function coachSnap(){
@@ -7816,14 +7810,14 @@ function showStart(){
 }
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
-  Object.assign(RULES,{trib:true,aFail:'draw',bot:'danmcai',coach:true,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
+  Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
   try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.bot==='clint'||NeuralBot.has(r.bot))RULES.bot=r.bot;if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){
   const mine=lobbyMode!=='join';
   for(const b of ruleBtns){
-    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'danmcai'):b.dataset.rule==='coach'?(RULES.coach===false?'0':'1'):RULES.aFail));
+    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'clint'):b.dataset.rule==='coach'?(RULES.coach?'1':'0'):RULES.aFail));
     b.disabled=!mine;
   }
   $('#rulesNote').textContent=mine?'':'规则由房主选定';
@@ -9085,7 +9079,7 @@ function testReplay(rec){
   G.hands=rec.hands.map(h=>sortHand(h.map(c=>byId.get(c.id)),G.L));
   G.deck=[];G.trick=null;G.passes=0;G.last=[null,null,null,null];G.out=[];G.fresh=[];G.result=null;
   G.turn=-1;G.notice='';G.trib=[];G.kang=null;G.returns=[];G.gives=[];G.afterTrib=false;G.clock=null;G.stepWait=null;G.busy=false;G.reveal=0;
-  G.trickPlays=[];G.heapN=0;G.seen=[];G.log=[];G.pw=[];G.rest=[];G.myOrder=[];G.fixed=[];G.ready=[];G.nextReady=[];G.queuedPlay=false;
+  G.trickPlays=[];G.heapN=0;G.seen=[];G.log=[];G.pw=[];G.rest=[];G.myOrder=[];G.fixed=[];G.ready=[];G.nextReady=[];
   G.tgRound=null;G.ua=null;NET.pending=false;sel=new Set();
   removeDeck();pileRebuild();
   G.replay={of:rec.replayOf||rec.no,trib:rec.trib,kang:rec.kang};
@@ -9283,9 +9277,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1610';
+const VERSION='1107-1633';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977b0bea';
+const APP_HASH='c1977d83d0';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
