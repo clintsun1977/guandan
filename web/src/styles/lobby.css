@@ -115,7 +115,3 @@
   .cnt{font-size:20px;padding:2px 6px 1px}
   .cnt small{font-size:12px}
 }
-/* 继续上一把: under the lobby table, offered when this browser remembers a match that was stopped; lit once 选级 holds it */
-.lobby-cont{align-self:center;font-size:16px;padding:6px 14px;border-radius:12px;border:1.5px dashed var(--gold);color:var(--gold);background:transparent;cursor:pointer}
-.lobby-cont.on{border-style:solid;background:var(--gold);color:var(--on-gold);font-weight:700}
-.lobby-cont[hidden]{display:none}

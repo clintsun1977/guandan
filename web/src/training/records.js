@@ -16,9 +16,7 @@ function testRoundStart(){
     hands:G.hands.map(h=>h.slice()),power,myGroups:mine,myPower:mine?scorePower(armScore(myUnits())):power[0],userGroups:ug,userPower:up,rawGroups:raw,
     trib:rp?rp.trib:(G.trib||[]).map(t=>`${NAMES[t.g]}进贡 ${cardText(t.tc)} 给${NAMES[t.r]}`+(t.rc?`，${NAMES[t.r]}还 ${cardText(t.rc)}`:'')),
     kang:rp?rp.kang:G.kang?kangHtml(true).replace(/<[^>]+>/g,''):'',
-    log:G.log,result:'',notes:{},nk:'all',nv:0,replayOf:rp?rp.of:null,endgame:!!G.endgame,preHands:G.endgame?G.preHands||null:null,
-    // a 残局 starts in the middle of the round: the plays so far, who is next, the 牌力 tiers worked out at the deal
-    endStart:G.endgame?{turn:G.turn,pw:(G.pw||[]).map(x=>x==null?null:x),pre:G.log.map(e=>({p:e.p,c:e.cards?e.cards.map(c=>c.id):null,lead:e.lead,type:e.type,value:e.value,n:e.n}))}:null});
+    log:G.log,result:'',notes:{},nk:'all',nv:0,replayOf:rp?rp.of:null});
   recName(curRec());
   testStore();
 }
@@ -33,8 +31,8 @@ function testRoundEnd(){
 // kept in this browser (the last 200 rounds), cards by their number in the deck
 const TKEY='guandan-test-records',DECK=makeDeck();
 const recOut=r=>({uid:r.uid,no:r.no,at:r.at,L:r.L,lvlTeam:r.lvlTeam,levels:r.levels,leader:r.leader,hands:r.hands.map(h=>h.map(c=>c.id)),
-  power:r.power,myGroups:r.myGroups,myPower:r.myPower,userGroups:r.userGroups,userPower:r.userPower,rawGroups:r.rawGroups,done:!!r.done,name:r.name,trib:r.trib,kang:r.kang,result:r.result,notes:r.notes,nk:'all',replayOf:r.replayOf,endgame:!!r.endgame,preHands:r.preHands,endStart:r.endStart,train:r.train,
-  log:r.log.map(e=>({p:e.p,c:e.cards?e.cards.map(c=>c.id):null,lead:e.lead,type:e.type,value:e.value,n:e.n,mq:e.mq,mn:e.mn}))});
+  power:r.power,myGroups:r.myGroups,myPower:r.myPower,userGroups:r.userGroups,userPower:r.userPower,rawGroups:r.rawGroups,done:!!r.done,name:r.name,trib:r.trib,kang:r.kang,result:r.result,notes:r.notes,nk:'all',replayOf:r.replayOf,
+  log:r.log.map(e=>({p:e.p,c:e.cards?e.cards.map(c=>c.id):null,lead:e.lead,type:e.type,value:e.value,n:e.n}))});
 // every turn has its number, a 过 as much as a play; records kept before then numbered the plays alone
 function notesIn(o){
   if(o.nk==='all'||!o.notes)return o.notes||{};
@@ -44,7 +42,7 @@ function notesIn(o){
   return m;
 }
 const recIn=o=>({...o,nv:0,notes:notesIn(o),nk:'all',userGroups:o.userGroups||{},userPower:o.userPower||{},hands:o.hands.map(h=>h.map(id=>DECK[id])),
-  log:o.log.map(e=>({p:e.p,cards:e.c?e.c.map(id=>DECK[id]):null,lead:e.lead,type:e.type,value:e.value,n:e.n,mq:e.mq,mn:e.mn}))});
+  log:o.log.map(e=>({p:e.p,cards:e.c?e.c.map(id=>DECK[id]):null,lead:e.lead,type:e.type,value:e.value,n:e.n}))});
 let storeT=0;
 function testStore(){
   if(SPEC)return;

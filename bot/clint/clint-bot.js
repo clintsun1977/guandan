@@ -380,18 +380,14 @@ function mateLead(p,pool,st){
   if(!ns[1])return null;
   const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
   const cards=makeDeck().filter(c=>!gone.has(c.id));
-  if(cards.length<need&&!G.open)return null;
+  if(cards.length<need)return null;
   const by=(a,b)=>a.value-b.value||b.n-a.n,kinds={};
   for(const u of pool)(kinds[u.type+u.n]||(kinds[u.type+u.n]=[])).push(u);
   const firsts=Object.values(kinds).map(g=>g.slice().sort(by)[0]),mc=firsts.map(()=>0),nc=firsts.map(()=>0);
-  const N=G.open?1:AIP.mateSamples;
+  const N=AIP.mateSamples;
   for(let t=0;t<N;t++){
-    let nh,mh;
-    if(G.open){nh=genPlays(G.hands[nx],G.L);mh=genPlays(G.hands[m],G.L).filter(x=>!isBomb(x))} // (the true hands, once)
-    else{
-      for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(cards.length-i));[cards[i],cards[j]]=[cards[j],cards[i]]}
-      nh=genPlays(cards.slice(0,ns[0]),G.L);mh=genPlays(cards.slice(ns[0],ns[0]+ns[1]),G.L).filter(x=>!isBomb(x));
-    }
+    for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(cards.length-i));[cards[i],cards[j]]=[cards[j],cards[i]]}
+    const nh=genPlays(cards.slice(0,ns[0]),G.L),mh=genPlays(cards.slice(ns[0],ns[0]+ns[1]),G.L).filter(x=>!isBomb(x));
     firsts.forEach((u,i)=>{if(mh.some(x=>beats(x,u)))mc[i]++;if(ns[0]&&nh.some(x=>beats(x,u)))nc[i]++});
   }
   const c=firsts.map((u,i)=>({u,m:mc[i]/N,x:nc[i]/N})).filter(o=>o.m>=AIP.leadMateMin&&o.x<=AIP.leadNextMax);
@@ -477,8 +473,6 @@ function eventFactor(x,k){
 }
 // weighted deals of the unseen cards to the other three (worked out once per move)
 function inferDeals(p){
-  // an open table (残局): the one deal there is, the true hands, in the order the others are counted
-  if(G.open)return[{ks:[1,2,3].map(k=>handCounts(G.hands[(p+k)%4],G.L)),w:1}];
   const log=G.log||[],key=p+':'+log.length;
   if(G.inf&&G.inf.key===key&&G.inf.hands===G.hands&&G.inf.aip===AIP)return G.inf.deals;
   const L=G.L,others=[1,2,3].map(k=>(p+k)%4);
@@ -520,7 +514,7 @@ function inferBeat(p,pl,who){
 }
 // the late game: the player who played last, or you, hold 10 cards or fewer
 // (in a 残局 the hands are open: always the true hands)
-const inferNow=p=>!!G.open||AIP.rInfer&&(G.hands[p].length<=10||!!G.trick&&G.hands[G.trick.player].length<=10);
+const inferNow=p=>AIP.rInfer&&(G.hands[p].length<=10||!!G.trick&&G.hands[G.trick.player].length<=10);
 // how likely the partner holds a play (not a bomb) over this one, by the inferred hands
 function inferMateBeat(p,cur){
   const m=(p+2)%4;

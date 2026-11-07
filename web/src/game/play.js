@@ -19,8 +19,7 @@ function doPlay(p,play){
     pileThrow(p,play,origins,true);
     G.trickPlays.push({p,play:{type:play.type,value:play.value,n:play.n,cards:play.cards}});
     G.seen.push(...play.cards); // every card played this round, for the computer's card memory
-    G.log.push({p,cards:play.cards,lead:!G.trick,type:play.type,value:play.value,n:play.n,...(G.mcNote&&G.mcNote.p===p?{mq:G.mcNote.q,mn:G.mcNote.n}:null)}); // and who played what, in order, leading or following
-    G.mcNote=null; // (in a 残局: how many levels the search expected from the move, and how many tries it made)
+    G.log.push({p,cards:play.cards,lead:!G.trick,type:play.type,value:play.value,n:play.n}); // and who played what, in order, leading or following
     const ids=new Set(play.cards.map(c=>c.id));
     G.hands[p]=G.hands[p].filter(c=>!ids.has(c.id));
     G.trick={player:p,play};

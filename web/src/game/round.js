@@ -34,6 +34,5 @@ function startRound(e){
   sel=new Set();
   hideOverlay();
   removeDeck();
-  if(ENDG){endgameDeal();return}
   startShuffle();
 }

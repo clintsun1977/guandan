@@ -68,7 +68,6 @@
 }
 body.test #emoteBtn,
 body.spec #emoteBtn,
-body.endg #emoteBtn,
 #emoteBtn[hidden] {
   display: none;
 }

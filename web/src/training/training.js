@@ -27,12 +27,10 @@ $('#testGo').onclick=()=>{
   if(lobbyMode!=='solo')setMode('solo');
   myNick=nickNow()||'测试';myDir='S';
   Sound.unlock();
-  // the right password opens the choice of practice: 配牌, 牌局 (the practice that was here before) or 残局
-  $('#lobby').hidden=true;$('#trainMenu').hidden=false;
+  // the right password goes straight into the practice
+  $('#lobby').hidden=true;
+  enterTest();
 };
-$('#tmPlay').onclick=()=>{ENDG=false;$('#trainMenu').hidden=true;enterTest()};
-$('#tmEnd').onclick=()=>{ENDG=true;document.body.classList.add('endg');$('#trainMenu').hidden=true;enterTest()};
-$('#tmBack').onclick=()=>{$('#trainMenu').hidden=true;$('#lobby').hidden=false};
 function enterTest(spec){
   TEST=true;SPEC=!!spec;document.body.classList.add('test');document.body.classList.toggle('spec',!!spec);syncPhone();
   TREC.started=new Date();TREC.rounds=spec?[]:testLoad();
@@ -103,23 +101,6 @@ function enterTest(spec){
   $('#tsBtn').onclick=()=>{s.classList.toggle('open');$('#tsBtn').classList.toggle('on',s.classList.contains('open'));$('#tsList').dataset.k='';testList()};
   document.body.classList.toggle('fsok',!!(document.fullscreenEnabled||document.webkitFullscreenEnabled));
   $('#fsBtn').onclick=testFull;
-  if(ENDG){
-    // 残局: the controls: how long a position may take, going on to the next position by itself, another position now
-    $('.acts').insertAdjacentHTML('afterbegin','<select id="endCap" title="一个局面最多算多久，算不完就放弃"><option value="30">最多算 30 秒</option><option value="60">最多算 1 分钟</option><option value="120" selected>最多算 2 分钟</option><option value="300">最多算 5 分钟</option></select><button class="link tog" id="autoBtn" aria-pressed="true" title="一个局面算完了，自己接着算下一个局面">自动下一局</button><button class="link" id="nextEndBtn" title="不等这个局面了，换一个新的">换一局</button>');
-    $('#endCap').onchange=e=>{ENDCAP=+e.target.value};
-    $('#autoBtn').onclick=()=>{
-      ENDAUTO=!ENDAUTO;$('#autoBtn').setAttribute('aria-pressed',ENDAUTO);
-      if(ENDAUTO&&G.phase==='roundEnd'&&!ENDRUN)endgameNext();
-    };
-    $('#nextEndBtn').onclick=endgameNext;
-    const tb=document.createElement('div');tb.id='etrain';document.body.appendChild(tb);
-    tb.addEventListener('click',e=>{
-      const b=e.target.closest('button');if(!b)return;
-      if(b.id==='etView'){testView(TREC.rounds.indexOf(ENDREC),0,true)}
-      else if(b.id==='etStop'){ENDTOK++;ENDRUN=false;endgameShow('停下来了。可以“换一局”，或者回放已经打完的局。',true)}
-      else if(b.id==='etNext')endgameNext();
-    });
-  }
   testFull(true);fsMark();
   testSize();
   // the boxes of plays follow the table when it changes size (the hand below it getting shorter, say)
@@ -176,5 +157,5 @@ const playName=e=>e.type==='bomb'?e.n+'张炸弹':TYPE_NAME[e.type];
 const esc=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
 // how a trick ended: its winner leads the next, or went out and the lead passed on
 const trickEnd=(w,lead)=>w===lead?`${NAMES[w]}收回出牌权`:`${NAMES[w]}出完，${NAMES[lead]}接风`;
-const roundName=r=>`第 ${r.no} 局${r.endgame?'（残局）':''}${r.replayOf?`（重打第 ${r.replayOf} 局）`:''}`;
+const roundName=r=>`第 ${r.no} 局${r.replayOf?`（重打第 ${r.replayOf} 局）`:''}`;
 
