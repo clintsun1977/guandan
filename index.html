@@ -616,6 +616,63 @@ body.test .overlay.dock .panel .btn:not(.round){font-size:12px;padding:3px 10px;
 .places .ours{border-color:var(--gold)}
 .places .ours small{color:var(--gold)}
 .panel .btns{justify-content:flex-end}
+/* 规则: a rules book over the table. Section tabs written top to bottom down the left, tabs across the top, every rule a card with
+   a title bar and the table's own card faces as examples; on a phone the sections go across the top and the cards get smaller */
+.panel[data-kind="rules"]{width:min(1040px,100%);height:min(740px,100%);max-height:100%;padding:0;gap:0;overflow:hidden;
+  border:2px solid rgba(221,176,80,.75);border-radius:18px;background:linear-gradient(160deg,#17402f,#0f2c21 70%);
+  box-shadow:0 18px 60px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.04)}
+.rules{display:grid;grid-template-columns:auto minmax(0,1fr);height:100%;min-height:0}
+.rules-side{display:flex;flex-direction:column;justify-content:center;gap:12px;padding:18px 10px;background:rgba(0,0,0,.22);border-right:1px solid rgba(221,176,80,.25)}
+.rules-side button{font:inherit;writing-mode:vertical-rl;text-orientation:upright;font-family:var(--font-display);font-weight:900;font-size:20px;
+  letter-spacing:.3em;padding:16px 8px;border-radius:14px;cursor:pointer;color:var(--ink);background:rgba(255,255,255,.04);
+  border:1.5px solid rgba(221,176,80,.35);transition:background .15s,color .15s}
+.rules-side button:hover{border-color:var(--gold)}
+.rules-side button.on{background:linear-gradient(180deg,#f3d27c,#d9a73f);color:#2a1d05;border-color:#f3d27c;box-shadow:0 0 16px rgba(221,176,80,.45)}
+.rules-main{display:flex;flex-direction:column;min-width:0;min-height:0;padding:14px 18px 16px}
+.rules-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:40px}
+.rules-head h2{margin:0;font-family:var(--font-display);font-weight:900;font-size:26px;letter-spacing:.12em;color:var(--gold);text-align:center}
+.rules-x{position:absolute;right:0;top:50%;translate:0 -50%;width:40px;height:40px;padding:0;border-radius:50%;cursor:pointer;
+  font-size:26px;line-height:1;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--line-strong)}
+.rules-x:hover{background:rgba(255,255,255,.14)}
+.rules-tabs{display:flex;gap:6px;margin:12px 0 10px}
+.rules-tabs button{font:inherit;flex:1;min-width:0;padding:9px 6px;cursor:pointer;font-family:var(--font-display);font-weight:900;font-size:18px;letter-spacing:.08em;
+  color:var(--ink);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(221,176,80,.3);border-radius:10px 10px 4px 4px}
+.rules-tabs button:hover{border-color:var(--gold)}
+.rules-tabs button.on{color:var(--gold);background:linear-gradient(180deg,rgba(221,176,80,.28),rgba(221,176,80,.08));border-color:var(--gold)}
+.rules-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(380px,100%),1fr));
+  grid-auto-rows:max-content;align-content:start;gap:12px;padding-right:6px}
+.rule-item.wide{grid-column:1/-1}
+.rule-item{border-radius:10px;overflow:hidden;background:rgba(0,0,0,.2);border:1px solid rgba(221,176,80,.2)}
+.ri-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 14px;
+  background:linear-gradient(90deg,rgba(221,176,80,.26),rgba(221,176,80,.05))}
+.ri-head b{font-family:var(--font-display);font-weight:900;font-size:20px;letter-spacing:.08em;color:#f6e7bf}
+.ri-tag{font-size:15px;color:#7fe39a;white-space:nowrap}
+.rule-item p{margin:0;padding:9px 14px 2px;font-size:16px;line-height:1.65;color:var(--ink)}
+.rule-item p:last-child{padding-bottom:12px}
+.ri-cards{--cw:46px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 3px;padding:10px 14px 14px}
+.ri-cards .card{position:relative;flex:none;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.ri-gap{width:12px;flex:none}
+.ri-steps{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 14px}
+.ri-steps span{display:flex;align-items:baseline;gap:8px;padding:6px 14px;border-radius:999px;font-size:16px;color:var(--ink);
+  background:rgba(255,255,255,.06);border:1px solid rgba(221,176,80,.35)}
+.ri-steps b{font-family:var(--font-display);font-size:18px;color:var(--gold)}
+/* a phone (or a narrow window): the sections go across the top, everything a little smaller */
+@media (max-width:640px){
+  .panel[data-kind="rules"]{height:100%;border-radius:14px}
+  .rules{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  .rules-side{flex-direction:row;justify-content:stretch;gap:6px;padding:8px;border-right:0;border-bottom:1px solid rgba(221,176,80,.25)}
+  .rules-side button{writing-mode:horizontal-tb;flex:1;padding:8px 2px;font-size:15px;letter-spacing:.04em;border-radius:10px}
+  .rules-main{padding:8px 10px 10px}
+  .rules-head h2{font-size:19px;letter-spacing:.06em}
+  .rules-x{width:34px;height:34px;font-size:22px}
+  .rules-tabs{margin:8px 0}
+  .rules-tabs button{font-size:15px;padding:7px 2px}
+  .ri-head b{font-size:17px}
+  .ri-tag{font-size:13px}
+  .rule-item p{font-size:14px;padding:7px 10px 2px}
+  .ri-cards{--cw:32px;padding:8px 10px 10px}
+  .ri-steps span{font-size:14px;padding:4px 10px}
+}
 /* the lobby: a nickname, then a seat at a square table */
 .lobby{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;overflow:auto;
   background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-deep) 100%);
@@ -6168,28 +6225,7 @@ function dblText(r){
   if(!RULES.trib)return`本场不进贡，由${NAMES[o[0]]}先出。`;
   return o[1]%2===o[0]%2?`${NAMES[o[2]]}和${NAMES[o[3]]}双下，两人都要进贡。`:`末游${NAMES[o[3]]}要向头游进贡。`;
 }
-function showRules(){
-  showPanel(`<h2>掼蛋规则速览</h2>
-  <ul>
-    <li>四人两队，你和对家一队。两副牌共 108 张，每人 27 张，轮流按逆时针出牌。</li>
-    <li>牌的大小：大王（红色 JOKER）&gt; 小王（黑色 JOKER）&gt; 级牌 &gt; A &gt; K … &gt; 2。本局打几，几就是级牌。</li>
-    <li>红心级牌是百搭（标一个皇冠），可以当除大小王外的任意牌用。</li>
-    <li>牌型：单张、对子、三张、三带二、顺子（5 张）、连对（3 对）、钢板（2 个连续三张）。顺子里 A 可作 1，不能带王。</li>
-    <li>炸弹从小到大：4 张 &lt; 5 张 &lt; 同花顺 &lt; 6 张 &lt; 7 张 … &lt; 四个王（天王炸）。炸弹可以压任何非炸弹牌型。</li>
-    <li>头游一方升级：队友二游升 3 级，三游升 2 级，末游升 1 级。打到 A 并且队友不是末游，赢下整场。</li>
-    <li>${RULES.trib?'从第二局起进贡：末游把最大的牌给头游，头游还一张 10 或以下的牌；双下则两人都进贡。要进贡的一方合起来有两张大王（一人两张，或双下时两人各一张）就可以抗贡：这一局不进贡、不还贡，由头游先出。':'本场不进贡：每局由上一局的头游先出。'}</li>
-    <li>${RULES.aFail==='once'?'每一方打 A 有三次机会。一方三次都没打过后，对方轮到打 A 时只有一次机会：打过算对方赢，没打过算双方平局。':`每一方打 A 有三次机会，三次都没打过${RULES.aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。`}</li>
-    <li>出完牌后若其他人都不要，由队友接风出牌。</li>
-    <li>电脑：${botLabel()}${botId()&&botFailed===botId()?'（没能加载，改用 Clint 规则）':''}。</li>
-    <li>“手持”模式下手牌像握在手里一样分两排或三排展开成弧形（按钮上写的是点一下会变成的排数）。平铺模式也可以在一排、两排、三排之间切换，同样大小的牌不会被分到两排。理牌方式按钮每点一下，依次换成“横式”、“竖式”、“手持”，按钮上写的是现在用的方式。“竖式”按牌的大小从左到右排，同样点数的牌从下往上按红心、黑桃、方块、梅花叠成一列，一眼就能看出每个点数有几张。按住没选中的牌滑过几张，是连选这些牌；从选中的牌上按住拖动，是把选中的牌一起挪到别处（也可以拖进左边的成组区）。平铺模式也一样。“复原”恢复成按大小排好的样子。</li>
-    <li>每局开始先洗牌、切牌：上一局头游的上家洗牌，头游切牌（第一局随机）。轮到你时点“洗牌”或“切牌”。</li>
-    <li>发完牌先进贡（最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒），有抗贡也在这时亮出；然后有 90 秒理牌时间（理好了点“理牌结束”），理完再还贡（限时 60 秒）。每次出牌限时 60 秒，最后 10 秒倒计时会闪烁，超时由系统代你出牌：跟牌时一律过；领出时先出活动区里最小的单张、对子、三张、三带二、顺子、连对、钢板（都按整组出，不拆对子），没有就出成组区里不是炸弹的一手，再没有出最小的炸弹，都没有就随机出。</li>
-  </ul>
-  <p class="muted">点选牌，双击任意一张牌直接出牌，“提示”会依次给出能出的牌，“过”是这一轮不要。</p>
-  <div class="btns"><button class="btn primary" id="closeBtn">知道了</button></div>`);
-  $('#closeBtn').onclick=()=>{hideOverlay();if(G.phase==='roundEnd'||G.phase==='over')showResult()};
-  $('#closeBtn').focus();
-}
+// 规则: see ui/rules.js
 // leaving the table, after a confirmation; the others are told and can carry on with the computer in that seat
 // pausing: the turn clocks, the computer players' thinking and the sorting minute all stop until the player who
 // paused resumes (G.pausedBy, a local seat); the others can only wait or leave the game
@@ -6240,6 +6276,127 @@ function playerLeft(name,how){
   $('#leaveBtn').onclick=askQuit;
 }
 
+/* ---------- 规则: a rules book laid out like a game's own guide ---------- */
+// Four sections down the left side (新手入门, 牌型一览, 升级进贡, 操作计时), tabs across the top within each, and every rule a card of
+// its own: a title bar (with a tag on the right where it helps), one or two lines of plain words and, where cards say it better, an
+// example drawn with the table's own card faces (the examples are played at level 2, so ♥2 is the wild card and the other 2s are
+// level cards). What depends on the table's rules (tribute, the tries at A) and the computers is said as this table has it
+const RULES_L=2;
+let rulesAt={sec:0,tab:0};
+// 'SA HK D10 C2 xw dw': spades ace, hearts king, diamonds 10, clubs 2, small joker, big joker; '|' leaves a small gap
+function ruleCards(spec){
+  let id=1000;
+  return spec.split(' ').map(t=>{
+    if(t==='|')return'<span class="ri-gap"></span>';
+    if(t==='xw'||t==='dw')return cardHTML({id:id++,s:'J',r:t==='dw'?17:16},RULES_L);
+    const r={A:14,K:13,Q:12,J:11}[t.slice(1)]||+t.slice(1);
+    return cardHTML({id:id++,s:t[0],r},RULES_L);
+  }).join('');
+}
+const ruleItem=(name,text,{cards,tag,html}={})=>({name,text,cards,tag,html});
+function rulesPages(){
+  const trib=RULES.trib,aFail=RULES.aFail;
+  return[
+    {key:'intro',label:'新手入门',tabs:[
+      {label:'基本',items:[
+        ruleItem('四人两队','你和对家一队，左右两家（上家、下家）是另一队。两副牌共 108 张，每人 27 张，按逆时针轮流出牌。'),
+        ruleItem('出牌与跟牌','先出的人可以出任意一种牌型；后面的人要出同一牌型、同样张数并且更大的牌，或者「过」。炸弹可以压任何不是炸弹的牌。其他三家都不要时，最后出牌的人重新先出。',
+          {cards:'H8 C8 | S10 D10',tag:'对 10 压对 8'}),
+        ruleItem('接风','一个人出完了手里的牌，其他人都不要他最后那手牌时，由他的队友接着先出。'),
+        ruleItem('名次与胜负','第一个出完的是头游，接着是二游、三游，剩下的是末游。每局结束时头游所在的一方升级；先从 2 打到 A 并且打过的一方赢下整场。'),
+        ruleItem('这一桌的电脑',`没坐人的座位由电脑来打，这一桌用的是：${botLabel()}${botId()&&botFailed===botId()?'（没能加载，改用 Clint 规则）':''}。`),
+      ]},
+      {label:'牌的大小',items:[
+        ruleItem('从大到小','大王 > 小王 > 级牌 > A > K > Q > … > 3 > 2。本局打几，几就是级牌：比 A 大，只比大小王小。',
+          {cards:'dw xw S2 SA SK SQ SJ S10 S9 S8 S7 S6 S5 S4 S3',tag:'以打 2 为例'}),
+        ruleItem('花色不分大小','同样点数的牌一样大，花色只在同花顺里有用。',{cards:'S9 H9 C9 D9'}),
+        ruleItem('级牌','两队各有自己的级数，每局打「打级方」的级。牌面上标「级」的就是级牌。',{cards:'S2 C2 D2',tag:'级牌'}),
+      ]},
+      {label:'百搭',items:[
+        ruleItem('红心级牌是百搭','红心的级牌（打 2 时就是红桃 2）可以当除大小王以外的任意一张牌用，两副牌共两张，牌面上有皇冠。',{cards:'H2 H2',tag:'百搭'}),
+        ruleItem('补成对子','百搭和一张 7 就是一对 7。',{cards:'S7 H2'}),
+        ruleItem('补进顺子','缺一张也能连成顺子：3、百搭（当 4）、5、6、7。',{cards:'S3 H2 C5 D6 S7'}),
+        ruleItem('补成炸弹','三张 Q 加一张百搭就是四张 Q 的炸弹。',{cards:'SQ HQ CQ H2',tag:'炸弹'}),
+      ]},
+    ]},
+    {key:'types',label:'牌型一览',tabs:[
+      {label:'普通牌型',items:[
+        ruleItem('单张','任意一张牌。',{cards:'SK'}),
+        ruleItem('对子','两张点数一样的牌。',{cards:'H8 C8'}),
+        ruleItem('三张','三张点数一样的牌，不带别的牌。',{cards:'S9 H9 D9'}),
+        ruleItem('三带二','三张一样的牌带一对，比大小只看三张。',{cards:'SQ HQ CQ | S5 D5',tag:'三张 + 一对'}),
+        ruleItem('顺子','5 张点数相连的牌。A 可以当 1（A2345）也可以当 14（10JQKA），顺子里不能有大小王。',{cards:'S3 H4 C5 D6 S7',tag:'刚好 5 张'}),
+        ruleItem('连对','3 对点数相连的对子。',{cards:'S4 H4 | C5 D5 | S6 H6',tag:'3 对相连'}),
+        ruleItem('钢板','2 个点数相连的三张。',{cards:'S8 H8 C8 | D9 S9 H9',tag:'2 个三张相连'}),
+      ]},
+      {label:'炸弹',items:[
+        ruleItem('炸弹压一切','炸弹可以压任何不是炸弹的牌型。炸弹之间按下面的顺序比，越往下越大；张数一样的炸弹比点数。'),
+        ruleItem('4 张炸弹','四张点数一样的牌，最小的炸弹。',{cards:'S6 H6 C6 D6',tag:'最小'}),
+        ruleItem('5 张炸弹','五张点数一样的牌。',{cards:'S10 H10 C10 D10 S10'}),
+        ruleItem('同花顺','同一花色的顺子：比 5 张炸弹大，比 6 张炸弹小。',{cards:'H9 H10 HJ HQ HK',tag:'5 张 < 同花顺 < 6 张'}),
+        ruleItem('6 张到 8 张炸弹','张数越多越大，6 张 < 7 张 < 8 张。',{cards:'SJ HJ CJ DJ SJ HJ',tag:'6 张'}),
+        ruleItem('天王炸','两张大王加两张小王，全场最大，什么都能压。',{cards:'xw xw dw dw',tag:'最大'}),
+      ]},
+    ]},
+    {key:'level',label:'升级进贡',tabs:[
+      {label:'升级',items:[
+        ruleItem('头游一方升级','每局头游所在的一方升级，升几级看头游的队友排第几：',
+          {html:'<div class="ri-steps"><span><b>二游</b>升 3 级</span><span><b>三游</b>升 2 级</span><span><b>末游</b>升 1 级</span></div>',tag:'看队友名次'}),
+        ruleItem('下一局打谁的级','升级的一方下一局打自己的级；没升级的一方级数不变。'),
+      ]},
+      {label:'进贡还贡',items:trib?[
+        ruleItem('进贡','从第二局起，上一局的末游把自己最大的一张牌（百搭除外）进贡给头游；最大的牌有几种花色时，自己选进贡哪一张，限时 30 秒。',{cards:'SA',tag:'末游 → 头游'}),
+        ruleItem('还贡','头游理完牌后，还给进贡的人一张 10 或以下的牌，限时 60 秒。',{cards:'C6',tag:'头游 → 末游'}),
+        ruleItem('双下','上一局一方是三游和末游（双下）时，两人都要进贡，分别给头游和二游。'),
+        ruleItem('抗贡','要进贡的一方合起来有两张大王（一人两张，或双下时两人各一张），就可以抗贡：这一局不进贡也不还贡，由上一局头游先出。',{cards:'dw dw',tag:'两张大王'}),
+      ]:[ruleItem('本场不进贡','这一桌选了不进贡：每局由上一局的头游先出。')]},
+      {label:'打 A',items:[
+        ruleItem('打过 A 赢下整场','打到 A 的一方，这一局拿到头游并且队友不是末游（队友二游或三游），就赢下整场。',{cards:'SA HA',tag:'整场胜利'}),
+        ruleItem('三次机会',aFail==='once'?'每一方打 A 有三次机会。一方三次都没打过后，对方轮到打 A 时只有一次机会：打过算对方赢，没打过算双方平局。'
+          :`每一方打 A 有三次机会，三次都没打过${aFail==='draw'?'，本场算平局':'，这一方从 2 重新打'}。`,{tag:aFail==='once'?'一次机会':aFail==='draw'?'平局':'从 2 打'}),
+      ]},
+    ]},
+    {key:'play',label:'操作计时',tabs:[
+      {label:'出牌',items:[
+        ruleItem('选牌出牌','点牌选中，再点「出牌」；双击任意一张牌直接出。「提示」依次给出能出的牌，「过」是这一轮不要，「重选」取消已选的牌。'),
+        ruleItem('出牌需确认','在「选项」里打开后，点出牌时选中的牌先放大，再点「确认」才出，防止点错。'),
+      ]},
+      {label:'理牌',items:[
+        ruleItem('三种排法','理牌方式按钮每点一下，依次换成「横式」「竖式」「手持」。竖式按大小从左到右排，同样点数叠成一列，一眼看出每个点数有几张；手持像握在手里一样展开成弧形，可选两排或三排。'),
+        ruleItem('拖动与连选','按住没选中的牌滑过几张，是连选这些牌；从选中的牌上按住拖动，是把它们一起挪到别处，也可以拖进左边的成组区。「复原」恢复成按大小排好的样子。'),
+        ruleItem('成组区','把选好的牌点「成组」放进左边的成组区，作为你拟定的一组牌，旁边会写出它是什么牌型。'),
+      ]},
+      {label:'计时',items:[
+        ruleItem('一局的流程','洗牌、切牌（上一局头游的上家洗、头游切，第一局随机）→ 发牌 → 进贡 → 90 秒理牌（理好点「理牌结束」）→ 还贡 → 出牌。',{tag:'每局开始'}),
+        ruleItem('限时','进贡 30 秒，理牌 90 秒，还贡 60 秒，每次出牌 60 秒；最后 10 秒会闪烁倒计时。'),
+        ruleItem('超时代打','超时由系统代你出：跟牌时一律过；先出时出活动区里最小的单张、对子、三张、三带二、顺子、连对、钢板（整组出，不拆对子），没有就出成组区里不是炸弹的一手，再没有出最小的炸弹。',{tag:'超时'}),
+      ]},
+    ]},
+  ];
+}
+function renderRulesPage(){
+  const pages=rulesPages(),sec=pages[rulesAt.sec]||pages[0],tab=sec.tabs[rulesAt.tab]||sec.tabs[0];
+  // a short rule takes half a row on a wide screen; long words or a long row of cards take the whole row
+  const wide=it=>it.text.length>58||(it.cards||'').split(' ').length>9||!!it.html;
+  const items=tab.items.map(it=>`<section class="rule-item${wide(it)?' wide':''}"><div class="ri-head"><b>${it.name}</b>${it.tag?`<span class="ri-tag">${it.tag}</span>`:''}</div>
+    <p>${it.text}</p>${it.cards?`<div class="ri-cards">${ruleCards(it.cards)}</div>`:''}${it.html||''}</section>`).join('');
+  $('#panel').innerHTML=`<div class="rules">
+    <nav class="rules-side" aria-label="规则分类">${pages.map((p,i)=>`<button type="button" class="${i===rulesAt.sec?'on':''}" data-sec="${i}">${p.label}</button>`).join('')}</nav>
+    <div class="rules-main">
+      <header class="rules-head"><h2>掼蛋规则 · ${sec.label}</h2><button type="button" class="rules-x" id="closeBtn" aria-label="关闭规则">×</button></header>
+      <div class="rules-tabs" role="tablist">${sec.tabs.map((t,i)=>`<button type="button" role="tab" aria-selected="${t===tab}" class="${t===tab?'on':''}" data-tab="${i}">${t.label}</button>`).join('')}</div>
+      <div class="rules-body">${items}</div>
+    </div></div>`;
+  for(const b of document.querySelectorAll('.rules-side button'))b.onclick=()=>{rulesAt={sec:+b.dataset.sec,tab:0};Sound.play('select');renderRulesPage()};
+  for(const b of document.querySelectorAll('.rules-tabs button'))b.onclick=()=>{rulesAt.tab=+b.dataset.tab;Sound.play('select');renderRulesPage()};
+  $('#closeBtn').onclick=()=>{hideOverlay();delete $('#panel').dataset.kind;if(G&&(G.phase==='roundEnd'||G.phase==='over'))showResult()};
+}
+function showRules(){
+  showPanel('');
+  $('#panel').dataset.kind='rules';
+  renderRulesPage();
+  $('#closeBtn').focus();
+}
 /* ---------- input ---------- */
 const handEl=$('#hand');
 let lastDown=null,mv=null,sweep=null;
@@ -8833,9 +8990,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1705';
+const VERSION='1107-1710';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c197704c90';
+const APP_HASH='c19779ecbf';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
