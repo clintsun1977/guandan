@@ -59,7 +59,8 @@
   </main>
 
   <aside class="coach" id="coach" aria-label="出牌评价" hidden>
-    <div class="coach-head"><small title="当前所有能出的牌里，模型值最高的是 100%，最低的是 0%；不是胜率，也不是正确的概率"><span id="coachName"></span> · 相对分，非胜率</small><button class="link" id="coachClose" aria-label="关闭出牌评价" title="本局不再显示出牌评价">×</button></div>
+    <div class="coach-head"><small title="当前所有能出的牌里，模型值最高的是 100%，最低的是 0%；不是胜率，也不是正确的概率"><span id="coachName"></span> · 相对分，非胜率</small><button class="link" id="coachTopBtn" type="button" hidden>收起 Top 5</button><button class="link" id="coachClose" aria-label="关闭出牌评价" title="本局不再显示出牌评价">×</button></div>
+    <ol class="coach-top" id="coachTop" hidden></ol>
     <output id="coachNow" aria-live="polite"></output>
     <output id="coachLast"></output>
   </aside>

@@ -323,7 +323,21 @@ const NeuralBot=(()=>{
     return{percent:flat?100:Math.round(100*(selected-low)/(high-low)),flat};
   }
 
+  // Top 5 (guandanai coach/evaluation.mjs rankedCoachActions): one row per plan of ranks and shape, the suit choice the network
+  // values most standing for it (how wild cards are used still tells plans apart); the best first
+  function ranked(actions,values,L,cur,limit=5){
+    const plans=new Map();
+    actions.forEach((ids,index)=>{
+      const cards=ids.map(id=>deck[id]),shape=ids.length?reading(ids,L,cur):null;
+      if(ids.length&&!shape)return;
+      const key=!ids.length?'pass':`${shape.type}|${shape.value}|${cards.map(c=>isWild(c,L)?'wild':c.r).sort().join(',')}`;
+      const row={ids:ids.slice(),value:values[index],shape,index};
+      if(!plans.has(key)||row.value>plans.get(key).value)plans.set(key,row);
+    });
+    return[...plans.values()].sort((a,b)=>b.value-a.value||a.index-b.index).slice(0,limit);
+  }
+
   const preload=id=>session(id).then(()=>true);
-  return{decide,preload,rate,actionKey,relativeRating,has:id=>models.has(id),models:BOT_MODELS.models,
+  return{decide,preload,rate,ranked,actionKey,relativeRating,has:id=>models.has(id),models:BOT_MODELS.models,
     _test:{encode,encodeHistory,candidates,replay,cardIndex}};
 })();

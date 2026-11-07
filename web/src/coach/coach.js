@@ -6,11 +6,15 @@
 // Top 5 list). The cards you pick show as 合理性 N%: 100 for the move the network values most, 0 for the one it values
 // least. It is a relative score, not a chance of winning. After you play, that move's score stays as 上一手 until the
 // round is over. Whoever plays alone or opens the room turns it on or off in the lobby (出牌评价); × hides it on your own
-// page for the rest of the game
-const COACH_ID='danmcai';
-const CO={turn:null,last:null,hidden:false};
+// page for the rest of the game.
+// Top 5 (guandanai's list of the network's five best plans, with their scores; a tap picks those cards, it does not play
+// them) is only for the nicknames in TOP5_NAMES, whoever opened the room, and for them the box shows even with 出牌评价 off
+const COACH_ID='danmcai'; // TOP5_NAMES: lobby.js
+const CO={turn:null,last:null,hidden:false,topOpen:null};
 const coachKey=()=>G.tok+':'+G.log.length;
-const coachShown=()=>RULES.coach!==false&&!CO.hidden&&!TEST&&!SPEC&&!ENDG&&NeuralBot.has(COACH_ID)&&isHumanSeat(0)&&!!G&&
+const coachTop5=()=>TOP5_NAMES.includes((myNick||'').trim().toLowerCase());
+const coachDeck=makeDeck();
+const coachShown=()=>(RULES.coach!==false||coachTop5())&&!CO.hidden&&!TEST&&!SPEC&&!ENDG&&NeuralBot.has(COACH_ID)&&isHumanSeat(0)&&!!G&&
   ['play','roundEnd','over'].includes(G.phase);
 // the table as you see it at the start of your turn; the other hands go in only as counts
 function coachSnap(){
@@ -20,7 +24,7 @@ function coachSnap(){
       passes:G.passes||0,log:G.log.slice(),levels:G.levels.slice(),L:G.L}};
   CO.turn=s;
   setTimeout(()=>NeuralBot.rate(COACH_ID,s.g)
-    .then(r=>{s.values=r.values;r.actions.forEach((ids,i)=>s.scores.set(NeuralBot.actionKey(ids),r.values[i]))},e=>{s.error=true;console.warn('出牌评价出错',e)})
+    .then(r=>{s.values=r.values;s.actions=r.actions;r.actions.forEach((ids,i)=>s.scores.set(NeuralBot.actionKey(ids),r.values[i]))},e=>{s.error=true;console.warn('出牌评价出错',e)})
     .finally(renderCoach),150);
   return s;
 }
@@ -39,7 +43,7 @@ function coachGrade(s,a){
     // a legal move the list of moves leaves out is scored by itself and joins the comparison
     if(!s.extra){
       s.extra=true;
-      NeuralBot.rate(COACH_ID,s.g,a.ids).then(r=>{s.scores.set(k,r.values[0]);s.values.push(r.values[0])},()=>{s.error=true})
+      NeuralBot.rate(COACH_ID,s.g,a.ids).then(r=>{s.scores.set(k,r.values[0]);s.values.push(r.values[0]);s.actions.push(r.actions[0])},()=>{s.error=true})
         .finally(()=>{s.extra=false;renderCoach()});
     }
     return'评价中…';
@@ -76,7 +80,40 @@ function renderCoach(){
   $('#coach').classList.toggle('chip',phone);
   $('#coachNow').textContent=now;
   $('#coachLast').textContent=last;
+  renderTop5(phone);
   coachPlace();
+}
+// Top 5: open by default on a computer; on a phone a tap on the chip opens and closes it
+function renderTop5(phone){
+  const on=coachTop5(),box=$('#coachTop'),btn=$('#coachTopBtn');
+  if(CO.topOpen===null)CO.topOpen=!phone;
+  $('#coach').classList.toggle('top5',on);
+  btn.hidden=!on||phone;
+  btn.textContent=CO.topOpen?'收起 Top 5':'Top 5';
+  box.hidden=!on||!CO.topOpen;
+  $('#coach').classList.toggle('open',phone&&!box.hidden);
+  if(box.hidden)return;
+  const mine=G.phase==='play'&&G.turn===0,s=mine?coachSnap():null;
+  if(!s||s.error||!s.values){
+    box.innerHTML=`<li class="coach-top-note">${s&&s.error?'评价暂不可用':s?'正在比较所有出法…':'轮到你时显示 Top 5'}</li>`;
+    return;
+  }
+  const cur=G.trick?G.trick.play:null,top=NeuralBot.ranked(s.actions,s.values,G.L,cur,5),picked=NeuralBot.actionKey([...sel]);
+  box.innerHTML=top.map((row,i)=>{
+    const pct=NeuralBot.relativeRating(s.values,row.value).percent;
+    const gap=i?` <small title="与第一名的模型值差（约等于本局升级分），越接近 0 差别越小">${(row.value-top[0].value).toFixed(2)}</small>`:'';
+    const cards=row.ids.length?row.ids.map(id=>{const c=coachDeck[id];return`<span class="coach-card${c.s==='H'||c.s==='D'||c.r===17?' red':''}">${cardText(c)}</span>`}).join(''):'<span class="coach-pass">本轮不跟</span>';
+    const sel1=row.ids.length&&NeuralBot.actionKey(row.ids)===picked?' on':'';
+    return`<li><button type="button" class="coach-choice${sel1}" data-i="${i}"><b>${i+1}. ${row.ids.length?TYPE_NAME[row.shape.type]:'过牌'}</b><span class="coach-cards">${cards}</span><b class="coach-pct">${pct}%${gap}</b></button></li>`;
+  }).join('');
+  box.querySelectorAll('.coach-choice').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    if(G.phase!=='play'||G.turn!==0||CO.turn!==s)return;
+    const row=top[+b.dataset.i];
+    sel=new Set(row.ids);hintIdx=0;
+    renderHand();
+  });
+  CO.shown=s.key; // the numbers were on show before this move (marked in the round record)
 }
 // the box stands just over the 成组区 frame (bottom left), whatever its height on this screen
 function coachPlace(){
@@ -90,10 +127,24 @@ function coachPlace(){
     return;
   }
   const f=$('#fixZone'),z=f?f.getBoundingClientRect():{height:0};
-  box.style.setProperty('--coach-bottom',(z.height>0?Math.max(8,innerHeight-z.top+8):Math.round(innerHeight*.42))+'px');
+  const bottom=z.height>0?Math.max(8,innerHeight-z.top+8):Math.round(innerHeight*.42);
+  box.style.setProperty('--coach-bottom',bottom+'px');
+  // Top 5 grows the box upward: it stops short of the left-hand player's plate and its status tag, and scrolls inside instead
+  const list=$('#coachTop');
+  if(!list.hidden){
+    let plate=0;
+    for(const el of document.querySelectorAll('#seat3 .whorow,#seat3 .stat')){const r=el.getBoundingClientRect();if(r.height)plate=Math.max(plate,r.bottom)}
+    const rest=box.getBoundingClientRect().height-list.getBoundingClientRect().height;
+    list.style.maxHeight=Math.max(56,innerHeight-bottom-rest-plate-10)+'px';
+  }
 }
 const coachModel=NeuralBot.models.find(m=>m.id===COACH_ID)||{};
 $('#coachName').textContent=coachModel.name||'';
 $('#coachName').parentElement.title=`${coachModel.label||''}：`+$('#coachName').parentElement.title;
 $('#coachClose').onclick=()=>{CO.hidden=true;renderCoach()};
+$('#coachTopBtn').onclick=e=>{e.stopPropagation();CO.topOpen=!CO.topOpen;renderCoach()};
+$('#coach').addEventListener('click',e=>{
+  if(!$('#coach').classList.contains('chip')||!coachTop5()||e.target.closest('.coach-choice'))return;
+  CO.topOpen=!CO.topOpen;renderCoach();
+});
 addEventListener('resize',()=>requestAnimationFrame(coachPlace));

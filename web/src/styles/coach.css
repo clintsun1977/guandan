@@ -1,5 +1,5 @@
 /* 出牌评价: a small box in the bottom-left corner, over the table, with the score of the picked cards and of your last move */
-.coach{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:var(--coach-bottom,260px);z-index:25;width:min(260px,calc(100vw - 24px));
+.coach{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:var(--coach-bottom,260px);z-index:90;width:min(260px,calc(100vw - 24px));
   display:flex;flex-direction:column;gap:2px;padding:6px 10px 8px;border-radius:12px;border:1px solid var(--line);background:var(--shade);
   box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:auto}
 .coach[hidden]{display:none}
@@ -13,3 +13,25 @@
 .coach.chip .coach-head{display:none}
 .coach.chip #coachNow{font-size:12px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .coach.chip #coachLast{font-size:11px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Top 5 (only for some nicknames): five rows under the title, each a button that picks those cards */
+.coach.top5{width:min(330px,calc(100vw - 24px))}
+.coach-head #coachTopBtn{font-size:12px;padding:1px 8px;border:1px solid var(--line);border-radius:8px}
+.coach-top{list-style:none;margin:2px 0 4px;padding:0;display:flex;flex-direction:column;gap:2px;max-height:min(46vh,250px);overflow:auto}
+.coach-top[hidden]{display:none}
+.coach-top-note{font-size:13px;color:var(--muted);padding:2px 0}
+.coach-choice{font:inherit;width:100%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:6px;padding:2px 6px;border-radius:8px;
+  border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;text-align:left}
+.coach-choice:hover{border-color:var(--gold)}
+.coach-choice.on{border-color:var(--gold);background:rgba(221,176,80,.18)}
+.coach-choice>b{font-size:14px;white-space:nowrap}
+.coach-cards{display:flex;flex-wrap:nowrap;gap:2px;min-width:0;overflow:hidden}
+.coach-card{font-size:12px;line-height:1.2;padding:0 3px;border-radius:4px;background:#fbf7ec;color:#222}
+.coach-card.red{color:#c8312b}
+.coach-pass{font-size:12px;color:var(--muted)}
+.coach-pct{color:var(--gold);text-align:right;white-space:nowrap}
+.coach-pct small{font-size:10px;font-weight:400;color:var(--muted)}
+/* a phone: tap the chip to open Top 5 under it */
+.coach.chip.top5{cursor:pointer;width:auto}
+.coach.chip.open{left:8px;right:8px;background:var(--felt-deep);box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.coach.chip .coach-top{max-height:52vh;margin-top:3px}
+.coach.chip .coach-choice>b{font-size:12px}
