@@ -1,0 +1,20 @@
+/* the deck: shuffled and cut in the middle of the table before every deal */
+.stack{position:absolute;left:0;top:0;width:var(--cw);height:calc(var(--cw)*1.4);margin:calc(var(--cw)*-.7) 0 0 calc(var(--cw)*-.5);
+  transition:transform .32s cubic-bezier(.3,.7,.3,1);pointer-events:none;z-index:7000}
+.stack .sb,.flick{position:absolute;inset:0;border-radius:calc(var(--cw)*.1);border:2px solid var(--card);
+  background:var(--back);box-shadow:0 1px 2px rgba(0,0,0,.4)}
+.flick{left:0;top:0;width:var(--cw);height:calc(var(--cw)*1.4);margin:calc(var(--cw)*-.7) 0 0 calc(var(--cw)*-.5);inset:auto;z-index:7100;transition:transform .16s linear,opacity .16s}
+/* your shuffle / cut button: large, in the bottom-right corner where the hand would be, just above the hand tools */
+#seat0 #deckBtn{position:fixed;z-index:20;right:max(24px,env(safe-area-inset-right,0px));bottom:64px;pointer-events:auto;--d:92px;font-size:24px;animation:btnCall 1.2s ease-in-out infinite}
+/* the shuffle / cut button calls for a click with a soft pulse, so it never reads as a mere label */
+@keyframes btnCall{50%{box-shadow:0 0 0 6px rgba(221,176,80,.25),0 0 22px var(--gold)}}
+/* dealing */
+.flyer{position:fixed;left:0;top:0;width:28px;height:40px;margin:-20px 0 0 -14px;border-radius:4px;border:2px solid var(--card);
+  background:var(--back);box-shadow:0 2px 5px rgba(0,0,0,.4);
+  z-index:15;pointer-events:none;transition:transform .24s cubic-bezier(.2,.7,.3,1),opacity .24s ease-in}
+.gift{position:fixed;left:0;top:0;z-index:16;pointer-events:none;width:0;height:0;transition:transform .6s cubic-bezier(.3,.7,.3,1),opacity .25s}
+.gift .card{--cw:70px;position:absolute;left:-35px;top:-49px;box-shadow:0 0 0 3px var(--gold),0 8px 24px rgba(0,0,0,.5)}
+.gift .gback{position:absolute;left:-35px;top:-49px;width:70px;height:98px;border-radius:7px;border:2px solid var(--card);
+  background:var(--back);box-shadow:0 0 0 3px var(--gold),0 8px 24px rgba(0,0,0,.5)}
+.gift .gl{position:absolute;left:50%;top:-80px;transform:translateX(-50%);white-space:nowrap;font-size:16px;font-weight:700;color:var(--on-gold);background:var(--gold);border-radius:999px;padding:3px 12px}
+

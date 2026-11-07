@@ -1,0 +1,59 @@
+/* header */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:16px;color:var(--muted)}
+.brand{font-family:var(--font-display);font-weight:900;font-size:26px;color:var(--ink);letter-spacing:.08em}
+.score{display:flex;gap:14px;font-variant-numeric:tabular-nums}
+.t-red{--team:var(--red-team);--team-fill:var(--red-team-fill)}
+.t-blue{--team:var(--blue-team);--team-fill:var(--blue-team-fill)}
+.score b{font-family:var(--font-display);color:var(--team,var(--ink));font-size:21px;margin-left:4px}
+/* the side whose level this round is played at gets a frame */
+/* each side's chip: its words and number centred both ways inside the frame */
+.score>span{display:inline-flex;align-items:center;justify-content:center;line-height:1;padding:5px 12px;border:1.5px solid transparent;border-radius:8px;color:var(--team,var(--muted))}
+.score>span b{line-height:1}
+/* the side being played reads "对方打7" on a lit gold chip, so the level in play can be checked at any moment */
+.score>span.playing{border-color:var(--team);color:#fff;background:var(--team-fill);font-size:19px;font-weight:700;box-shadow:0 0 16px var(--team)}
+.score>span.playing b{color:#fff;font-size:25px;margin-left:2px}
+.score>span.playing .lvx{color:#ffe08a}
+.bar .acts{display:flex;gap:6px}
+/* 选项: sound, card back and 出牌需确认 drop down under one button */
+.optwrap{position:relative;display:inline-flex}
+.optwrap>.link{width:100%;justify-content:center}
+.optmenu{position:absolute;z-index:60;top:calc(100% + 6px);right:0;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:8px;
+  background:var(--felt-deep);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.optmenu[hidden]{display:none}
+.optinfo{font-size:15px;color:var(--muted);text-align:center;padding:2px 8px;letter-spacing:.04em}
+.optinfo b{color:var(--gold);font-size:18px;letter-spacing:.14em;margin-left:4px}
+.optspec{display:flex;flex-direction:column;gap:6px}
+.optspec[hidden]{display:none}
+#optBtn[aria-expanded="true"]{color:var(--ink);border-color:var(--gold)}
+/* while it is open the header rises above the play buttons, which on a short screen reach up beside it */
+.bar:has(.optmenu:not([hidden])){z-index:30}
+#pauseBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700}
+/* voice (online only): 开麦 lit gold while your microphone is on; beside each person's name a bouncing speaker while
+   they talk, or a grey 闭麦 while their microphone is off */
+#micBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700;opacity:1}
+#micBtn.on::before{background:var(--on-gold)}
+.vc{display:none;align-items:center;flex:none}
+.vc.talk,.vc.mute{display:inline-flex}
+.vc svg{width:1.05em;height:1.05em;fill:var(--gold);display:none}
+.vc.talk svg{display:block;animation:vcTalk .45s ease-in-out infinite alternate}
+.vc.mute::after{content:"闭麦";font-size:11px;font-weight:400;line-height:1;padding:2px 5px;border-radius:999px;color:var(--muted);border:1px solid var(--line-strong)}
+@keyframes vcTalk{from{transform:scale(.8);opacity:.6}to{transform:scale(1.15);opacity:1}}
+/* who paid whom and what came back, kept in the corner while the round is played */
+.tribinfo{display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--ink);line-height:1.5;white-space:nowrap}
+.tribinfo:empty{display:none}
+.tribinfo{position:relative}
+/* the test version: the 贡 button stands right of the score, clear of the 4号 plate's tags */
+body.test .tribinfo{position:fixed;left:84px;top:22px;z-index:35}
+.tribinfo .tribbtn{font-size:15px;font-weight:700;padding:2px 12px;color:var(--gold);border-color:var(--gold);align-self:flex-start}
+.tribinfo .tribbtn.on{background:var(--gold);color:var(--on-gold)}
+.tribpop{position:absolute;left:0;top:calc(100% + 6px);z-index:40;padding:8px 12px;border-radius:10px;cursor:pointer;
+  background:rgba(19,54,41,.96);border:1.5px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.45);white-space:nowrap}
+html.phone .tribpop{left:auto;right:0}
+.tribinfo .ct{font-size:13px;padding:0 4px}
+.link{font:inherit;font-size:16px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:4px 12px;cursor:pointer;white-space:nowrap}
+.link:hover{color:var(--ink);border-color:var(--line-strong)}
+.tog{display:inline-flex;align-items:center;gap:6px}
+.tog::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.tog[aria-pressed="false"]{opacity:.55}
+.tog[aria-pressed="false"]::before{background:transparent;box-shadow:inset 0 0 0 1px var(--muted)}
+

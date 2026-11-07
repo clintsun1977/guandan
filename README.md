@@ -31,9 +31,10 @@
 
 ```text
 index.html          网站页面（由 web/build.py 生成，GitHub Pages 直接发布）
-web/                网页端
-  guandan.html      游戏源文件：牌桌、大厅、联机、训练
-  build.py          把 web/ 和 bot/ 合成根目录的 index.html
+web/                网页端（每个功能一个文件，见 web/README.md）
+  src/index.html    主页面：页面结构 + 按顺序引入各功能文件
+  src/core/ game/ ui/ hand/ input/ lobby/ training/ network/ ...
+  build.py          把 web/src 和 bot/ 合成根目录的 index.html
 bot/                电脑玩家
   models.json       大厅里可选的电脑：名称、文件、SHA-256、来源
   clint/            Clint 规则机器人与残局搜索

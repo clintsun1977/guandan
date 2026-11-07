@@ -1,0 +1,23 @@
+/* on a computer the header gives its row back to the table: the name and the two sides' levels sit in the
+   top-left corner and the sound / rules / new-game buttons in the top-right, both over the felt */
+@media (min-width:700px){
+  #app{position:relative}
+  .bar{position:absolute;z-index:5;top:8px;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));
+    align-items:flex-start;pointer-events:none}
+  .bar>*{pointer-events:auto}
+  .bar{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"brand . acts" "score . ." "trib . .";row-gap:6px}
+  .tribinfo{grid-area:trib}
+  .brand{grid-area:brand;line-height:1}
+  .score{grid-area:score;flex-direction:column;align-items:flex-start;gap:4px}
+  /* the options, rules, pause and leave buttons sit together in the top-right corner as a small
+     block of two columns, well clear of the player across the table */
+  .bar .acts{position:absolute;top:0;right:0;display:grid;grid-template-columns:repeat(2,auto);gap:6px}
+  .bar .acts .link{text-align:center}
+  /* the test version: the six buttons as small squares, three by two, in the top-right corner */
+  body.test .bar .acts{grid-template-columns:repeat(3,40px);gap:4px}
+  body.test .bar .acts .link,body.test .bar .acts .optwrap{box-sizing:border-box;width:40px;height:40px}
+  body.test .bar .acts .link{padding:2px;border-radius:6px;font-size:12px;line-height:1.15;white-space:normal;text-align:center;display:flex;align-items:center;justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}

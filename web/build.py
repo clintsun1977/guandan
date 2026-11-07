@@ -1,6 +1,8 @@
-"""Build index.html at the top of the repository (the page GitHub Pages serves) from web/guandan.html and bot/.
+"""Build index.html at the top of the repository (the page GitHub Pages serves) from web/src/ and bot/.
 
-web/guandan.html is the game page. The computer players live in bot/ and are pulled into the page here:
+web/src/index.html is the main page: the markup, then in order every file it uses (web/src/ has one per feature, bot/ the
+computer players). Each is pulled into the page here:
+  //@include web/src/core/cards.js      the line is replaced by that file
   //@include bot/clint/clint-bot.js     the line is replaced by that file
   //@json BOT_MODELS bot/models.json     the line becomes  const BOT_MODELS=<the file's JSON>;
 The page gets the <!doctype html>/<head>/<body> skeleton and reset a plain web host needs. Pages publishes the whole
@@ -50,7 +52,7 @@ def check_models():
 
 
 def build(version=None):
-    src = inline((web / "guandan.html").read_text(encoding="utf-8"))
+    src = inline((web / "src" / "index.html").read_text(encoding="utf-8"))
     # stamp the build time as the page version, shown in the lobby and compared between players in a room
     version = version or datetime.now().strftime("%m%d-%H%M")
     assert "const VERSION='dev';" in src

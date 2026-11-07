@@ -1,0 +1,205 @@
+/* table */
+.table{flex:1;min-height:0;display:grid;gap:8px;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) minmax(0,1fr);
+  grid-template-rows:auto minmax(0,1fr) auto;
+  grid-template-areas:"top top top" "left mid right" "me me me"}
+.seat{display:flex;flex-direction:column;gap:8px;min-width:0}
+#seat2{grid-area:top;align-items:center}
+#seat3{grid-area:left;align-items:flex-start;justify-content:center}
+#seat1{grid-area:right;align-items:flex-end;justify-content:center}
+.table{--mid-drop:clamp(16px,5vh,44px)}
+/* the side players sit a little low; the level disc stays in the middle, leaving room under it for the last-play line
+   and the near player's cards */
+#seat3,#seat1{transform:translateY(var(--mid-drop))}
+/* the test version: the 2号 and 4号 plates stand at the top of the table's sides, so their hands have the whole side */
+body.test #seat3,body.test #seat1{justify-content:flex-start;transform:none}
+#seat0{grid-area:me;align-items:center;justify-content:flex-end;gap:4px;text-align:center;pointer-events:none}
+#seat0 .btn{pointer-events:auto}
+.table{position:relative}
+/* a seat's box covers a whole corner of the table but only its plate is meant to be touched: the rest lets taps through */
+.seat{position:relative;z-index:2;pointer-events:none}
+.seat .whorow,.seat .who{pointer-events:auto}
+/* the table's cards are the ones everyone needs to read, so they get the larger size; your hand is a little smaller */
+#pile{position:absolute;inset:0;z-index:1;pointer-events:none;--cw:clamp(54px,7.2vw,90px)}
+#pile .probe{position:absolute;visibility:hidden;width:var(--cw)}
+.pc{position:absolute;left:0;top:0;width:var(--cw);height:calc(var(--cw)*var(--cr,1.4));margin:calc(var(--cw)*var(--cr,1.4)*-.5) 0 0 calc(var(--cw)*-.5);
+  transform-style:preserve-3d;transition:transform .5s cubic-bezier(.25,.75,.3,1)}
+.pc .card,.pc .bk{position:absolute;left:0;top:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.pc .bk{width:100%;height:100%;border-radius:calc(var(--cw)*.1);border:2px solid var(--card);transform:rotateY(180deg);
+  background:var(--back);box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.pc.old .card{filter:brightness(.72)}
+.pc.cur .card{box-shadow:0 0 0 2.5px var(--latest),0 0 16px 3px var(--latest-glow),0 6px 18px rgba(0,0,0,.45);animation:curBlink 1.1s ease-in-out infinite}
+@keyframes curBlink{50%{box-shadow:0 0 0 2.5px rgba(54,201,255,.2),0 0 3px 1px rgba(54,201,255,.15),0 6px 18px rgba(0,0,0,.45)}}
+/* under the level disc, always: who played what last (or who leads), lit and pulsing, so the play to beat is never in doubt */
+.lastplay{position:absolute;z-index:3;left:0;top:0;translate:-50% 0;pointer-events:none;width:max-content;
+  font-size:17px;line-height:1.6;font-weight:700;color:#ffe08a;text-align:center;text-wrap:balance;padding:1px 10px;border-radius:10px;
+  background:rgba(19,54,41,.78);text-shadow:0 0 10px rgba(221,176,80,.75);animation:lpPulse 1.2s ease-in-out infinite}
+.lastplay:empty{display:none}
+.lastplay .ct{font-size:15px;text-shadow:none;padding:0 5px;margin:0 2px}
+.lastplay small{font-size:14px;color:var(--ink);margin-left:6px}
+@keyframes lpPulse{50%{opacity:.55}}
+.ktag{position:absolute;left:0;top:0;transform:translate(-50%,-50%);white-space:nowrap;animation:drop .25s ease-out}
+/* what a player is doing, as a lit tag just outside their plate: 理牌中 / 理牌结束 while sorting, 准备出牌 on their
+   turn, then 已出牌 or 过 until the trick is taken in. It sits left of the plate for you and your partner, above it
+   for the players at the sides, so the plate never changes size and the name, clock and count stay clear */
+.stat{position:absolute;z-index:4;top:50%;right:calc(100% + 8px);translate:0 -50%;pointer-events:none;white-space:nowrap;
+  font-family:var(--font-ui);font-size:14px;font-weight:800;line-height:1;letter-spacing:.06em;padding:4px 9px 4px 10px;border-radius:999px;
+  background:var(--sc);color:#13261e;box-shadow:0 0 0 1px rgba(0,0,0,.25),0 0 10px var(--sc);animation:drop .25s ease-out}
+#seat3 .stat,#seat1 .stat{top:auto;bottom:calc(100% + 6px);translate:none}
+#seat3 .stat{right:auto;left:0}
+#seat1 .stat{right:0}
+.stat:empty{display:none}
+.stat[data-s="sort"]{--sc:#ece8da}
+.stat[data-s="sorted"]{--sc:#6fd690}
+.stat[data-s="turn"]{--sc:var(--gold);animation:drop .25s ease-out,statCall 1.1s ease-in-out infinite}
+.stat[data-s="played"]{--sc:#4cd47a}
+.stat[data-s="pass"]{--sc:#aebfb7}
+@keyframes statCall{50%{box-shadow:0 0 0 1px rgba(0,0,0,.25),0 0 2px var(--sc)}}
+.ktag{font-size:14px;color:var(--ink);background:var(--shade);border-radius:999px;padding:1px 8px;letter-spacing:.08em}
+.ktag.boom{color:var(--on-gold);background:var(--gold);font-weight:600}
+.mid{grid-area:mid;z-index:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-width:0;text-align:center}
+
+.who{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 6px;border-radius:10px;background:var(--shade);border:1px solid var(--line);font-size:17px;white-space:nowrap;transition:border-color .2s,box-shadow .2s}
+.who .back{width:20px;height:28px;border-radius:3px;border:2px solid var(--card);background:var(--back);flex:none}
+.who .name{color:var(--team,var(--ink));font-weight:700}
+.seat .who{border-color:color-mix(in srgb,var(--team,#fff) 45%,transparent)}
+#myName{color:var(--team,var(--ink));font-weight:700}
+.mebar .meinfo{border-color:color-mix(in srgb,var(--team,#fff) 45%,transparent)}
+/* the count sits beside the name plate, never inside it */
+.whorow{display:flex;align-items:center;gap:12px;position:relative}
+.actlbl{position:absolute;z-index:5;pointer-events:none;white-space:nowrap}
+#seat1 .actlbl,#seat3 .actlbl{bottom:calc(100% + 30px);left:50%;translate:-50% 0}
+#seat2 .actlbl{left:calc(100% + 12px);top:50%;translate:0 -50%}
+/* card counts stay hidden until a player is down to 10 or fewer, then they shout */
+.cnt{display:inline-flex;align-items:baseline;gap:2px;font-family:var(--font-display);font-weight:900;font-size:26px;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--felt-deep);background:var(--warn);border-radius:8px;padding:3px 7px 2px;animation:pop .35s ease-out}
+.cnt small{font-family:var(--font-ui);font-size:13px;font-weight:700}
+.cnt:empty{display:none}
+/* the test version: the count stands right beside the name plate, in the row, so no hand or message can cover it */
+html body.test .seat .cnt{position:static!important;translate:none!important;top:auto!important;left:auto!important;right:auto!important;margin:0 0 0 8px;font-size:22px;z-index:3}
+html body.test #seat1 .cnt{margin:0 8px 0 0}
+/* the test version: the name plates stay where they are all game. What stands beside the 3号 and 1号 plates (the count of cards,
+   the 牌力 line, the 同花顺 button) is laid out around the plate, never in the row with it, so a changing number cannot
+   push the plate along; the 2号 and 4号 plates are held by their columns (the top row's height is kept, see testPeeks) */
+body.test #seat2 .whorow,body.test #mebar .whorow,body.test #mebar .left{position:relative}
+html body.test #seat2 .whorow>.cnt,html body.test #mebar #myCnt{position:absolute!important;left:100%!important;right:auto!important;top:50%!important;bottom:auto!important;translate:0 -50%!important;margin:0 0 0 8px!important}
+body.test #seat2 .pwn{position:absolute;left:calc(100% + 84px);top:50%;translate:0 -50%;margin:0}
+body.test #mebar #sfBtn{position:absolute;left:calc(100% + 84px);top:50%;translate:0 -50%;margin:0}
+body.test #mebar #myPw{position:absolute;left:calc(100% + 168px);top:50%;translate:0 -50%;margin:0}
+/* the places (头游 ... 末游) stand by their plates, out of the middle of the table where the played cards are: over the count for the
+   2号 and 4号 (in place of the status chip), beside the plate for the 3号 (on its left, clear of the header buttons) and for you */
+html body.test #seat3 .place,html body.test #seat1 .place{top:auto;bottom:calc(100% + 35px);transform:none;margin:0}
+html body.test #seat3 .place{left:0;right:auto}
+html body.test #seat1 .place{right:0;left:auto}
+html body.test #seat3 .who:has(.place:not(:empty)) .stat,html body.test #seat1 .who:has(.place:not(:empty)) .stat{display:none}
+html body.test #seat2 .place{top:50%;right:calc(100% + 8px);left:auto;transform:translateY(-50%);margin:0}
+html body.test #seat2 .who:has(.place:not(:empty)) .stat{display:none}
+html body.test #mebar #myPlace{position:absolute;left:calc(100% + 84px);top:50%;transform:translateY(-50%);margin:0}
+/* the 2号 and 4号: the count of cards left stands right over the name plate, and the status chip (已出牌, 过 ...) over the count:
+   nothing reaches toward the middle of the table, which keeps the played cards' room; the plates drop a little so both clear the header */
+html body.test #seat3,html body.test #seat1{padding-top:50px}
+html body.test #seat3 .cnt,html body.test #seat1 .cnt{position:absolute!important;bottom:calc(100% + 4px)!important;top:auto!important;margin:0}
+html body.test #seat3 .cnt{left:0!important;right:auto!important}
+html body.test #seat1 .cnt{right:0!important;left:auto!important}
+html body.test #seat3 .stat{top:auto;bottom:calc(100% + 35px);left:0;right:auto;translate:none}
+html body.test #seat1 .stat{top:auto;bottom:calc(100% + 35px);right:0;left:auto;translate:none}
+@keyframes pop{0%{transform:scale(1.6)}100%{transform:scale(1)}}
+/* the finishing place: a large label on the table side of each plate, so the four sit symmetrically around the table */
+.who,.meinfo{position:relative}
+.place{position:absolute;z-index:3;white-space:nowrap;font-family:var(--font-display);font-weight:900;font-size:26px;line-height:1;letter-spacing:.08em;
+  padding:6px 12px 6px 14px;border-radius:10px;background:var(--gold);color:var(--on-gold);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+#seat2 .place{top:100%;left:50%;transform:translateX(-50%);margin-top:10px}
+/* yours stands at the foot of the table, centred, answering your partner's at its head */
+#myPlace{position:static;margin-bottom:4px}
+#seat3 .place{left:100%;top:50%;transform:translateY(-50%);margin-left:12px}
+#seat1 .place{right:100%;top:50%;transform:translateY(-50%);margin-right:12px}
+/* gold for first, quiet for second and third, red for last; each one drops in as it is called out */
+.place:not(:empty){animation:placeIn .45s cubic-bezier(.2,.9,.3,1.3)}
+/* last place is slammed down like a stamp */
+.place[data-place="3"]:not(:empty){animation:stampIn .5s cubic-bezier(.3,1.4,.5,1)}
+@keyframes stampIn{0%{opacity:0;scale:2.6;rotate:-18deg}60%{opacity:1;scale:.92;rotate:-6deg}100%{scale:1;rotate:0deg}}
+@keyframes placeIn{from{opacity:0;scale:.4}to{opacity:1;scale:1}}
+.place[data-place="1"],.place[data-place="2"]{background:var(--felt-deep);color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.place[data-place="3"]{background:var(--warn);color:var(--felt-deep)}
+.place:empty{display:none}
+/* first out: the label drops onto the plate from above and keeps a glow */
+.place[data-place="0"]:not(:empty){animation:landIn .9s cubic-bezier(.2,.9,.3,1.2);box-shadow:0 0 22px var(--gold),0 4px 14px rgba(0,0,0,.35)}
+@keyframes landIn{0%{opacity:0;scale:3;translate:0 -80px}55%{opacity:1;scale:.92;translate:0 0}75%{scale:1.08}100%{scale:1}}
+/* the sorting minute: "理牌" on one side of the level disc and the countdown on the other, never over the disc
+   (placed by placePrepBig; on a narrow screen both sit above the disc) */
+.prepbig{position:absolute;inset:0;z-index:2;pointer-events:none}
+.prepbig>*{position:absolute}
+.prepbig>b{display:flex;align-items:baseline;gap:6px;white-space:nowrap;
+  font-family:var(--font-display);font-weight:900;color:var(--gold);padding:8px 22px;border-radius:16px;background:var(--felt-deep);box-shadow:0 0 0 2px var(--gold),0 8px 30px rgba(0,0,0,.4)}
+.prepbig #prepL{font-size:clamp(34px,6vh,56px);letter-spacing:.2em;padding-right:14px}
+/* the countdown is the same little alarm clock as the turn clocks, drawn large */
+.prepbig .bigclock{font-size:clamp(30px,5.4vh,46px);margin:0;box-shadow:inset 0 0 0 .1em var(--card-edge),0 6px 24px rgba(0,0,0,.45)}
+/* the seconds sit smaller in the middle of the face, clear of the bells and the feet */
+#prepBigNum{font-size:.8em;line-height:1;position:relative;top:-.06em}
+.prepbig small{font-size:24px}
+
+/* the tribute: one line per pair, large, each card shown as a little white card face */
+.msg .trib{font-size:clamp(19px,2.4vw,25px);font-weight:700;line-height:1.6;white-space:nowrap}
+.msg:has(.trib){max-width:none}
+.ct{display:inline-block;background:var(--card);color:#222;border-radius:6px;padding:0 8px;margin:0 3px;line-height:1.3}
+.ct.red{color:var(--red)}
+.seat.turn .who,.mebar.turn .meinfo{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+/* the turn clock is a little alarm clock: a round face with the seconds in it, two bells on top and two feet */
+.clock{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:2.3em;height:2.3em;margin:.35em .1em .2em;
+  border-radius:50%;background:var(--card);border:.16em solid var(--gold);box-shadow:inset 0 0 0 .1em var(--card-edge),0 2px 5px rgba(0,0,0,.35);
+  color:var(--card-ink);font-family:var(--font-display);font-weight:900;font-variant-numeric:tabular-nums;font-size:16px;line-height:1}
+.clock:empty{display:none}
+.clock::before,.clock::after{content:"";position:absolute;top:-.42em;width:.78em;height:.5em;border-radius:.5em .5em .12em .12em;background:var(--gold)}
+.clock::before{left:-.12em;transform:rotate(-32deg)}
+.clock::after{right:-.12em;transform:rotate(32deg)}
+.clock b::before,.clock b::after{content:"";position:absolute;bottom:-.3em;width:.16em;height:.42em;border-radius:.1em;background:var(--gold)}
+.clock b::before{left:.42em;transform:rotate(30deg)}
+.clock b::after{right:.42em;transform:rotate(-30deg)}
+#myClock{font-size:19px}
+/* the last five seconds: the clock turns red and rings */
+.clock.hurry{border-color:var(--warn);color:var(--red);animation:ring .5s ease-in-out infinite}
+.clock.hurry::before,.clock.hurry::after,.clock.hurry b::before,.clock.hurry b::after{background:var(--warn)}
+@keyframes ring{0%,100%{transform:rotate(0)}15%{transform:rotate(-14deg)}35%{transform:rotate(12deg)}55%{transform:rotate(-9deg)}75%{transform:rotate(6deg)}}
+@keyframes blink{50%{opacity:.2}}
+.prep{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 10px}
+.prep .pn{font-family:var(--font-display);font-weight:900;font-size:38px;line-height:1;color:var(--gold);font-variant-numeric:tabular-nums;min-width:1.3em}
+.prep .pn.hurry{color:var(--warn);animation:blink .5s steps(1) infinite}
+.prep .pt{font-size:17px;color:var(--ink)}
+/* the "done sorting" button calls for attention: gold, larger, pulsing */
+.prep .btn{--d:74px;font-size:19px}
+#readyBtn,#nextBtn:not(:disabled){animation:readyFlash 1s ease-in-out infinite}
+/* on a computer or tablet these two stand in the action column (placed by placeActionBtns) */
+#seat0 #deckBtn.atcol,#seat0 #readyBtn.atcol,#nextBtn.atcol{position:fixed;right:auto;bottom:auto;transform:translate(-50%,-50%);z-index:20;--d:100px;font-size:22px}
+@keyframes readyFlash{50%{filter:brightness(1.3);box-shadow:0 0 0 6px rgba(221,176,80,.35),0 0 26px var(--gold)}}
+@keyframes pulse{50%{opacity:.25}}
+
+.played{--cw:clamp(32px,4.2vw,48px);display:flex;flex-direction:column;gap:3px;min-height:calc(var(--cw)*var(--cr,1.4) + 16px);justify-content:center}
+#seat3 .played{align-items:flex-start}
+#seat1 .played{align-items:flex-end}
+#seat2 .played,#seat0 .played{align-items:center}
+.played .cards{display:flex;flex-wrap:wrap;row-gap:4px;padding-left:calc(var(--cw)*.58);max-width:100%}
+#seat1 .played .cards{justify-content:flex-end}
+#seat2 .played .cards,#seat0 .played .cards{justify-content:center}
+.played .card{position:relative;margin-left:calc(var(--cw)*-.58);animation:drop .22s ease-out}
+.played .kind{font-size:11px;color:var(--muted);letter-spacing:.08em}
+.played .kind.boom{color:var(--gold);font-weight:600}
+.pass{font-size:14px;color:var(--muted);letter-spacing:.2em;padding:4px 0}
+@keyframes drop{from{transform:translateY(-8px);opacity:0}}
+
+/* the level being played: a lit disc in the colour of the side whose level it is (red north-south, blue east-west),
+   the rank in white, the brightest thing on the table */
+.emblem{width:112px;height:112px;border-radius:50%;border:2px solid color-mix(in srgb,var(--team) 60%,#fff);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;gap:2px;
+  background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--team) 65%,#fff) 0%,var(--team-fill) 62%,color-mix(in srgb,var(--team-fill) 65%,#000) 100%);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--team) 30%,transparent),0 0 30px color-mix(in srgb,var(--team) 65%,transparent);transition:background .4s,box-shadow .4s}
+.emblem .r{font-family:var(--font-display);font-weight:900;font-size:68px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.35)}
+/* a short window (a laptop with the browser not maximised): a smaller disc and line leave the near player's cards room */
+@media (max-height:700px) and (min-width:561px){
+  .emblem{width:84px;height:84px}
+  .emblem .r{font-size:50px}
+  .lastplay{font-size:15px}
+  .lastplay .ct{font-size:13px}
+}
+.msg{font-size:17px;color:var(--ink);min-height:2.6em;max-width:28em;line-height:1.35;text-wrap:balance}
+.msg.err{color:var(--warn)}
+.msg small{display:block;color:var(--muted);font-size:15px}
+
