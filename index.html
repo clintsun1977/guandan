@@ -2557,7 +2557,7 @@ function mcSearch(S,{ms=1000,iters=0,C=1,max=20000}={}){
 
 const BOT_MODELS={"schema":1,"defaultId":"danmcai","models":[{"id":"clint","name":"Clint","label":"Clint 规则机器人","kind":"rules","path":"clint/clint-bot.js"},{"id":"danmcai","name":"danMCai","label":"danMCai-v000855042","kind":"onnx","path":"danmcai/danmcai-v000855042.onnx","file":"danmcai-v000855042.onnx","sha256":"462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7","bytes":5368650,"config":{"stateFeatures":513,"actionFeatures":54},"source":{"repo":"stevensun1005/guandanai","release":"web-model-017","run":"mac-20261105","version":"v000855042","step":855042,"note":"guandanai 网页默认的 danMCai 现任门控冠军（归档 017）"}},{"id":"guanzero","name":"GuanZero","label":"guanzero-adp-io48-229609","kind":"onnx","path":"guanzero/guanzero-adp-io48-229609.onnx","file":"guanzero-adp-io48-229609.onnx","sha256":"43d72b65e773fb5acb6b8f86baed16a69a1977a97fb6fddf4fe5f23ee25261bc","bytes":6346014,"config":{"stateFeatures":513,"actionFeatures":54,"history":"guanzero-v1"},"source":{"repo":"stevensun1005/guandanai","release":"web-model-021","run":"guanzero-adp-io48","version":"model-000000229609","step":229609,"note":"guandanai 最新发布的 GuanZero（归档 021）"}}]};
 /* ---------- neural computer players: danMCai and GuanZero (bot/models.json), run in the browser with onnxruntime-web ---------- */
-// Ported from stevensun1005/guandanai web/src/ai (encoding.mjs, history.mjs, candidates.js, observation.js, endgame.js,
+// Taken from stevensun1005/guandanai (https://github.com/stevensun1005/guandanai), not written for this project: ported from its web/src/ai (encoding.mjs, history.mjs, candidates.js, observation.js, endgame.js,
 // policy-inference.mjs, table-policy.mjs), keeping the exact inputs the networks were trained on. A network sees only its
 // own hand and what is public at the table (the plays so far, how many cards each player holds, the levels). It scores
 // every legal play (and the pass) and the highest score is played; a two-player ending that can be searched to the end is
@@ -6258,6 +6258,8 @@ let handW=0;
 if(window.ResizeObserver)new ResizeObserver(()=>{const w=handEl.clientWidth;if(w&&w!==handW){handW=w;layoutHand()}}).observe(handEl);
 
 /* ---------- 出牌评价: danMCai's score for the cards you pick, and for your last move ---------- */
+// Taken from stevensun1005/guandanai (web/src/coach/evaluation.mjs and controller.js, https://github.com/stevensun1005/guandanai);
+// the danMCai network is guandanai's too (bot/danmcai/README.md).
 // On your own turn the danMCai network (bot/models.json) scores, once, every move you could make, from what you can see:
 // your own hand, the plays so far, how many cards each player holds and the levels (guandanai's 出牌评价, without its
 // Top 5 list). The cards you pick show as 合理性 N%: 100 for the move the network values most, 0 for the one it values
@@ -7972,7 +7974,7 @@ function endgameBatchPanel(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1231';
+const VERSION='1107-1233';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

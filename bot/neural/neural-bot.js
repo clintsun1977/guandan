@@ -1,5 +1,5 @@
 /* ---------- neural computer players: danMCai and GuanZero (bot/models.json), run in the browser with onnxruntime-web ---------- */
-// Ported from stevensun1005/guandanai web/src/ai (encoding.mjs, history.mjs, candidates.js, observation.js, endgame.js,
+// Taken from stevensun1005/guandanai (https://github.com/stevensun1005/guandanai), not written for this project: ported from its web/src/ai (encoding.mjs, history.mjs, candidates.js, observation.js, endgame.js,
 // policy-inference.mjs, table-policy.mjs), keeping the exact inputs the networks were trained on. A network sees only its
 // own hand and what is public at the table (the plays so far, how many cards each player holds, the levels). It scores
 // every legal play (and the pass) and the highest score is played; a two-player ending that can be searched to the end is

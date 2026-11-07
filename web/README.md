@@ -21,7 +21,7 @@
 | `lobby/` | 大厅：昵称（`lobby.js`）、规则与电脑选择、选级（`rules.js`）、单人／开房间／进房间（`modes.js`） |
 | `training/` | 训练版：入口与牌桌、配牌、记牌器、出牌记录、单步与撤回、回看、文本导出导入、残局批量 |
 | `network/` | 联机：房间与版本（`connection.js`）、语音（`voice.js`）、房主（`host.js`）、掉线重连（`resume.js`）、加入者与观战（`guest.js`） |
-| `coach/` | 出牌评价：danMCai 给你选的牌和上一手打合理性分（`coach.js`） |
+| `coach/` | 出牌评价：danMCai 给你选的牌和上一手打合理性分（`coach.js`，引用 guandanai 的出牌评价，见 [bot/README](../bot/README.md#来源引用-guandanai)） |
 | `app/` | 启动：恢复热更新状态（`boot.js`）、主入口（`main.js`） |
 
-电脑玩家（Clint 规则、danMCai、GuanZero）在仓库的 [bot/](../bot/README.md) 目录，同样由 `index.html` 按顺序引入。
+电脑玩家（Clint 规则；以及引用自 [guandanai](https://github.com/stevensun1005/guandanai) 的 danMCai、GuanZero）在仓库的 [bot/](../bot/README.md) 目录，同样由 `index.html` 按顺序引入。

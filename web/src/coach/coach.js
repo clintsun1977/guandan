@@ -1,4 +1,6 @@
 /* ---------- 出牌评价: danMCai's score for the cards you pick, and for your last move ---------- */
+// Taken from stevensun1005/guandanai (web/src/coach/evaluation.mjs and controller.js, https://github.com/stevensun1005/guandanai);
+// the danMCai network is guandanai's too (bot/danmcai/README.md).
 // On your own turn the danMCai network (bot/models.json) scores, once, every move you could make, from what you can see:
 // your own hand, the plays so far, how many cards each player holds and the levels (guandanai's 出牌评价, without its
 // Top 5 list). The cards you pick show as 合理性 N%: 100 for the move the network values most, 0 for the one it values
