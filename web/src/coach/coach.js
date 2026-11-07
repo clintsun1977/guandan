@@ -62,7 +62,7 @@ function coachRemember(pl){
 function renderCoach(){
   const box=$('#coach'),on=coachShown();
   box.hidden=!on;
-  if(!on)return;
+  if(!on){$('#coachSide').hidden=true;top5Room(false);return}
   if(CO.last&&(CO.last.s.G!==G||CO.last.s.round!==G.round))CO.last=null;
   let now='轮到你时评价';
   if(G.phase==='play'&&G.turn===0){
@@ -83,30 +83,40 @@ function renderCoach(){
   renderTop5(phone);
   coachPlace();
 }
-// Top 5: open by default on a computer; on a phone a tap on the chip opens and closes it
+// Top 5, laid out as guandanai lays it out, so it covers nothing: on a computer 800px or wider it is a column of its own on the
+// right and the whole table (header, plates, pile, hand, buttons) moves over to make room for it, giving the room back when
+// it is folded away; on a phone or a narrower window it starts folded and opens as a pop-up under the header that stops short
+// of the hand and the play buttons (a tap on the evaluation chip, or Top 5 in its box, opens and closes it)
+const top5Wide=()=>!isPhone()&&innerWidth>=800;
 function renderTop5(phone){
-  const on=coachTop5(),box=$('#coachTop'),btn=$('#coachTopBtn');
-  if(CO.topOpen===null)CO.topOpen=!phone;
-  $('#coach').classList.toggle('top5',on);
+  const on=coachTop5(),side=$('#coachSide'),list=$('#coachTop'),btn=$('#coachTopBtn'),wide=top5Wide();
+  // first shown, and whenever the window crosses 800px: open as a column, folded as a pop-up
+  if(CO.topOpen===null||CO.wasWide!==wide){CO.topOpen=wide;CO.wasWide=wide}
   btn.hidden=!on||phone;
   btn.textContent=CO.topOpen?'收起 Top 5':'Top 5';
-  box.hidden=!on||!CO.topOpen;
-  $('#coach').classList.toggle('open',phone&&!box.hidden);
-  if(box.hidden)return;
+  $('#coach').classList.toggle('top5',on);
+  const show=on&&CO.topOpen;
+  side.hidden=!show;
+  side.classList.toggle('pop',show&&!wide);
+  top5Room(show&&wide);
+  if(!show)return;
   const mine=G.phase==='play'&&G.turn===0,s=mine?coachSnap():null;
   if(!s||s.error||!s.values){
-    box.innerHTML=`<li class="coach-top-note">${s&&s.error?'评价暂不可用':s?'正在比较所有出法…':'轮到你时显示 Top 5'}</li>`;
+    $('#coachTopStatus').textContent=s&&s.error?'评价暂不可用':s?'正在比较所有出法…':'轮到你时显示推荐';
+    list.innerHTML='';
+    top5Pop();
     return;
   }
   const cur=G.trick?G.trick.play:null,top=NeuralBot.ranked(s.actions,s.values,G.L,cur,5),picked=NeuralBot.actionKey([...sel]);
-  box.innerHTML=top.map((row,i)=>{
+  $('#coachTopStatus').textContent=`已比较 ${s.actions.length} 种出法 · 点一下选中，不会自动打出`;
+  list.innerHTML=top.map((row,i)=>{
     const pct=NeuralBot.relativeRating(s.values,row.value).percent;
-    const gap=i?` <small title="与第一名的模型值差（约等于本局升级分），越接近 0 差别越小">${(row.value-top[0].value).toFixed(2)}</small>`:'';
-    const cards=row.ids.length?row.ids.map(id=>{const c=coachDeck[id];return`<span class="coach-card${c.s==='H'||c.s==='D'||c.r===17?' red':''}">${cardText(c)}</span>`}).join(''):'<span class="coach-pass">本轮不跟</span>';
-    const sel1=row.ids.length&&NeuralBot.actionKey(row.ids)===picked?' on':'';
-    return`<li><button type="button" class="coach-choice${sel1}" data-i="${i}"><b>${i+1}. ${row.ids.length?TYPE_NAME[row.shape.type]:'过牌'}</b><span class="coach-cards">${cards}</span><b class="coach-pct">${pct}%${gap}</b></button></li>`;
+    const gap=i?` <small class="coach-gap" title="与第一名的模型值差（约等于本局升级分），越接近 0 差别越小">差 ${(row.value-top[0].value).toFixed(2)}</small>`:'';
+    const cards=row.ids.length?row.ids.map(id=>{const c=coachDeck[id];return`<span class="coach-card${c.s==='H'||c.s==='D'||c.r===17?' red':''}">${cardText(c)}</span>`}).join(''):'<span class="coach-pass">本轮不跟牌</span>';
+    const on1=row.ids.length&&NeuralBot.actionKey(row.ids)===picked?' on':'';
+    return`<li><button type="button" class="coach-choice${on1}" data-i="${i}"><span class="coach-choice-head"><strong>${i+1}. ${row.ids.length?TYPE_NAME[row.shape.type]:'过牌'}</strong><b>${pct}%${gap}</b></span><span class="coach-cards">${cards}</span></button></li>`;
   }).join('');
-  box.querySelectorAll('.coach-choice').forEach(b=>b.onclick=e=>{
+  list.querySelectorAll('.coach-choice').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
     if(G.phase!=='play'||G.turn!==0||CO.turn!==s)return;
     const row=top[+b.dataset.i];
@@ -114,8 +124,25 @@ function renderTop5(phone){
     renderHand();
   });
   CO.shown=s.key; // the numbers were on show before this move (marked in the round record)
+  top5Pop();
 }
-// the box stands just over the 成组区 frame (bottom left), whatever its height on this screen
+// the column takes its room from the table: when that changes, everything is laid out again as for a new window size
+function top5Room(on){
+  if(document.body.classList.contains('has-top5')===on)return;
+  document.body.classList.toggle('has-top5',on);
+  requestAnimationFrame(()=>dispatchEvent(new Event('resize')));
+}
+// the pop-up: from under the header down to just above the hand and the play buttons
+function top5Pop(){
+  const side=$('#coachSide');
+  if(side.hidden||!side.classList.contains('pop'))return;
+  const top=Math.round($('.bar').getBoundingClientRect().bottom+6);
+  let floor=innerHeight-8;
+  for(const el of document.querySelectorAll('#hand,#btns .btn')){const r=el.getBoundingClientRect();if(r.height&&r.top>top+80)floor=Math.min(floor,r.top-8)}
+  side.style.setProperty('--top5-top',top+'px');
+  side.style.setProperty('--top5-h',Math.max(120,floor-top)+'px');
+}
+// the evaluation box stands in the bottom-left corner over the felt, whatever the screen
 function coachPlace(){
   const box=$('#coach');
   if(box.hidden)return;
@@ -126,25 +153,26 @@ function coachPlace(){
     box.style.setProperty('--coach-left',Math.round(a.right+8)+'px');
     return;
   }
-  const f=$('#fixZone'),z=f?f.getBoundingClientRect():{height:0};
-  const bottom=z.height>0?Math.max(8,innerHeight-z.top+8):Math.round(innerHeight*.42);
-  box.style.setProperty('--coach-bottom',bottom+'px');
-  // Top 5 grows the box upward: it stops short of the left-hand player's plate and its status tag, and scrolls inside instead
-  const list=$('#coachTop');
-  if(!list.hidden){
-    let plate=0;
-    for(const el of document.querySelectorAll('#seat3 .whorow,#seat3 .stat')){const r=el.getBoundingClientRect();if(r.height)plate=Math.max(plate,r.bottom)}
-    const rest=box.getBoundingClientRect().height-list.getBoundingClientRect().height;
-    list.style.maxHeight=Math.max(56,innerHeight-bottom-rest-plate-10)+'px';
+  // it sits on whatever comes first under it in its column: the 成组区 frame, your name row, 同花顺 / 成组 (which a narrow
+  // table moves left of your name), so it covers none of them
+  const left=box.getBoundingClientRect().left,width=Math.min(260,innerWidth-24);
+  let floor=innerHeight-8,found=false;
+  for(const el of document.querySelectorAll('#fixZone,#mebar .meinfo,#mebar .stat,#mebar .cnt,#sfBtn,#fixBtn')){
+    const r=el.getBoundingClientRect();
+    if(r.width&&r.height&&r.left<left+width&&r.right>left){floor=Math.min(floor,r.top-8);found=true}
   }
+  box.style.width=width+'px';
+  box.style.setProperty('--coach-bottom',(found?Math.max(8,innerHeight-floor):Math.round(innerHeight*.42))+'px');
 }
 const coachModel=NeuralBot.models.find(m=>m.id===COACH_ID)||{};
 $('#coachName').textContent=coachModel.name||'';
 $('#coachName').parentElement.title=`${coachModel.label||''}：`+$('#coachName').parentElement.title;
 $('#coachClose').onclick=()=>{CO.hidden=true;renderCoach()};
 $('#coachTopBtn').onclick=e=>{e.stopPropagation();CO.topOpen=!CO.topOpen;renderCoach()};
+$('#coachSideClose').onclick=e=>{e.stopPropagation();CO.topOpen=false;renderCoach()};
 $('#coach').addEventListener('click',e=>{
-  if(!$('#coach').classList.contains('chip')||!coachTop5()||e.target.closest('.coach-choice'))return;
+  if(!$('#coach').classList.contains('chip')||!coachTop5())return;
   CO.topOpen=!CO.topOpen;renderCoach();
 });
-addEventListener('resize',()=>requestAnimationFrame(coachPlace));
+// a window that grows past 800px or shrinks below it switches between the column (open) and the pop-up (folded)
+addEventListener('resize',()=>{if(G&&!$('#coach').hidden&&coachTop5()&&top5Wide()!==CO.wasWide)renderTop5(isPhone());coachPlace();top5Pop()});

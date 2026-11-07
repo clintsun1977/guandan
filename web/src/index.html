@@ -60,7 +60,6 @@
 
   <aside class="coach" id="coach" aria-label="出牌评价" hidden>
     <div class="coach-head"><small title="当前所有能出的牌里，模型值最高的是 100%，最低的是 0%；不是胜率，也不是正确的概率"><span id="coachName"></span> · 相对分，非胜率</small><button class="link" id="coachTopBtn" type="button" hidden>收起 Top 5</button><button class="link" id="coachClose" aria-label="关闭出牌评价" title="本局不再显示出牌评价">×</button></div>
-    <ol class="coach-top" id="coachTop" hidden></ol>
     <output id="coachNow" aria-live="polite"></output>
     <output id="coachLast"></output>
   </aside>
@@ -82,6 +81,13 @@
     <div class="handtools"><button class="link" id="fixBtn" title="把选中的牌放进左边的成组区，作为你拟定的一组牌">成组</button><span class="toolgap"></span><button class="link" id="fanBtn">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
   </div>
 </div>
+
+<aside class="coach-side" id="coachSide" aria-label="Top 5 推荐出牌" hidden>
+  <header><div><small>出牌推荐 · danMCai</small><h2>Top 5 <span>相对分，非胜率</span></h2></div><button class="link" id="coachSideClose" type="button" aria-label="收起 Top 5" title="收起 Top 5">×</button></header>
+  <p id="coachTopStatus"></p>
+  <ol id="coachTop"></ol>
+  <p class="coach-footnote">同点数、同牌型的花色变体合并为一行；「差」是与第一名的模型值差，越接近 0 差别越小。</p>
+</aside>
 
 <div class="overlay" id="overlay" hidden><div class="panel" id="panel"></div></div>
 
