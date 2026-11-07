@@ -10,12 +10,7 @@ function testText(rounds=TREC.rounds){
   for(const r of rounds){
     const ct=c=>cardText(c)+(isWild(c,r.L)?'*':'');
     const shown=(cards,p,grouped)=>(grouped?recUnits(r,p,cards):handUnits(cards,r.L,false)).map(u=>grouped?'['+u.cards.map(ct).join(' ')+']':u.cards.map(ct).join(' ')).join(grouped?' ':'  ');
-    out.push('='.repeat(48),`${recName(r)}　${roundName(r)}　打 ${rankName(r.L)}（${r.lvlTeam===0?'我方':'对方'}的级）　${NAMES[r.leader]}${r.endgame?'接着出':'先出'}　${r.at||''}`);
-    if(r.endgame){
-      out.push(`  残局：先正常发牌（每家 27 张），电脑四家用老规则自动打了 ${r.endStart?r.endStart.pre.length:0} 手，打到每家都不超过 10 张就停下；这个局面是从那里开始的（明牌）。`);
-      out.push('  之后四家都是电脑，不用任何出牌规则：四家的牌都看得见，电脑把每一手的每种出法（包括不出）都试遍，算出双方都打到最好时的结果。下面的出牌就是这个最好的打法，每一手都是当时最好的一手。');
-      if(r.train)out.push(`  计算过程：用了 ${r.train.sec.toFixed(1)} 秒，看过 ${r.train.nodes} 个局面，试过 ${r.train.tries} 种试探顺序；最好结果：${r.train.value>0?'1号3号一方':'2号4号一方'}赢 ${Math.abs(r.train.value)} 级。`);
-    }
+    out.push('='.repeat(48),`${recName(r)}　${roundName(r)}　打 ${rankName(r.L)}（${r.lvlTeam===0?'我方':'对方'}的级）　${NAMES[r.leader]}先出　${r.at||''}`);
     for(const t of r.trib)out.push('  '+t);
     if(r.kang)out.push('  '+r.kang);
     out.push('','开局手牌（进贡、还贡之后）：');

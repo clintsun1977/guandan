@@ -3,7 +3,6 @@ function selectedCards(){return G.hands[0].filter(c=>sel.has(c.id))}
 // waiting for the host to confirm your last move; never for more than four seconds
 const waitingHost=()=>NET.pending&&Date.now()-(NET.pendingAt||0)<4000;
 function onPlay(){
-  if(ENDG)return;
   // you lead next but the finished trick is still being gathered up: nothing goes out yet
   if(G.phase==='play'&&G.turn===-1&&G.nextLeader===0){setMsg('这一轮的牌还在收，收完再出',true);return}
   if(G.phase!=='play')return;
@@ -55,14 +54,12 @@ function syncCfmShow(){
 }
 addEventListener('resize',()=>{if(cfm)syncCfmShow()});
 function onPass(){
-  if(ENDG)return;
   if(G.phase!=='play'||G.turn!==0||!G.trick||waitingHost())return;
   sel=new Set();
   coachRemember(null);
   act({...playEvt(0,null),...(coachAssisted()?{as:1}:{})});
 }
 function onHint(){
-  if(ENDG)return;
   if(G.phase!=='play'||G.turn!==0)return;
   if(!hints.length){setMsg('没有能管上的牌，可以点“过”');return}
   const h=hints[hintIdx%hints.length];hintIdx++;

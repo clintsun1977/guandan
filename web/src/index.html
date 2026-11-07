@@ -148,18 +148,6 @@
   </div>
 </div>
 
-<!-- 训练: after the password, a choice of three kinds of practice; 配牌 has its own screen -->
-<div class="trainmenu" id="trainMenu" hidden>
-  <div class="tm-box">
-    <h1 class="tm-title">训练</h1>
-    <div class="tm-btns">
-      <button class="tm-card" id="tmPlay"><b>牌局</b><span>打一整局，每一手都能写评语</span></button>
-      <button class="tm-card" id="tmEnd"><b>残局</b><span>四家都是电脑，每家 10 张以内，明牌，自己算出最好的打法</span></button>
-    </div>
-    <button class="link" id="tmBack">返回大厅</button>
-  </div>
-</div>
-
 <!-- PeerJS: browser-to-browser connections for playing with friends (room codes) -->
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
@@ -168,13 +156,11 @@
 //@include web/src/core/moves.js
 //@include bot/clint/clint-bot.js
 //@include web/src/hand/hints.js
-//@include bot/clint/endgame-search.js
 //@json BOT_MODELS bot/models.json
 //@include bot/neural/neural-bot.js
 //@include web/src/game/state.js
 //@include web/src/game/match.js
 //@include web/src/game/round.js
-//@include web/src/game/endgame-setup.js
 //@include web/src/game/dealing.js
 //@include web/src/game/tribute.js
 //@include web/src/game/turns.js

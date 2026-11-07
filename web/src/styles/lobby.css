@@ -115,6 +115,6 @@
   .cnt{font-size:20px;padding:2px 6px 1px}
   .cnt small{font-size:12px}
 }
-/* 选级: the line that fills in where the last match stopped, quiet under the title; lit once 选级 holds it */
-.level-cont{align-self:center;font-size:15px;padding:3px 10px;border-radius:10px;color:var(--gold);background:transparent;border:1px dashed rgba(221,176,80,.6);cursor:pointer}
-.level-cont.on{border-style:solid;background:rgba(221,176,80,.18)}
+/* 选级: 「继续上一把」, a button of its own under the title (where the last match stopped underneath); gold once 选级 holds it */
+.level-cont{align-self:center;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:200px;padding:6px 18px;font-size:18px;font-weight:700}
+.level-cont small{font-size:13px;font-weight:400;opacity:.85}

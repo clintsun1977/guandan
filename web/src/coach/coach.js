@@ -14,7 +14,7 @@ const CO={turn:null,last:null,hidden:false,topOpen:null};
 const coachKey=()=>G.tok+':'+G.log.length;
 const coachTop5=()=>TOP5_NAMES.includes((myNick||'').trim().toLowerCase());
 const coachDeck=makeDeck();
-const coachShown=()=>(RULES.coach===true||coachTop5())&&!CO.hidden&&!TEST&&!SPEC&&!ENDG&&NeuralBot.has(COACH_ID)&&isHumanSeat(0)&&!!G&&
+const coachShown=()=>(RULES.coach===true||coachTop5())&&!CO.hidden&&!TEST&&!SPEC&&NeuralBot.has(COACH_ID)&&isHumanSeat(0)&&!!G&&
   ['play','roundEnd','over'].includes(G.phase);
 // the table as you see it at the start of your turn; the other hands go in only as counts
 function coachSnap(){

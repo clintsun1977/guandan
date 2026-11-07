@@ -17,7 +17,7 @@ let hrQuit=false;
 function hrForget(){hrQuit=true;hrClear()}
 // after every move the host applies, every few seconds, and as the page goes away
 function hrSave(){
-  if(hrQuit||NET.mode!=='host'||!NET.started||TEST||ENDG||SPEC||!G||G.phase==='start')return;
+  if(hrQuit||NET.mode!=='host'||!NET.started||TEST||SPEC||!G||G.phase==='start')return;
   if(G.phase==='over'){hrClear();return}
   const s=REC.byGame.get(G);
   const d={v:1,savedAt:Date.now(),code:NET.code,hostDir:NET.hostDir,myDir,nick:myNick,names:NET.names,rules:RULES,snap:snapG(),

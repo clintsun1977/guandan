@@ -7,7 +7,16 @@ function straightFlushes(hand=G.hands[0]){
     for(let q=s;q<s+5;q++){const r=q===1?14:q,c=hand.find(x=>!isWild(x,L)&&x.s===su&&x.r===r);if(c)nat.push(c);else wu++}
     if(wu<=w.length&&wu<5){const cards=nat.concat(w.slice(0,wu));if(analyze(cards,L).some(a=>a.type==='sflush'))out.push({cards,wu,s,su})}
   }
-  return out.sort((a,b)=>a.wu-b.wu||a.s-b.s||SUIT_ORDER[a.su]-SUIT_ORDER[b.su]);
+  // the same cards are one straight flush, however the wild cards are read (4 natural cards of a run and a wild card fit the run
+  // above them or below them: one flush, shown once, as the higher run)
+  const same=new Map();
+  for(const o of out){const k=o.cards.map(c=>c.id).sort((a,b)=>a-b).join(),p=same.get(k);if(!p||o.s>p.s)same.set(k,o)}
+  const all=[...same.values()];
+  // and a flush that puts a wild card in where the hand holds a natural card of its own is no other way to make it: a hand with a
+  // whole flush and two wild cards is one flush, not that and four more made of its cards with a wild card at either end
+  const real=a=>a.cards.filter(c=>!isWild(c,L));
+  const list=all.filter(a=>!all.some(b=>b!==a&&b.wu<a.wu&&real(a).every(c=>b.cards.includes(c))));
+  return list.sort((a,b)=>a.wu-b.wu||a.s-b.s||SUIT_ORDER[a.su]-SUIT_ORDER[b.su]);
 }
 let sfIdx=0;
 $('#sfBtn').onclick=()=>{

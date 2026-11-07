@@ -311,7 +311,7 @@ const Emotes=(()=>{
   }
   // the 😊 button is there while a game is on the table: not in the lobby, the training version, a 残局 or for a spectator
   function sync(){
-    const on=!!G&&G.phase!=='start'&&!TEST&&!SPEC&&!ENDG&&$('#lobby').hidden;
+    const on=!!G&&G.phase!=='start'&&!TEST&&!SPEC&&$('#lobby').hidden;
     $('#emoteBtn').hidden=!on;
     if(!on&&!$('#emotePanel').hidden)setPanel(false);
   }

@@ -1,7 +1,7 @@
 /* ---------- 接着上一把: a match (一把, from 2 up to A) can be stopped and taken up again later as the same match ---------- */
 // After every round the page that runs the table (alone or as host) remembers in this browser where the match stands, in
-// 选级's terms: each side's level, the side whose level is played, the finishing order, the tries at A. The lobby then offers
-// 「继续上一把」, which fills 选级 with it; a match started from exactly that state (by the button or by hand) is the same
+// 选级's terms: each side's level, the side whose level is played, the finishing order, the tries at A. 选级 then offers
+// 「继续上一把」, which fills it in; a match started from exactly that state (by that button or by hand) is the same
 // match again: its rounds go up under the same match ID, numbered on from where it stopped, so all the rounds of one
 // match can be put together however many sittings it took. A match that is won or drawn is forgotten
 const MATCH_KEY='guandan-match-v1',MATCH_KEEP_MS=30*86400000;
@@ -11,7 +11,7 @@ function mlLoad(){
   catch(_){return null}
 }
 function mlStore(m){try{m?localStorage.setItem(MATCH_KEY,JSON.stringify(m)):localStorage.removeItem(MATCH_KEY)}catch(_){}}
-const mlOwn=()=>NET.mode!=='guest'&&!TEST&&!ENDG&&!SPEC;
+const mlOwn=()=>NET.mode!=='guest'&&!TEST&&!SPEC;
 const mlHostDir=()=>NET.mode==='solo'?myDir:NET.hostDir;
 const mlDir=p=>DIRS[(DIRS.indexOf(mlHostDir())+toAbs(p))%4];
 const mlSide=t=>dirSide(mlDir(t)); // team t sits at seats t and t+2
@@ -40,12 +40,12 @@ function mlRoundEnd(){
   for(const t of [0,1]){const s=mlSide(t);st['lv'+s]=G.levels[t];st['a'+s]=(G.aFails||[0,0])[t]}
   mlStore({id:ML.id,seats:ML.seats,nextRound:ML.base+G.round+1,state:st,savedAt:Date.now()});
 }
-// 选级's own first line, for whoever plays alone or opens the room: 「填入上一把的级数」 fills 选级 with where the match stopped
+// 选级's own 「继续上一把」 button, for whoever plays alone or opens the room: it fills 选级 with where the match stopped
 function mlLevelHtml(dis){
   const m=lobbyMode!=='join'?mlLoad():null;
   if(!m)return'';
   const s=m.state,on=mlSame(RULES,s);
-  return`<button type="button" class="link level-cont${on?' on':''}" data-mlcont="1"${dis}>${on?'已填入上一把':'填入上一把的级数'}（南北打${rankName(s.lvSN)}，东西打${rankName(s.lvEW)}）</button>`;
+  return`<button type="button" class="rule-btn level-cont${on?' on':''}" data-mlcont="1"${dis}>${on?'已接上一把':'继续上一把'}<small>南北打${rankName(s.lvSN)} · 东西打${rankName(s.lvEW)}</small></button>`;
 }
 function mlApply(){
   const m=mlLoad();

@@ -84,15 +84,6 @@ function tvDraw(){
   let s=-1;
   for(let i=end-1;i>=0;i--)if(done[i].cards&&done[i].lead){s=i;break}
   const trick=s<0?[]:done.slice(s);
-  // a 残局 begins in the middle of a trick: what was already on the table
-  let pre='';
-  if(s<0&&rec.endgame&&rec.endStart){
-    const pl=rec.endStart.pre;let i0=-1;
-    for(let i=pl.length-1;i>=0;i--)if(pl[i].c&&pl[i].lead){i0=i;break}
-    if(i0>=0)pre=`<div class="tvnote">桌上原来的牌（这一圈）：</div>`+pl.slice(i0).map(e=>e.c?
-      `<div class="tvp"><span class="tw">${NAMES[e.p]} ${e.lead?'领出':'跟'}</span><span class="grp">${displayOrder({type:e.type,value:e.value,n:e.n,cards:e.c.map(id=>DECK[id])},L).map(c=>cardHTML(c,L)).join('')}</span><small>${playName(e)}</small></div>`:
-      `<div class="tvp pass"><span class="tw">${NAMES[e.p]}</span>过</div>`).join('');
-  }
   let note='';
   if(s>0)for(let i=s-1;i>=0;i--)if(done[i].cards){note='上一圈：'+trickEnd(done[i].p,done[s].p);break}
   const pw=p=>p===0&&rec.myGroups&&rec.myPower!==rec.power[0]?`${powerText(rec.myPower)}，电脑配牌 ${rec.power[0]}`:
@@ -100,10 +91,10 @@ function tvDraw(){
   const seat=p=>`<div class="tvs" data-p="${p}"><div class="tvn">${NAMES[p]}<small>${
     hands[p].length?`剩 ${hands[p].length} 张`:PLACE[outs.indexOf(p)]||''} · ${pw(p)}</small></div>
     <div class="peek"><div class="prows">${hands[p].length?rowsHTML(recUnits(rec,p,hands[p]),L):''}</div></div></div>`;
-  const mid=`<div class="tvmid">${note?`<div class="tvnote">${note}</div>`:''}${pre}${trick.map(e=>e.cards?
+  const mid=`<div class="tvmid">${note?`<div class="tvnote">${note}</div>`:''}${trick.map(e=>e.cards?
     `<div class="tvp${e===cur?' cur':''}"><span class="no">${done.indexOf(e)+1}</span><span class="tw">${NAMES[e.p]} ${e.lead?'领出':'跟'}</span><span class="grp">${displayOrder(e,L).map(c=>cardHTML(c,L)).join('')}</span><small>${playName(e)}</small></div>`:
     `<div class="tvp pass${e===cur?' cur':''}"><span class="no">${done.indexOf(e)+1}</span><span class="tw">${NAMES[e.p]}</span>过</div>`).join('')}${
-    k?'':`<div class="tvnote">${NAMES[rec.leader]}${rec.endgame?'接着出':'先出'}</div>`}${k===n&&rec.result?`<div class="tvnote">${rec.result}</div>`:''}${tvBreak(rec,plays,cur)}</div>`;
+    k?'':`<div class="tvnote">${NAMES[rec.leader]}先出</div>`}${k===n&&rec.result?`<div class="tvnote">${rec.result}</div>`:''}${tvBreak(rec,plays,cur)}</div>`;
   const cm=`<div class="tvcm"><label for="tvNote">${k?`对第 ${k} 手的评语`:'对这一局开局（配牌）的评语'}</label>
       <textarea id="tvNote" rows="2" placeholder="${!k?'比如：这手牌应该配成…':cur.cards?'比如：这里应该出…，因为…':'比如：这里不该过，应该出…，因为…'}">${esc(rec.notes[k]||'')}</textarea></div>`;
   const v=$('#tview');
@@ -136,16 +127,6 @@ function testReplay(rec){
   G.tgRound=null;G.ua=null;NET.pending=false;sel=new Set();
   removeDeck();pileRebuild();
   G.replay={of:rec.replayOf||rec.no,trib:rec.trib,kang:rec.kang};
-  // a 残局 is played again as it began: the same plays so far, the same next player, the cards not in a hand out of the game, the hands open
-  if(rec.endgame&&rec.endStart){
-    const es=rec.endStart;
-    G.log=es.pre.map(e=>({p:e.p,cards:e.c?e.c.map(id=>byId.get(id)):null,lead:e.lead,type:e.type,value:e.value,n:e.n}));
-    G.seen=G.log.flatMap(e=>e.cards||[]);
-    G.pw=(es.pw||[]).map(x=>x==null?undefined:x);G.preHands=rec.preHands;
-    G.open=true;G.endgame=true;
-    endgameRestoreTrick();
-    startPlay(es.turn);return;
-  }
   startPrep(rec.leader);
 }
 

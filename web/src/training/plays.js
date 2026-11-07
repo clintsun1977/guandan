@@ -147,7 +147,7 @@ function testChanges(rec){
 // the k-th turn in words: who played what, or who passed on what
 function turnHTML(rec,k){
   const e=rec.log[k-1];
-  if(e.cards)return`${NAMES[e.p]}${e.lead?'领出':'跟'} ${playName(e)} ${displayOrder(e,rec.L).map(cardTag).join('')}${e.mq!=null?`（搜索估计${e.p%2?'我方':'本方'}${e.mq>=0?'赚':'亏'} ${Math.abs(e.mq).toFixed(1)} 级，试了 ${e.mn} 次）`:''}`;
+  if(e.cards)return`${NAMES[e.p]}${e.lead?'领出':'跟'} ${playName(e)} ${displayOrder(e,rec.L).map(cardTag).join('')}`;
   const t=passedOn(rec,k);
   return`${NAMES[e.p]} 过${t?`（桌上是${NAMES[t.p]}的${playName(t)} ${displayOrder(t,rec.L).map(cardTag).join('')}）`:''}`;
 }

@@ -18,9 +18,6 @@ function later(fn,ms){const t=G.tok;setTimeout(()=>{if(G.tok===t)fn()},ms)}
 
 function startTurn(){
   hints=[];hintIdx=0;
-  // 残局: the table shows the position as it stands; nobody plays it here. The computers work on it by themselves (see endgameTrain), and
-  // what they come to is looked at in the replay
-  if(ENDG&&G.endgame&&G.phase==='play'){G.stepWait=null;G.clock=null;render();endgameTrain();return}
   // the test version stops before every turn, yours as much as a computer's, until the space bar (or 继续) is pressed,
   // so each step can be looked at and commented on before the next one is made
   // (your own turn needs no stop: after 4号 the game goes straight to you; a copy of the game is kept at its start all the same)

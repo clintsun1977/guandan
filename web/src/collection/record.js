@@ -4,12 +4,12 @@
 // (human, bot or timeout) and the finishing order. Only the host records, only rounds that start with two or more people
 // seated, never the training version, a 残局 or a spectator, and nothing once the host has gone back to playing alone.
 // No nicknames, room number, chat, voice or IP: the four seats get random IDs that last for one match only (a match taken up
-// again with 「继续上一把」 keeps its match ID, seat IDs and round numbers: see match-link.js).
+// again (选级 set by hand to the state it stopped in) keeps its match ID, seat IDs and round numbers: see match-link.js).
 // Cards are the 0-107 ids of makeDeck(). appVersion starts with c1977 so these rounds can be told from guandanai's own.
 const REC={byGame:new WeakMap(),auto:-1};
 const recHumans=()=>[...NET.humans].sort((a,b)=>a-b);
 const recMask=h=>h.reduce((m,p)=>m|(1<<p),0);
-const recEligible=()=>NET.mode==='host'&&!TEST&&!ENDG&&!SPEC&&NET.humans.size>=2;
+const recEligible=()=>NET.mode==='host'&&!TEST&&!SPEC&&NET.humans.size>=2;
 // a computer as guandanai's records name it: its release number and weights for a network, clint-rule for the Clint rules
 function recModel(id){
   const m=NeuralBot.models.find(x=>x.id===id&&x.file);
