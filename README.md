@@ -33,11 +33,6 @@
 模型值最高的算 100%，最低的算 0%。出牌后保留**上一手**的评分，到这一局结束。只用你自己的手牌和公开信息；
 这是相对分，不是胜率。手机上显示在顶栏右侧。点 × 本场不再显示。
 
-**Top 5（仅限昵称 `stezer0`、`koala`，不分大小写）**：轮到你时，另外列出 danMCai 认为最好的 5 种出法
-（同点数同牌型的花色变体合并，保留模型值最高的那种），每种显示具体牌、合理性和与第一名的模型值差。点一下只会选中这些牌，
-仍要自己点「出牌」。谁开房间都可以，只看你自己的昵称；对这两个昵称，即使「出牌评价」是关（包括默认的关），评价框和 Top 5 也会显示。
-布局与 guandanai 相同、不遮挡牌桌：电脑窗口宽 800px 以上时 Top 5 是右侧单独一栏，牌桌、顶栏、手牌和按钮整体让出位置，「收起 Top 5」后还原；手机和更窄的窗口默认收起，点评价小条（或「Top 5」）才弹出，弹出时在顶栏下方、手牌和出牌按钮上方。手机昵称一般限 3 个字，这两个昵称可以完整输入。
-
 ## 表情（引用自 guandanai）
 
 对局中点右下角「复原」右边的圆形 😊 按钮，弹出「表情」「快捷语」两页，**只能从预设里选，不能输入文字**；同一个人两次发送至少隔 2.5 秒。
@@ -82,7 +77,7 @@ danMCai、GuanZero 两个神经网络机器人和出牌评价**不是本项目�
 | danMCai 权重 | Release [`web-model-017`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-017)（训练任务 `mac-20261105`，版本 `v000855042`） | `bot/danmcai/danmcai-v000855042.onnx` |
 | GuanZero 权重 | Release [`web-model-021`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-021)（训练任务 `guanzero-adp-io48`，步数 229609） | `bot/guanzero/guanzero-adp-io48-229609.onnx` |
 | 浏览器推理代码 | `web/src/ai/` 的 `encoding.mjs`、`history.mjs`、`candidates.js`、`observation.js`、`endgame.js`、`policy-inference.mjs`、`table-policy.mjs` | 移植为 `bot/neural/neural-bot.js` |
-| 出牌评价 | `web/src/coach/evaluation.mjs`、`controller.js`（只取合理性和上一手，不含 Top 5） | `bot/neural/neural-bot.js`（打分）、`web/src/coach/coach.js`（显示） |
+| 出牌评价 | `web/src/coach/evaluation.mjs`、`controller.js` | `bot/neural/neural-bot.js`（打分）、`web/src/coach/coach.js`（显示） |
 
 权重文件和 guandanai 发布的完全相同（SHA-256 记录在 `bot/models.json`，构建时核对）；代码移植自 guandanai `main`
 （提交 `fe066bc`，2026-11-07），只改成本项目单文件页面的写法，输入编码与候选出牌经逐局比对与原代码一致。
