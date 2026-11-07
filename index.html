@@ -84,6 +84,10 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .optmenu{position:absolute;z-index:60;top:calc(100% + 6px);right:0;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:8px;
   background:var(--felt-deep);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .optmenu[hidden]{display:none}
+.optinfo{font-size:15px;color:var(--muted);text-align:center;padding:2px 8px;letter-spacing:.04em}
+.optinfo b{color:var(--gold);font-size:18px;letter-spacing:.14em;margin-left:4px}
+.optspec{display:flex;flex-direction:column;gap:6px}
+.optspec[hidden]{display:none}
 #optBtn[aria-expanded="true"]{color:var(--ink);border-color:var(--gold)}
 /* while it is open the header rises above the play buttons, which on a short screen reach up beside it */
 .bar:has(.optmenu:not([hidden])){z-index:30}
@@ -822,7 +826,7 @@ body.test .overlay.dock .panel .btn:not(.round){font-size:12px;padding:3px 10px;
 .lobby-testbox .lobby-nick{width:150px;flex:none}
 /* 观战: the test version's picture with nothing to press (the game is the host's; a spectator only watches) */
 body.spec #btns,body.spec #fixBtn,body.spec #splitBtn,body.spec #sortBtn,body.spec #undoBtn,body.spec #goBtn,body.spec #sfBtn,
-body.spec #pauseBtn,body.spec #micBtn,body.spec #tsBtn,body.spec #tside,body.spec #tview,body.spec .tcb,body.spec .tcount,
+body.spec #pauseBtn,body.spec #tsBtn,body.spec #tside,body.spec #tview,body.spec .tcb,body.spec .tcount,
 body.spec .tgrp,body.spec .tnbox,body.spec #readyBtn,body.spec #deckBtn,body.spec #prep,body.spec #prepBig,body.spec .clock,
 body.spec #myClock,body.spec #cardBackBtn,body.spec #watchBtn,body.spec #confirmBtn,body.spec #overlay .btn:not(.keep){display:none!important}
 body.spec #hand{pointer-events:none}
@@ -1109,7 +1113,7 @@ body.test .tside:not(.open){display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹、无（无：一轮打完，牌直接消失，不收牌）">牌背：<span id="backName">大雁</span></button><button class="link tog" id="watchBtn" aria-pressed="false" title="自己打完这一局后，能看到其他人手里的牌">观战</button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><span class="optinfo" id="roomOpt" hidden>房间号 <b id="roomOptNum"></b></span><span class="optspec" id="specVoice" hidden></span><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹、无（无：一轮打完，牌直接消失，不收牌）">牌背：<span id="backName">大雁</span></button><button class="link tog" id="watchBtn" aria-pressed="false" title="自己打完这一局后，能看到其他人手里的牌">观战</button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -1195,7 +1199,7 @@ body.test .tside:not(.open){display:none}
       <input class="lobby-nick" id="specCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="房间号">
       <button class="btn primary" id="specGo">进入</button>
     </div>
-    <button class="link lobby-test" id="testBtn">测试版</button>
+    <button class="link lobby-test" id="testBtn">训练</button>
     <div class="lobby-join" id="testRow" hidden>
       <input class="lobby-nick" id="testPw" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="密码">
       <button class="btn primary" id="testGo">进入</button>
@@ -2555,6 +2559,9 @@ function dealNext(){
   later(dealNext,reduceMotion()?0:20);
 }
 function finishDeal(){
+  // a spectator's page deals as the host's does (one card to each seat in turn from the cutter's seat, popped off the end of the deck):
+  // the test version's fill below gives a whole hand to one seat at a time, which makes four different hands
+  if(SPEC)while(G.deck.length)G.hands[(G.dealIdx+G.dealCount++)%4].push(G.deck.pop());
   // also fills hands at once if the page was reloaded mid-deal
   for(let p=0;p<4;p++)while(G.hands[p].length<27&&G.deck.length)G.hands[p].push(G.deck.pop());
   G.deck=[];
@@ -3276,6 +3283,7 @@ function setHumans(list,names){
   NET.humans=new Set(list);
   NAMES=BASE_NAMES.slice();
   if(names)for(const a in names){const l=toLocal(+a);if(l!==0&&NET.humans.has(l))NAMES[l]=names[a]}
+  if(SPEC&&names)NET.pn=[0,1,2,3].map(l=>NET.humans.has(l)&&names[l]?names[l]:'电脑');
   for(let q=1;q<4;q++)$('#seat'+q+' .name').textContent=NAMES[q];
   VC.prune();
   if(G&&G.paused&&!NET.humans.has(G.pausedBy))setPaused(false);
@@ -5524,9 +5532,19 @@ $('#confirmBtn').onclick=()=>{
 // the options drop down on a tap of 选项 and fold away on a tap anywhere outside them
 // it hangs from the button's right edge; where the button sits near the left of the screen (a phone held upright) it
 // hangs from the left edge instead, so it never runs off the screen
+// the room's number, for telling a friend who wants to watch (or to join); and, for the host, a button for each spectator's voice
+function syncRoomOpt(){
+  const code=NET.mode==='host'?NET.code:NET.mode==='guest'?(SPEC?NET.specCode:NET.lastCode):'';
+  $('#roomOpt').hidden=!code;$('#roomOptNum').textContent=code||'';
+  const box=$('#specVoice'),list=NET.mode==='host'?[...NET.specs.values()].filter(v=>v.ready):[];
+  box.hidden=!list.length;
+  box.innerHTML=list.map(v=>`<button class="link tog" data-sid="${v.sid}" aria-pressed="${!v.muted}" title="关掉后这位观战的人不能说话（还能听）">观战 ${esc(v.name)}：语音${v.muted?'已关':'开'}</button>`).join('');
+}
+$('#specVoice').addEventListener('click',e=>{const b=e.target.closest('button[data-sid]');if(b)hostSpecMute(+b.dataset.sid)});
 $('#optBtn').onclick=()=>{
   const m=$('#optMenu');m.hidden=!m.hidden;$('#optBtn').setAttribute('aria-expanded',!m.hidden);
   if(m.hidden)return;
+  syncRoomOpt();
   m.style.left=m.style.right='';
   if(m.getBoundingClientRect().left<8){m.style.right='auto';m.style.left='0'}
 };
@@ -5872,7 +5890,7 @@ $('#specGo').onclick=()=>{
   watchRoom(code);
 };
 $('#testGo').onclick=()=>{
-  if($('#testPw').value!==TEST_PW){lobbyStatus('测试版密码不对');$('#testPw').select();return}
+  if($('#testPw').value!==TEST_PW){lobbyStatus('训练密码不对');$('#testPw').select();return}
   if(lobbyMode!=='solo')setMode('solo');
   myNick=nickNow()||'测试';myDir='S';
   Sound.unlock();
@@ -5991,10 +6009,12 @@ if(window.ResizeObserver)new ResizeObserver(testResize).observe(document.documen
 // everyone by number: you are 1, then counterclockwise, the order of play, 2 (your next), 3 (your partner), 4; each has
 // its own colour on the table and in the record
 const pcol=p=>p%2?'var(--blue-team)':'var(--red-team)';
+// (a spectator's plates also carry the player's own name, behind the number; the plays in the record keep the number alone)
 function testNames(){
   for(let p=0;p<4;p++)NAMES[p]=`${p+1}号`;
-  for(let q=1;q<4;q++){const e=$('#seat'+q+' .name');e.textContent=NAMES[q];e.style.color=pcol(q)}
-  $('#myName').textContent=NAMES[0];$('#myName').style.color=pcol(0);
+  const plate=p=>SPEC&&NET.pn&&NET.pn[p]?`${NAMES[p]} ${NET.pn[p]}`:NAMES[p];
+  for(let q=1;q<4;q++){const e=$('#seat'+q+' .name');e.textContent=plate(q);e.style.color=pcol(q)}
+  $('#myName').textContent=plate(0);$('#myName').style.color=pcol(0);
 }
 const tierNum=pw=>pw>=AIP.tier1?1:pw>=AIP.tier2?2:pw>=AIP.tier3?3:4;
 const powerText=pw=>`牌力 ${pw}（第 ${tierNum(pw)} 档）`;
@@ -7026,7 +7046,7 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1106-1922';
+const VERSION='1106-1946';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -7041,10 +7061,12 @@ const VC=(()=>{
   document.querySelectorAll('.vc').forEach(e=>e.innerHTML=SPK);
   let active=false,peers={},ac=null,blank=null,mic=null,on=false,timer=0;
   const lines=new Map(),meters=new Map(),heard=new Map(),talking=new Set(),waiting=[],buf=new Uint8Array(512);
-  const me=()=>toAbs(0);
+  const me=()=>SPEC?NET.sid:toAbs(0);
+  // numbers from 10 up are spectators; muted: spectators the host has switched off (their line is not played); locked: this page's own voice is off
+  let muted=new Set(),locked=false;
   const ctx=()=>{if(!ac){const AC=window.AudioContext||window.webkitAudioContext;if(AC)ac=new AC()}return ac};
   const track=()=>mic||blank||(blank=ctx()?ac.createMediaStreamDestination().stream.getAudioTracks()[0]:null);
-  const here=a=>active&&!!peers[a]&&isHumanSeat(toLocal(a));
+  const here=a=>active&&!!peers[a]&&(a>=10||isHumanSeat(toLocal(a)));
   function meter(a,stream){
     try{const c=ctx(),an=c.createAnalyser();an.fftSize=512;c.createMediaStreamSource(stream).connect(an);meters.set(a,an)}catch(_){}
   }
@@ -7061,7 +7083,7 @@ const VC=(()=>{
       if(lines.get(a)!==ln)return;
       ln.got=true;
       if(!ln.audio){ln.audio=document.createElement('audio');ln.audio.autoplay=true;ln.audio.setAttribute('playsinline','');ln.audio.hidden=true;document.body.appendChild(ln.audio)}
-      ln.audio.srcObject=st;ln.audio.play().catch(()=>{});
+      ln.audio.srcObject=st;ln.audio.muted=muted.has(a);ln.audio.play().catch(()=>{});
       meter(a,st);
     });
     // the line broke while both are still at the table: the caller calls again
@@ -7104,11 +7126,32 @@ const VC=(()=>{
   function prune(){
     if(!active)return;
     for(const a of [...lines.keys()])if(!here(a))drop(a);
-    if(NET.humans.size<2)stop();else paint();
+    if(Object.keys(peers).filter(a=>+a===me()||here(+a)).length<2)stop();else paint();
+  }
+  // who can be called changed (a spectator came or went): lines to those gone drop, new ones are called (the lower number calls)
+  function update(p){
+    if(!active){start(p);return}
+    peers=p;
+    for(const a of [...lines.keys()])if(!here(a))drop(a);
+    for(const a in peers)if(+a>me()&&!lines.has(+a))dial(+a);
+    paint();
+  }
+  function setMuted(ids){
+    muted=new Set(ids);
+    for(const [a,ln] of lines)if(ln.audio)ln.audio.muted=muted.has(a);
+    paint();
+  }
+  // the host switched this spectator's voice off (or on again): the microphone goes quiet and stays so
+  function lock(off){
+    locked=off;
+    if(off&&mic){on=false;mic.enabled=false;Sound.duck(false)}
+    paint();
+    if(off)setMsg('房主关闭了你的语音',true);
   }
   function swap(call,t){try{const sd=call.peerConnection&&call.peerConnection.getSenders().find(x=>!x.track||x.track.kind==='audio');if(sd)sd.replaceTrack(t)}catch(_){}}
   async function toggle(){
     if(!active)return;
+    if(locked){setMsg('房主关闭了你的语音',true);return}
     if(!mic){
       try{
         // an iPad plays the page like a media app; to listen to the microphone it has to switch to a call
@@ -7141,10 +7184,10 @@ const VC=(()=>{
   }
   function paint(){
     const b=$('#micBtn');
-    b.hidden=!active;b.classList.toggle('on',on);b.textContent=on?'开麦':'闭麦';b.setAttribute('aria-pressed',on);
+    b.hidden=!active;b.classList.toggle('on',on);b.textContent=locked?'语音已关':on?'开麦':'闭麦';b.setAttribute('aria-pressed',on);b.classList.toggle('off',locked);
     for(let q=0;q<4;q++){
       const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
-      const a=toAbs(q),mine=q===0?on:!!NET.mics[a];
+      const a=toAbs(q),mine=q===0&&!SPEC?on:!!NET.mics[a];
       el.className='vc'+(!active||!isHumanSeat(q)?'':talking.has(a)?' talk':mine?'':' mute');
     }
   }
@@ -7153,7 +7196,7 @@ const VC=(()=>{
     if(ac&&ac.state!=='running')try{ac.resume().catch(()=>{})}catch(_){}
     for(const ln of lines.values())if(ln.audio&&ln.audio.paused)ln.audio.play().catch(()=>{});
   }
-  return {start,stop,prune,incoming,toggle,wake,paint};
+  return {start,update,stop,prune,incoming,toggle,wake,paint,setMuted,lock,info:()=>({active,me:me(),peers,lines:[...lines.keys()],muted:[...muted],locked,on})};
 })();
 function leaveNet(){
   VC.stop();
@@ -7205,12 +7248,17 @@ function openRoom(){
 function broadcast(msg){
   for(const v of NET.conns.values())if(v.conn.open)v.conn.send(msg);
   // spectators get the moves (once they have been sent the table) and the goodbye
-  if(msg.t==='evt'||msg.t==='bye')for(const v of NET.specs.values())if(v.conn.open&&(v.ready||msg.t==='bye'))v.conn.send(msg);
+  if(['evt','bye','mics','vpeers','vmuted'].includes(msg.t))for(const v of NET.specs.values())if(v.conn.open&&(v.ready||msg.t==='bye'))v.conn.send(msg);
 }
 function broadcastLobby(){for(const v of NET.conns.values())if(v.conn.open)v.conn.send({t:'lobby',seats:NET.lobby,you:v.dir,rules:RULES,ver:VERSION})}
 function hostOnData(conn,d){
   const sp=NET.specs.get(conn.peer);
-  if(sp&&sp.conn===conn){sp.seen=Date.now();return} // (a spectator only answers the pings)
+  if(sp&&sp.conn===conn){
+    sp.seen=Date.now();
+    // a spectator's microphone: on only if the host has not turned the spectator's voice off
+    if(d&&d.t==='mic'){NET.mics[sp.sid]=!!d.on&&!sp.muted;broadcast({t:'mics',m:NET.mics});VC.paint()}
+    return;
+  }
   const info=NET.conns.get(conn.peer);if(!info||!d)return;
   info.seen=Date.now();
   if(d.t==='bye'){hostOnClose(conn,'quit');try{conn.close()}catch(_){}return}
@@ -7235,10 +7283,11 @@ function hostWatch(conn,info,d){
   if(d.ver&&d.ver!==VERSION){if(conn.open)conn.send({t:'old'});return}
   if(NET.specs.size>=SPEC_MAX){if(conn.open)conn.send({t:'specfull'});return}
   const name=String(d.name||'').replace(/[<>&"']/g,'').slice(0,8)||'观众';
-  NET.specs.set(conn.peer,{conn,name,seen:Date.now(),ready:false});
+  NET.specs.set(conn.peer,{conn,name,seen:Date.now(),ready:false,sid:NET.specSeq=(NET.specSeq||9)+1,muted:false});
   const n=NET.specs.size,say=`${name} 来观战（现在 ${n} 人观战）`;
   if(NET.started)setMsg(say);else lobbyStatus(say);
   if(conn.open)conn.send({t:'wait',started:!!NET.started});
+  syncRoomOpt();
 }
 // a friend's move: only for their own seat, and a play must be legal, exactly what their own buttons check
 // false when the move is refused (the friend's page is then told, so it does not keep waiting)
@@ -7343,8 +7392,7 @@ setInterval(()=>{
   for(const r of q.splice(0)){
     if(!r.conn.open||NET.conns.get(r.conn.peer)!==r.info)continue;
     const list=[...new Set([...NET.humans,r.a])];
-    const peers={0:NET.peer.id};
-    for(const v of NET.conns.values())if(v.dir)peers[absOf(v.dir,NET.hostDir)]=v.conn.peer;
+    const peers=vcPeers();
     r.conn.send({t:'resume',dir:r.info.dir,hostDir:NET.hostDir,names:NET.names,rules:RULES,peers,humans:list,snap:snapG()});
     // after the picture, so the events that follow reach the returning page behind it
     act({k:'humans',list,names:NET.names,back:r.info.name});
@@ -7355,12 +7403,36 @@ setInterval(()=>{
   for(const v of NET.specs.values()){
     if(v.ready||!v.conn.open)continue;
     v.ready=true;
-    v.conn.send({t:'spec',hostDir:NET.hostDir,names:NET.names,rules:RULES,humans:[...NET.humans],snap:snapG()});
+    v.conn.send({t:'spec',hostDir:NET.hostDir,names:NET.names,rules:RULES,humans:[...NET.humans],snap:snapG(),sid:v.sid,peers:vcPeers(),mics:NET.mics,muted:mutedIds()});
+    broadcastPeers();syncRoomOpt();
   }
 },500);
+// voice: who can be called (the seats' and the ready spectators' connections, spectators under numbers from 10 up), told to everyone
+// whenever it changes; and the host's switch for a spectator's voice
+function vcPeers(){
+  const peers={0:NET.peer.id};
+  for(const v of NET.conns.values())if(v.dir)peers[absOf(v.dir,NET.hostDir)]=v.conn.peer;
+  for(const v of NET.specs.values())if(v.ready)peers[v.sid]=v.conn.peer;
+  return peers;
+}
+const mutedIds=()=>[...NET.specs.values()].filter(v=>v.muted).map(v=>v.sid);
+function broadcastPeers(){const peers=vcPeers();broadcast({t:'vpeers',peers});VC.update(peers)}
+function hostSpecMute(sid){
+  const sp=[...NET.specs.values()].find(v=>v.sid===sid);if(!sp)return;
+  sp.muted=!sp.muted;
+  if(sp.muted)NET.mics[sid]=false;
+  if(sp.conn.open)sp.conn.send({t:'vmute',off:sp.muted});
+  broadcast({t:'vmuted',ids:mutedIds()});broadcast({t:'mics',m:NET.mics});
+  VC.setMuted(mutedIds());VC.paint();syncRoomOpt();
+}
 function hostOnClose(conn,how='drop'){
   const sp=NET.specs.get(conn.peer);
-  if(sp&&sp.conn===conn){NET.specs.delete(conn.peer);if(NET.started)setMsg(`${sp.name} 离开了观战`);return}
+  if(sp&&sp.conn===conn){
+    NET.specs.delete(conn.peer);delete NET.mics[sp.sid];
+    if(NET.started)setMsg(`${sp.name} 离开了观战`);
+    broadcastPeers();broadcast({t:'mics',m:NET.mics});syncRoomOpt();
+    return;
+  }
   const info=NET.conns.get(conn.peer);if(!info)return;
   NET.conns.delete(conn.peer);
   if(!NET.started){if(info.dir)NET.lobby[info.dir]=null;broadcastLobby();renderLobby();return}
@@ -7426,7 +7498,8 @@ function watchRoom(code){
   NET.watching=true;NET.gone=false;
   lobbyStatus('正在连接…');
   const peer=new Peer();
-  NET.peer=peer;
+  NET.peer=peer;NET.specCode=code;
+  peer.on('call',c=>VC.incoming(c));
   peer.on('open',()=>{
     if(NET.peer!==peer)return;
     const conn=peer.connect(ROOM_PREFIX+code,{reliable:true});
@@ -7453,6 +7526,10 @@ function specOnData(d){
     NET.peer=null;NET.hostConn=null;
     return;
   }
+  if(d.t==='mics'){NET.mics=d.m||{};VC.paint();return}
+  if(d.t==='vpeers'){VC.update(d.peers);return}
+  if(d.t==='vmuted'){VC.setMuted(d.ids||[]);return}
+  if(d.t==='vmute'){VC.lock(!!d.off);return}
   if(d.t==='wait')lobbyStatus(d.started?'已连上房间，正在进入牌局…':'已连上房间，牌局还没开始，开始后自动进入观战',true);
   else if(d.t==='spec')enterSpec(d);
   else if(d.t==='evt'&&SPEC)NET.inbox.push(d.e);
@@ -7462,7 +7539,7 @@ function enterSpec(d){
   if(SPEC)return;
   myNick=nickNow()||'观众';
   if(d.rules)Object.assign(RULES,d.rules);
-  NET.mode='guest';NET.hostDir=d.hostDir;NET.off=0;NET.watching=false;NET.gone=false;
+  NET.mode='guest';NET.hostDir=d.hostDir;NET.off=0;NET.watching=false;NET.gone=false;NET.sid=d.sid;NET.mics=d.mics||{};NET.pn=[0,1,2,3].map(a=>d.humans.includes(a)&&d.names&&d.names[a]?d.names[a]:'电脑');
   enterTest(true);
   resetGame();
   Object.assign(G,loadSnap(d.snap,0),{tok:G.tok+1,myOrder:[],fixed:[],rest:[],fresh:[],pw:[],busy:false,stepWait:null});
@@ -7475,6 +7552,8 @@ function enterSpec(d){
   else if(G.phase==='play')startTurn();
   else if(G.phase==='roundEnd'||G.phase==='over'){G.reveal=4;render();showResult()}
   else render();
+  VC.setMuted(d.muted||[]);
+  VC.start(d.peers);
 }
 // the host left, or the line broke: the watching is over
 function specGone(lost){
@@ -7491,6 +7570,8 @@ function guestOnData(d){
   if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
   if(d.t==='bye'){hostGone(false);return}
   if(d.t==='mics'){NET.mics=d.m||{};VC.paint();return}
+  if(d.t==='vpeers'){VC.update(d.peers);return}
+  if(d.t==='vmuted'){VC.setMuted(d.ids||[]);return}
   // the host turned a move down: stop waiting for it and let the player try again
   if(d.t==='nope'){NET.pending=false;if(['play','pass','return','tribute'].includes(d.k))setMsg('这一步没有成功，请再试一次',true);render();return}
   if(d.t==='lobby'){
