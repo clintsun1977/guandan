@@ -45,8 +45,11 @@ function coachGrade(s,a){
     return'评价中…';
   }
   const r=NeuralBot.relativeRating(s.values,s.scores.get(k));
+  if(s===CO.turn&&G.phase==='play'&&G.turn===0)CO.shown=s.key; // a score was on show before this move (marked in the round record)
   return`合理性 ${r.percent}%${r.flat?' · 候选无明显分差':''}`;
 }
+// whether a score was shown on this turn before you moved
+const coachAssisted=()=>!!G&&CO.shown===coachKey();
 // called as you play or pass (not for a move the clock made for you)
 function coachRemember(pl){
   if(!coachShown()||G.phase!=='play'||G.turn!==0)return;

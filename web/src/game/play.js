@@ -92,6 +92,7 @@ function finishRound(){
     }
   }
   G.result={order:G.out.slice(),team,up,before,after,win,draw,reset,aTry,aTeam,spent,lastTry,aOut:G.aOut,playedLevel:G.L};
+  recDone();
   if(TEST)testRoundEnd();
   G.prevOut=G.out.slice();
   G.lvlTeam=team;

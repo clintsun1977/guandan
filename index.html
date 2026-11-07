@@ -1154,7 +1154,7 @@ body.test .tside:not(.open){display:none}
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><span class="optinfo" id="roomOpt" hidden>房间号 <b id="roomOptNum"></b></span><span class="optspec" id="specVoice" hidden></span><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹、无（无：一轮打完，牌直接消失，不收牌）">牌背：<span id="backName">大雁</span></button><button class="link tog" id="watchBtn" aria-pressed="false" title="自己打完这一局后，能看到其他人手里的牌">观战</button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><span class="optinfo" id="roomOpt" hidden>房间号 <b id="roomOptNum"></b></span><span class="optspec" id="specVoice" hidden></span><span class="optinfo" id="collectStatus" hidden></span><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹、无（无：一轮打完，牌直接消失，不收牌）">牌背：<span id="backName">大雁</span></button><button class="link tog" id="watchBtn" aria-pressed="false" title="自己打完这一局后，能看到其他人手里的牌">观战</button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -1223,6 +1223,7 @@ body.test .tside:not(.open){display:none}
       <div class="rule-row"><span class="rule-k">电脑</span><button class="rule-btn" data-rule="bot" data-val="danmcai">danMCai</button><button class="rule-btn" data-rule="bot" data-val="clint">Clint</button><button class="rule-btn" data-rule="bot" data-val="guanzero">GuanZero</button></div>
       <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
       <div class="rule-note" id="rulesNote"></div>
+      <div class="rule-note" id="collectNote"></div>
     </div>
     <div class="lobby-join" id="joinRow" hidden>
       <input class="lobby-nick" id="roomCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="请输入房间号">
@@ -2555,7 +2556,7 @@ function mcSearch(S,{ms=1000,iters=0,C=1,max=20000}={}){
   return{pl,n:root.N,q:ch?(S.t%2?-1:1)*ch.W/ch.N*3:0};
 }
 
-const BOT_MODELS={"schema":1,"defaultId":"danmcai","models":[{"id":"clint","name":"Clint","label":"Clint 规则机器人","kind":"rules","path":"clint/clint-bot.js"},{"id":"danmcai","name":"danMCai","label":"danMCai-v000855042","kind":"onnx","path":"danmcai/danmcai-v000855042.onnx","file":"danmcai-v000855042.onnx","sha256":"462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7","bytes":5368650,"config":{"stateFeatures":513,"actionFeatures":54},"source":{"repo":"stevensun1005/guandanai","release":"web-model-017","run":"mac-20261105","version":"v000855042","step":855042,"note":"guandanai 网页默认的 danMCai 现任门控冠军（归档 017）"}},{"id":"guanzero","name":"GuanZero","label":"guanzero-adp-io48-229609","kind":"onnx","path":"guanzero/guanzero-adp-io48-229609.onnx","file":"guanzero-adp-io48-229609.onnx","sha256":"43d72b65e773fb5acb6b8f86baed16a69a1977a97fb6fddf4fe5f23ee25261bc","bytes":6346014,"config":{"stateFeatures":513,"actionFeatures":54,"history":"guanzero-v1"},"source":{"repo":"stevensun1005/guandanai","release":"web-model-021","run":"guanzero-adp-io48","version":"model-000000229609","step":229609,"note":"guandanai 最新发布的 GuanZero（归档 021）"}}]};
+const BOT_MODELS={"schema":1,"defaultId":"danmcai","models":[{"id":"clint","name":"Clint","label":"Clint 规则机器人","kind":"rules","path":"clint/clint-bot.js"},{"id":"danmcai","name":"danMCai","label":"danMCai-v000855042","kind":"onnx","path":"danmcai/danmcai-v000855042.onnx","file":"danmcai-v000855042.onnx","sha256":"462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7","bytes":5368650,"config":{"stateFeatures":513,"actionFeatures":54},"source":{"repo":"stevensun1005/guandanai","release":"web-model-017","run":"mac-20261105","version":"v000855042","step":855042,"note":"guandanai 网页默认的 danMCai 现任门控冠军（归档 017）"},"guandanaiId":"017"},{"id":"guanzero","name":"GuanZero","label":"guanzero-adp-io48-229609","kind":"onnx","path":"guanzero/guanzero-adp-io48-229609.onnx","file":"guanzero-adp-io48-229609.onnx","sha256":"43d72b65e773fb5acb6b8f86baed16a69a1977a97fb6fddf4fe5f23ee25261bc","bytes":6346014,"config":{"stateFeatures":513,"actionFeatures":54,"history":"guanzero-v1"},"source":{"repo":"stevensun1005/guandanai","release":"web-model-021","run":"guanzero-adp-io48","version":"model-000000229609","step":229609,"note":"guandanai 最新发布的 GuanZero（归档 021）"},"guandanaiId":"021"}]};
 /* ---------- neural computer players: danMCai and GuanZero (bot/models.json), run in the browser with onnxruntime-web ---------- */
 // Taken from stevensun1005/guandanai (https://github.com/stevensun1005/guandanai), not written for this project: ported from its web/src/ai (encoding.mjs, history.mjs, candidates.js, observation.js, endgame.js,
 // policy-inference.mjs, table-policy.mjs), keeping the exact inputs the networks were trained on. A network sees only its
@@ -3134,6 +3135,7 @@ function finishDeal(){
   G.deck=[];
   for(const h of G.hands)sortHand(h,G.L);
   removeDeck();
+  recDeal();
   if(!G.prevOut){
     G.turn=G.firstLeader;
     G.notice='';
@@ -3285,6 +3287,7 @@ function beginPlay(){
 // the sorting, over your name; the leader may already press 出牌 meanwhile, as between two tricks
 const TRIB_SHOW_MS=3000;
 function startPlay(leader){
+  recStart(leader);
   G.phase='play';G.turn=leader;G.clock=null;
   if(TEST)testRoundStart();
   if((G.trib&&G.trib.length)||G.kang){
@@ -3353,6 +3356,7 @@ const BOT_WAIT_MS=30000;
 const botId=()=>RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
 const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'danmcai'));return m?m.label:'Clint 规则机器人'};
 let botFailed='';
+const BOT_USED=[]; // which computer actually made each seat's last move (for the round records)
 function botPreload(){const id=botId();if(id&&isHost()&&botFailed!==id)NeuralBot.preload(id).catch(e=>console.warn('电脑模型没能加载',e))}
 function botStart(p){
   const id=botId();
@@ -3367,6 +3371,7 @@ function botStart(p){
 // the computer's move now; undefined while its network is still working on it
 function aiMove(p){
   const nn=G.nn;
+  BOT_USED[p]='clint';
   if(!nn||nn.key!==G.tok+':'+G.log.length+':'+p)return aiDecide(p);
   if(!nn.done){
     if(performance.now()-nn.at<BOT_WAIT_MS)return undefined;
@@ -3374,9 +3379,10 @@ function aiMove(p){
   }
   G.nn=null;
   if(nn.err){botFail(nn.id);return aiDecide(p)}
-  if(!nn.pl)return G.trick?null:aiDecide(p);
+  if(!nn.pl){if(!G.trick)return aiDecide(p);BOT_USED[p]=nn.id;return null}
   const cards=nn.pl.cards.map(c=>G.hands[p].find(x=>x.id===c.id));
   if(cards.some(c=>!c)||!beats(nn.pl,G.trick&&G.trick.play))return aiDecide(p);
+  BOT_USED[p]=nn.id;
   return{...nn.pl,cards};
 }
 function botFail(id){
@@ -3460,7 +3466,8 @@ function timeUp(c){
   if(typeof who==='number'&&G.phase==='play'&&G.turn===who){
     const pl=timeoutPlay(who);
     if(who===0){sel=new Set();setMsg(pl?'时间到，已自动出牌':'时间到，自动过')}
-    act(playEvt(who,pl));
+    REC.auto=who; // the round record calls this move a timeout, not the player's
+    try{act(playEvt(who,pl))}finally{REC.auto=-1}
   }
 }
 // the sorting countdown flanks the level disc: 理牌 on its left, the seconds on its right, both clear of the
@@ -3682,6 +3689,7 @@ function finishRound(){
     }
   }
   G.result={order:G.out.slice(),team,up,before,after,win,draw,reset,aTry,aTeam,spent,lastTry,aOut:G.aOut,playedLevel:G.L};
+  recDone();
   if(TEST)testRoundEnd();
   G.prevOut=G.out.slice();
   G.lvlTeam=team;
@@ -3731,7 +3739,7 @@ function onPlay(){
   if(waitingHost())return;
   if(askConfirm())return;
   coachRemember({...ok[0],cards});
-  act(playEvt(0,{...ok[0],cards}));
+  act({...playEvt(0,{...ok[0],cards}),...(coachAssisted()?{as:1}:{})});
 }
 // 出牌需确认 (an option): the first press only shows the picked cards large and turns 出牌 into 确认; pressing it again
 // with the same cards still picked plays them, and any change to the picked cards or the turn calls it off
@@ -3772,7 +3780,7 @@ function onPass(){
   if(G.phase!=='play'||G.turn!==0||!G.trick||waitingHost())return;
   sel=new Set();
   coachRemember(null);
-  act(playEvt(0,null));
+  act({...playEvt(0,null),...(coachAssisted()?{as:1}:{})});
 }
 function onHint(){
   if(ENDG)return;
@@ -3881,10 +3889,12 @@ function applyEvt(e){
       if(G.phase!=='play'||G.turn!==p)return false;
       // your own move came back: you are no longer waiting on it (it may have ended the round, with no next turn to clear this)
       if(p===0)NET.pending=false;
-      if(e.k==='pass'){doPlay(p,null);return true}
+      if(e.k==='pass'){recAction(p,e,null);doPlay(p,null);return true}
       const cards=e.ids.map(id=>G.hands[p].find(c=>c.id===id));
       if(cards.some(c=>!c))return true;
-      doPlay(p,{type:e.type,value:e.value,n:e.n,cards,wu:cards.filter(c=>isWild(c,G.L)).length});
+      const play={type:e.type,value:e.value,n:e.n,cards,wu:cards.filter(c=>isWild(c,G.L)).length};
+      recAction(p,e,play);
+      doPlay(p,play);
       return true;
     }
   }
@@ -6304,8 +6314,11 @@ function coachGrade(s,a){
     return'评价中…';
   }
   const r=NeuralBot.relativeRating(s.values,s.scores.get(k));
+  if(s===CO.turn&&G.phase==='play'&&G.turn===0)CO.shown=s.key; // a score was on show before this move (marked in the round record)
   return`合理性 ${r.percent}%${r.flat?' · 候选无明显分差':''}`;
 }
+// whether a score was shown on this turn before you moved
+const coachAssisted=()=>!!G&&CO.shown===coachKey();
 // called as you play or pass (not for a move the clock made for you)
 function coachRemember(pl){
   if(!coachShown()||G.phase!=='play'||G.turn!==0)return;
@@ -6353,6 +6366,128 @@ $('#coachName').textContent=coachModel.name||'';
 $('#coachName').parentElement.title=`${coachModel.label||''}：`+$('#coachName').parentElement.title;
 $('#coachClose').onclick=()=>{CO.hidden=true;renderCoach()};
 addEventListener('resize',()=>requestAnimationFrame(coachPlace));
+/* ---------- 牌谱上传: the outbox that sends finished rounds to guandanai's collector ---------- */
+// Ported from stevensun1005/guandanai web/src/collection/outbox.mjs and client.js. A finished round is kept in this browser
+// (IndexedDB) until the collector answers stored=true; a failed send is tried again later (after 10 s, 20 s, ... at most an hour),
+// also after the page is closed and opened again, so a round played offline still arrives
+const COLLECT_URL='https://guandan-human-games-collector.couple-ledger-service.workers.dev/rounds';
+const Outbox=(()=>{
+  const memory=new Map();
+  let busy=false,storageFailed=false,saved=0,opening=null;
+  function db(){
+    if(!opening)opening=new Promise((resolve,reject)=>{
+      const q=indexedDB.open('guandan-human-games',1);
+      q.onupgradeneeded=()=>q.result.createObjectStore('pending',{keyPath:'id'});
+      q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);
+    });
+    return opening;
+  }
+  async function run(mode,method,value){
+    const d=await db();
+    return new Promise((resolve,reject)=>{
+      const tx=d.transaction('pending',mode),r=tx.objectStore('pending')[method](value);
+      tx.oncomplete=()=>resolve(r.result);tx.onerror=tx.onabort=()=>reject(tx.error||Error('outbox_unavailable'));
+    });
+  }
+  const store={list:()=>run('readonly','getAll'),put:e=>run('readwrite','put',e),remove:id=>run('readwrite','delete',id)};
+  function status(){
+    const el=$('#collectStatus');
+    if(!el)return;
+    const n=memory.size,live=NET.mode==='host'&&NET.humans.size>=2&&!TEST;
+    el.hidden=!(n||live);
+    el.textContent=n?`牌谱待上传 ${n} 局${storageFailed?' · 本机暂存不可用':''}`:saved?'牌谱已上传':'牌谱自动上传';
+  }
+  async function add(payload){
+    const e={id:payload.id,payload,attempts:0,nextAttempt:0};
+    memory.set(e.id,e);
+    try{await store.put(e)}catch(_){storageFailed=true}
+    status();
+    await flush();
+  }
+  async function flush(){
+    if(busy)return;
+    busy=true;
+    try{
+      try{for(const e of await store.list())if(!memory.has(e.id))memory.set(e.id,e)}catch(_){storageFailed=true}
+      for(const e of memory.values()){
+        if(e.nextAttempt>Date.now())continue;
+        try{
+          const res=await fetch(COLLECT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(e.payload),signal:AbortSignal.timeout(15000)});
+          if(!res.ok)throw Error('upload_failed '+res.status+' '+(await res.text().catch(()=>'')));
+          const receipt=await res.json();
+          if(receipt.id!==e.id||receipt.stored!==true)throw Error('invalid_receipt');
+          // removed only once the collector says it is stored (a repeat send gets the same answer)
+          try{await store.remove(e.id)}catch(_){storageFailed=true}
+          memory.delete(e.id);saved++;
+        }catch(err){
+          console.warn('牌谱上传失败，稍后重试',err);
+          e.attempts++;e.nextAttempt=Date.now()+Math.min(3600000,5000*2**Math.min(10,e.attempts));
+          try{await store.put(e)}catch(_){storageFailed=true}
+        }
+      }
+    }finally{busy=false;status()}
+  }
+  addEventListener('online',()=>flush());
+  setInterval(()=>flush(),15000);
+  setTimeout(()=>flush(),3000);
+  return{add,flush,status,pending:()=>memory.size};
+})();
+/* ---------- 牌谱采集: every round with at least two people at the table goes to guandanai's collector, for AI training ---------- */
+// The record is the format of stevensun1005/guandanai's human-game collector (web/src/collection/record.mjs there; the server
+// checks it in validate.mjs by replaying the round): the dealt hands, the tribute, every play and pass with who made it
+// (human, bot or timeout) and the finishing order. Only the host records, only rounds that start with two or more people
+// seated, never the training version, a 残局 or a spectator, and nothing once the host has gone back to playing alone.
+// No nicknames, room number, chat, voice or IP: the four seats get random IDs that last for one match only.
+// Cards are the 0-107 ids of makeDeck(). appVersion starts with c1977 so these rounds can be told from guandanai's own.
+const REC={byGame:new WeakMap(),auto:-1};
+const recHumans=()=>[...NET.humans].sort((a,b)=>a-b);
+const recMask=h=>h.reduce((m,p)=>m|(1<<p),0);
+const recEligible=()=>NET.mode==='host'&&!TEST&&!ENDG&&!SPEC&&NET.humans.size>=2;
+// a computer as guandanai's records name it: its release number and weights for a network, clint-rule for the Clint rules
+function recModel(id){
+  const m=NeuralBot.models.find(x=>x.id===id&&x.file);
+  return m?{id:m.guandanaiId,sha256:m.sha256,version:m.source.version}:{id:'clint-rule',sha256:null,version:'clintsun1977-'+VERSION};
+}
+const REC_TIMEOUT={id:'clint-rule',sha256:null,version:'clintsun1977-timeout'};
+// right after the deal, before any tribute
+function recDeal(){
+  if(!recEligible())return;
+  let s=REC.byGame.get(G);
+  if(!s){s={match:crypto.randomUUID(),seats:[0,1,2,3].map(()=>crypto.randomUUID())};REC.byGame.set(G,s)}
+  s.t0=performance.now();
+  s.rec={schema:1,kind:new URLSearchParams(location.search).get('test')==='1'?'test':'game',encoding:'physical-108-v1',
+    id:`${s.match}:${G.round}`,matchId:s.match,round:G.round,appVersion:APP_HASH,startedAt:new Date().toISOString(),level:G.L,
+    match:{levels:G.levels.slice(),lvlTeam:G.lvlTeam,L:G.L,aFails:(G.aFails||[0,0]).slice(),aOut:G.aOut??null},
+    rules:{trib:!!RULES.trib,aFail:RULES.aFail},dealtHands:G.hands.map(h=>h.map(c=>c.id)),actions:[]};
+}
+// as play starts: the hands after the tribute, who leads, who is a person
+function recStart(leader){
+  const s=REC.byGame.get(G),r=s&&s.rec;
+  if(!r||r.round!==G.round||r.hands||!recEligible())return;
+  const humans=recHumans(),bot=recModel(RULES.bot);
+  r.leader=leader;r.hands=G.hands.map(h=>h.map(c=>c.id));r.humanMask=recMask(humans);
+  r.seats=s.seats.map((id,p)=>({id,human:humans.includes(p),bot}));
+  r.tribute=(G.trib||[]).map(t=>({from:t.g,to:t.r,card:t.tc.id,returnCard:t.rc?t.rc.id:null}));
+}
+// every play or pass, as the host applies it (before doPlay, while the turn's clock still shows how long it took)
+function recAction(p,e,play){
+  const s=REC.byGame.get(G),r=s&&s.rec;
+  if(!r||!r.hands||r.round!==G.round||r.endedAt||NET.mode!=='host')return;
+  const humans=recHumans(),human=humans.includes(p),actor=human?(REC.auto===p?'timeout':'human'):'bot',c=G.clock;
+  r.actions.push({seat:p,cards:play?play.cards.map(c=>c.id):null,...(play?{type:play.type,value:play.value,n:play.n}:{}),actor,
+    ...(actor==='human'&&e.as?{assisted:true}:{}),humanMask:recMask(humans),
+    model:actor==='human'?null:actor==='timeout'?REC_TIMEOUT:recModel(BOT_USED[p]||'clint'),
+    decisionMs:actor==='human'&&c&&c.who===p?Math.min(120000,Math.max(0,Math.round(c.total-c.left))):null,
+    elapsedMs:Math.max(0,Math.round(performance.now()-s.t0))});
+}
+// the round is over: the record goes into the outbox, which keeps it until the collector has stored it
+function recDone(){
+  const s=REC.byGame.get(G),r=s&&s.rec;
+  if(!r||!r.hands||r.round!==G.round||!G.result||NET.mode!=='host'||TEST)return;
+  if(r.endedAt)return;
+  r.endedAt=new Date().toISOString();r.order=G.result.order.slice();
+  Outbox.add(JSON.parse(JSON.stringify(r)));
+}
 /* ---------- boot (keeps the game across live page updates) ---------- */
 function boot(data){
   if(data&&data.G&&data.G.hands&&data.G.phase!=='start'){
@@ -6411,6 +6546,8 @@ function renderRules(){
     b.disabled=!mine;
   }
   $('#rulesNote').textContent=mine?'':'规则由房主选定';
+  // 牌谱采集: said to everyone in a room before they sit down
+  $('#collectNote').textContent=lobbyMode==='solo'?'':'两名以上真人时，每局牌谱匿名上传到 guandanai，用于 AI 训练（不含昵称、房间号、语音）';
   renderLevel();
 }
 // 选级: the state to start the first match from (see applyStart): so a table that cannot get back to a game it dropped out of can go
@@ -7974,7 +8111,9 @@ function endgameBatchPanel(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1233';
+const VERSION='1107-1240';
+// the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
+const APP_HASH='c197774096';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

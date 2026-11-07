@@ -33,6 +33,22 @@
 模型值最高的算 100%，最低的算 0%。出牌后保留**上一手**的评分，到这一局结束。只用你自己的手牌和公开信息；
 这是相对分，不是胜率。手机上显示在顶栏右侧。点 × 本场不再显示。
 
+## 牌谱采集（上传到 guandanai）
+
+房间里**发牌和开打时至少有两名真人**，每局打完后房主的页面会把这一局的牌谱匿名上传到
+[guandanai](https://github.com/stevensun1005/guandanai) 的真人牌谱云端（同一个 Cloudflare Worker + D1 数据库），和 guandanai 自己网站的牌谱放在一起，
+供之后 AI 训练使用。单人局、只有一名真人的房间、训练版、残局、观战，以及房主转为单机之后，都不上传。
+
+- 内容：发牌、进还贡、每一手出牌和过牌（标明真人／电脑／超时托管、用的哪个电脑、是否看过出牌评价）、名次。格式与 guandanai 的
+  [采集说明](https://github.com/stevensun1005/guandanai/blob/main/web/collector/README.md) 完全相同，服务端会重放整局核对。
+- 不含昵称、房间号、聊天、语音或 IP；四个座位用只在本场有效的随机 ID。大厅进房间时会显示这条说明，「选项」里显示上传状态。
+- 断网或上传失败时先存在房主浏览器里（IndexedDB），之后自动重试，收到云端确认才删除。
+- 本项目上传的牌谱 `appVersion` 以 `c1977` 开头，可与 guandanai 自己网站的牌谱区分；电脑 ID 用 guandanai 的发布编号
+  （danMCai `017`、GuanZero `021`），Clint 规则为 `clint-rule`、版本 `clintsun1977-…`。
+- 网址加 `?test=1` 时上传为测试局（`kind=test`），guandanai 默认导出时不包含。
+
+代码在 `web/src/collection/`（移植自 guandanai 的 `web/src/collection/`）。
+
 ## 引用 guandanai 的机器人
 
 danMCai、GuanZero 两个神经网络机器人和出牌评价**不是本项目训练或原创的**，引用自

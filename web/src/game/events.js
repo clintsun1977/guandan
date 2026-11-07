@@ -80,10 +80,12 @@ function applyEvt(e){
       if(G.phase!=='play'||G.turn!==p)return false;
       // your own move came back: you are no longer waiting on it (it may have ended the round, with no next turn to clear this)
       if(p===0)NET.pending=false;
-      if(e.k==='pass'){doPlay(p,null);return true}
+      if(e.k==='pass'){recAction(p,e,null);doPlay(p,null);return true}
       const cards=e.ids.map(id=>G.hands[p].find(c=>c.id===id));
       if(cards.some(c=>!c))return true;
-      doPlay(p,{type:e.type,value:e.value,n:e.n,cards,wu:cards.filter(c=>isWild(c,G.L)).length});
+      const play={type:e.type,value:e.value,n:e.n,cards,wu:cards.filter(c=>isWild(c,G.L)).length};
+      recAction(p,e,play);
+      doPlay(p,play);
       return true;
     }
   }

@@ -1,4 +1,5 @@
 function startPlay(leader){
+  recStart(leader);
   G.phase='play';G.turn=leader;G.clock=null;
   if(TEST)testRoundStart();
   if((G.trib&&G.trib.length)||G.kang){

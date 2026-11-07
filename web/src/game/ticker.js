@@ -74,7 +74,8 @@ function timeUp(c){
   if(typeof who==='number'&&G.phase==='play'&&G.turn===who){
     const pl=timeoutPlay(who);
     if(who===0){sel=new Set();setMsg(pl?'时间到，已自动出牌':'时间到，自动过')}
-    act(playEvt(who,pl));
+    REC.auto=who; // the round record calls this move a timeout, not the player's
+    try{act(playEvt(who,pl))}finally{REC.auto=-1}
   }
 }
 // the sorting countdown flanks the level disc: 理牌 on its left, the seconds on its right, both clear of the

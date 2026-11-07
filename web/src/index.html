@@ -31,7 +31,7 @@
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><span class="optinfo" id="roomOpt" hidden>房间号 <b id="roomOptNum"></b></span><span class="optspec" id="specVoice" hidden></span><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹、无（无：一轮打完，牌直接消失，不收牌）">牌背：<span id="backName">大雁</span></button><button class="link tog" id="watchBtn" aria-pressed="false" title="自己打完这一局后，能看到其他人手里的牌">观战</button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><span class="optinfo" id="roomOpt" hidden>房间号 <b id="roomOptNum"></b></span><span class="optspec" id="specVoice" hidden></span><span class="optinfo" id="collectStatus" hidden></span><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹、无（无：一轮打完，牌直接消失，不收牌）">牌背：<span id="backName">大雁</span></button><button class="link tog" id="watchBtn" aria-pressed="false" title="自己打完这一局后，能看到其他人手里的牌">观战</button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
   </header>
 
   <main class="table" id="table">
@@ -100,6 +100,7 @@
       <div class="rule-row"><span class="rule-k">电脑</span><button class="rule-btn" data-rule="bot" data-val="danmcai">danMCai</button><button class="rule-btn" data-rule="bot" data-val="clint">Clint</button><button class="rule-btn" data-rule="bot" data-val="guanzero">GuanZero</button></div>
       <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
       <div class="rule-note" id="rulesNote"></div>
+      <div class="rule-note" id="collectNote"></div>
     </div>
     <div class="lobby-join" id="joinRow" hidden>
       <input class="lobby-nick" id="roomCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="请输入房间号">
@@ -193,6 +194,8 @@
 //@include web/src/ui/options.js
 //@include web/src/ui/resize.js
 //@include web/src/coach/coach.js
+//@include web/src/collection/upload.js
+//@include web/src/collection/record.js
 //@include web/src/app/boot.js
 //@include web/src/lobby/lobby.js
 //@include web/src/lobby/rules.js

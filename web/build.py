@@ -55,8 +55,11 @@ def build(version=None):
     src = inline((web / "src" / "index.html").read_text(encoding="utf-8"))
     # stamp the build time as the page version, shown in the lobby and compared between players in a room
     version = version or datetime.now().strftime("%m%d-%H%M")
-    assert "const VERSION='dev';" in src
+    assert "const VERSION='dev';" in src and "const APP_HASH='dev';" in src
+    # the round records name the page by its content: c1977 (this project) and five hex digits of its SHA-256
+    app_hash = "c1977" + hashlib.sha256(src.encode("utf-8")).hexdigest()[:5]
     src = src.replace("const VERSION='dev';", f"const VERSION='{version}';")
+    src = src.replace("const APP_HASH='dev';", f"const APP_HASH='{app_hash}';")
 
     split = src.index('<div id="app">')
     head, body = src[:split].rstrip(), src[split:].strip()

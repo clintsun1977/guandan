@@ -22,7 +22,7 @@ function onPlay(){
   if(waitingHost())return;
   if(askConfirm())return;
   coachRemember({...ok[0],cards});
-  act(playEvt(0,{...ok[0],cards}));
+  act({...playEvt(0,{...ok[0],cards}),...(coachAssisted()?{as:1}:{})});
 }
 // 出牌需确认 (an option): the first press only shows the picked cards large and turns 出牌 into 确认; pressing it again
 // with the same cards still picked plays them, and any change to the picked cards or the turn calls it off
@@ -63,7 +63,7 @@ function onPass(){
   if(G.phase!=='play'||G.turn!==0||!G.trick||waitingHost())return;
   sel=new Set();
   coachRemember(null);
-  act(playEvt(0,null));
+  act({...playEvt(0,null),...(coachAssisted()?{as:1}:{})});
 }
 function onHint(){
   if(ENDG)return;
