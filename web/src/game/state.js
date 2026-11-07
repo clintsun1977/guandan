@@ -3,11 +3,12 @@ let G=null;
 let sel=new Set();
 // the test version (entered from the lobby with a password): every hand face up, every play numbered; TV is its look-back view
 let TEST=false;
-// 残局 (a kind of practice in the test version): every round starts with each hand at most 15 cards, and the computers see every hand
+// 残局 (a kind of practice in the test version): every round starts with each hand at most ENDLIM cards, and the computers see every hand
 let ENDG=false;
-// (in a 残局 the four computers train by search: ENDMS is the time each move may take in the first round, doubled in each round after;
-// ENDAUTO goes on to the next position by itself; ENDTOK stops the training that is running when it changes)
-let ENDAUTO=true,ENDMS=100,ENDTOK=0;
+// (in a 残局 the four computers work the position out: ENDCAP is how many seconds they may take, ENDTT how many positions the table of
+// finished ones holds; ENDAUTO goes on to the next position by itself; ENDTOK stops the work that is running when it changes)
+const ENDLIM=10,ENDTT=4e6;
+let ENDAUTO=true,ENDCAP=120,ENDTOK=0;
 // 观战 (a spectator's page): the test version's picture, fed by the host, nothing to press
 let SPEC=false;
 const TV={open:false};

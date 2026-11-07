@@ -104,15 +104,14 @@ function enterTest(spec){
   document.body.classList.toggle('fsok',!!(document.fullscreenEnabled||document.webkitFullscreenEnabled));
   $('#fsBtn').onclick=testFull;
   if(ENDG){
-    // 残局: the controls: how long a move may take in the first round, going on to the next position by itself, another position now, a batch against the old rules
-    $('.acts').insertAdjacentHTML('afterbegin','<select id="endMs" title="摸索第一轮每手想多久，以后每一轮加倍"><option value="50">起步每手 0.05 秒</option><option value="100" selected>起步每手 0.1 秒</option><option value="300">起步每手 0.3 秒</option><option value="1000">起步每手 1 秒</option></select><button class="link tog" id="autoBtn" aria-pressed="true" title="一个局面摸索完了，自己接着摸索下一个局面">自动下一局</button><button class="link" id="nextEndBtn" title="不等这个局面了，换一个新的">换一局</button><button class="link" id="batchBtn" title="后台打一批残局，看这种摸索对老规则的胜负">批量对比</button>');
-    $('#endMs').onchange=e=>{ENDMS=+e.target.value};
+    // 残局: the controls: how long a position may take, going on to the next position by itself, another position now
+    $('.acts').insertAdjacentHTML('afterbegin','<select id="endCap" title="一个局面最多算多久，算不完就放弃"><option value="30">最多算 30 秒</option><option value="60">最多算 1 分钟</option><option value="120" selected>最多算 2 分钟</option><option value="300">最多算 5 分钟</option></select><button class="link tog" id="autoBtn" aria-pressed="true" title="一个局面算完了，自己接着算下一个局面">自动下一局</button><button class="link" id="nextEndBtn" title="不等这个局面了，换一个新的">换一局</button>');
+    $('#endCap').onchange=e=>{ENDCAP=+e.target.value};
     $('#autoBtn').onclick=()=>{
       ENDAUTO=!ENDAUTO;$('#autoBtn').setAttribute('aria-pressed',ENDAUTO);
       if(ENDAUTO&&G.phase==='roundEnd'&&!ENDRUN)endgameNext();
     };
     $('#nextEndBtn').onclick=endgameNext;
-    $('#batchBtn').onclick=endgameBatchPanel;
     const tb=document.createElement('div');tb.id='etrain';document.body.appendChild(tb);
     tb.addEventListener('click',e=>{
       const b=e.target.closest('button');if(!b)return;

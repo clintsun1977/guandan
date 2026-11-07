@@ -37,7 +37,7 @@ body.endg #etrain{display:block;position:fixed;left:50%;top:50%;transform:transl
 #etrain .er{margin:8px 0;padding-left:1.4em;font-size:15px;color:var(--muted);line-height:1.6}
 #etrain .eb{display:flex;gap:8px;flex-wrap:wrap}
 #etrain .btn{font-size:16px;padding:6px 18px}
-#endMs{font:inherit;font-size:14px;background:var(--felt-deep);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:3px 6px}
+#endCap{font:inherit;font-size:14px;background:var(--felt-deep);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:3px 6px}
 body.test{--tside-w:340px}
 body.test #app{max-width:none;margin:0}
 body.test #fanBtn,body.test #rowsBtn{display:none}

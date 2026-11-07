@@ -10,73 +10,52 @@ function testSnap(){
 // a computer's move is remembered by how the round had gone to that point: taking a step back and going on plays the same
 // move again (a different move of yours before it makes the position a new one, and it is thought out afresh)
 const TDEC=new Map();
-// 残局: the computers train on the position by themselves. They play it out from where it stands, all four hands by search (mcSearch's way: a play
-// tried many times to the end of the round, the best-looking tried more), each move for ENDMS milliseconds; then again, each move
-// given twice the time, and again... Every play-through is a whole round. They stop when two play-throughs in a row (from the third) come to
-// the same result (the levels won or lost), or after ENDMAX of them; the last, the one with the longest thinking, is the line they
-// settle on, and is what 回放 shows. The work is done a slice at a time (nothing is drawn meanwhile), so the page stays alive.
-const ENDMAX=6;
+// 残局: the computers work the position out to the end (EsSolver: every play of the four, the best of them found for certain). They try one
+// order of the plays for a while, then another for twice as long, and so on round, 40 ms at a time so the page stays alive (nothing is drawn
+// meanwhile), until the result is known or ENDCAP seconds are up (then the position is given up). The line of best plays is what 回放 shows.
 let ENDRUN=false,ENDREC=null;
-// the training's box over the table: where it is, the play-throughs so far, and the buttons
-function endgameShow(head,done,rounds=[]){
+// the training's box over the table: where it is, and the buttons
+function endgameShow(head,done,note=''){
   const box=$('#etrain');if(!box)return;
-  const t=ms=>ms<1000?(ms/1000).toFixed(2).replace(/0$/,''):(ms/1000).toFixed(ms%1000?1:0);
-  const res=r=>r>0?`1号3号一方赢 ${r} 级`:r<0?`2号4号一方赢 ${-r} 级`:'平';
-  box.innerHTML=`<h3>残局 · 四家电脑自己摸索</h3><div class="eh">${head}</div>
-    <ol class="er">${rounds.map(r=>`<li>第 ${r.k} 轮（每手想 ${t(r.ms)} 秒，${r.moves} 手）：${res(r.reward)}</li>`).join('')}</ol>
-    <div class="eb">${ENDREC&&!ENDREC.training?'<button class="btn primary" id="etView">回放最后这一轮</button>':''}${ENDRUN?'<button class="btn" id="etStop">停</button>':''}<button class="btn" id="etNext">换一局</button></div>`;
-}
-async function endgameLine(S0,ms,tok,prog){
-  let S=S0;const line=[];
-  for(let moves=0;!mcOver(S)&&moves<800;moves++){
-    if(tok!==ENDTOK)return null;
-    const p=S.t,mv=mcMoves(S);
-    let pl,q=0,n=0;
-    if(mv.length===1)pl=mv[0];
-    else{
-      const root=mcNode(S),end=mcNow()+ms;let k=0;
-      do{
-        const t1=mcNow()+30;
-        while(mcNow()<t1&&(k<8||(mcNow()<end&&k<20000))){mcIter(root,1);k++}
-        await new Promise(r=>setTimeout(r,0));
-        if(tok!==ENDTOK)return null;
-      }while(k<8||(mcNow()<end&&k<20000));
-      pl=mcBest(root);
-      const ch=root.ch.find(c=>root.mv[c.mi]===pl);
-      q=ch?(p%2?-1:1)*ch.W/ch.N*3:0;n=root.N;
-    }
-    line.push(pl?{p,cards:pl.cards,lead:!S.tr,type:pl.type,value:pl.value,n:pl.n,mq:q,mn:n}:{p,cards:null});
-    S=mcStep(S,pl);
-    if(prog)prog(line.length);
-  }
-  return mcOver(S)?{line,reward:mcReward(S),S}:null;
+  box.innerHTML=`<h3>残局 · 四家电脑自己算出最好的打法</h3><div class="eh">${head}</div>${note?`<div class="en">${note}</div>`:''}
+    <div class="eb">${ENDREC&&!ENDREC.training?'<button class="btn primary" id="etView">回放这个最好的打法</button>':''}${ENDRUN?'<button class="btn" id="etStop">停</button>':''}<button class="btn" id="etNext">换一局</button></div>`;
 }
 async function endgameTrain(){
-  const tok=++ENDTOK,rec=curRec(),S0=mcFromGame(G.turn),rounds=[];
+  const tok=++ENDTOK,rec=curRec(),S0=mcFromGame(G.turn),t0=mcNow(),cap=ENDCAP*1000,nodeText=n=>n<1e4?n:n<1e8?(n/1e4).toFixed(n<1e5?1:0)+' 万':(n/1e8).toFixed(1)+' 亿';
   ENDREC=rec;ENDRUN=true;rec.training=true;rec.log=[];
-  let ms=ENDMS,stable=false,last=null;
-  for(let k=1;k<=ENDMAX;k++){
-    endgameShow(`第 ${k} 轮：每手想 ${ms<1000?(ms/1000).toFixed(2):ms/1000} 秒，正在打…`,false,rounds);
-    last=await endgameLine(S0,ms,tok,m=>{if(m%4===0)endgameShow(`第 ${k} 轮：每手想 ${ms<1000?(ms/1000).toFixed(2):ms/1000} 秒，打到第 ${m} 手…`,false,rounds)});
+  let solver=null,ci=0,round=0,slice=2000,sliceEnd=0,nodes=0,tries=0,found=false,lastShow=0;
+  const sec=()=>((mcNow()-t0)/1000).toFixed(0);
+  endgameShow('正在算：四家的牌都看得见，每一手都试遍，找出双方都打到最好时的结果…',false);
+  while(mcNow()-t0<cap){
+    if(!solver){solver=new EsSolver(S0,ES_PORT[ci],ENDTT);sliceEnd=mcNow()+slice;tries++}
+    if(solver.step(40)){found=true;break}
+    if(mcNow()>sliceEnd){nodes+=solver.nodes;solver=null;if(++ci>=ES_PORT.length){ci=0;round++;slice*=2}}
+    if(mcNow()-lastShow>400){lastShow=mcNow();endgameShow(`正在算……已用 ${sec()} 秒，看过 ${nodeText(nodes+(solver?solver.nodes:0))} 个局面，试过 ${tries} 种试探顺序（最多算 ${ENDCAP} 秒）`,false)}
+    await new Promise(r=>setTimeout(r,0));
     if(tok!==ENDTOK)return;
-    if(!last){ENDRUN=false;endgameShow('这一轮没有打完（出牌太多手），停下了。可以换一局。',true,rounds);return}
-    rounds.push({k,ms,reward:last.reward,moves:last.line.length});
-    if(k>=3&&rounds[k-1].reward===rounds[k-2].reward){stable=true;break}
-    ms*=2;
   }
-  // the line they settle on
-  const S=last.S,order=S.out.slice();
+  if(tok!==ENDTOK)return;
+  if(solver)nodes+=solver.nodes;
+  const ln=found?solver.line():null;
+  if(!ln){
+    // too big to finish: the position is given up (the record is dropped by 换一局)
+    ENDRUN=false;
+    endgameShow(`这个局面太复杂，${ENDCAP} 秒没有算完，放弃了。${ENDAUTO?'马上换下一局。':'可以“换一局”。'}`,true);
+    if(ENDAUTO)setTimeout(()=>{if(tok===ENDTOK&&ENDAUTO)endgameNext()},2500);
+    return;
+  }
+  const S=ln.S,order=S.out.slice();
   for(let k=1;k<=4;k++){const j=(order[order.length-1]+k)%4;if(!order.includes(j))order.push(j)}
-  const r=last.reward;
-  rec.log=last.line;rec.live=false;rec.training=false;
+  const r=ln.value,took=(mcNow()-t0)/1000;
+  rec.log=ln.line;rec.live=false;rec.training=false;
   rec.result=order.map((p,i)=>PLACE[i]+' '+NAMES[p]).join('，')+'；'+(r>0?'1号3号一方':'2号4号一方')+`赢 ${Math.abs(r)} 级`;
-  rec.train={stable,rounds:rounds.map(x=>({ms:x.ms,reward:x.reward,moves:x.moves}))};
+  rec.train={value:r,sec:took,nodes,tries,moves:ln.line.length};
   rec.nv++;testStore();testList();
   ENDRUN=false;G.phase='roundEnd';
-  endgameShow(stable?`摸索稳定了：连着两轮结果一样。最后一轮的打法就是它认为这一局最好的打法。`:`打满 ${ENDMAX} 轮，结果还在变，用最后一轮的打法。`,true,rounds);
+  endgameShow(`算完了：两边都打到最好，结果是 <b>${r>0?'1号3号一方':'2号4号一方'}赢 ${Math.abs(r)} 级</b>（${ln.line.length} 手，用了 ${took.toFixed(1)} 秒）。`,true,'每一手都是当时最好的一手；几种同样好的打法里，选的是先试到的（能一手出完的、一次出牌多的、不用炸弹的优先，同样的取小牌）。点“回放”一步一步看。');
   if(ENDAUTO)setTimeout(function wait(){if(tok!==ENDTOK||!ENDAUTO)return;if(TV.open||TV.edit){setTimeout(wait,1000);return}endgameNext()},3000);
 }
-// another position now (what is being trained on is given up, and a round not finished is not kept)
+// another position now (what is being worked on is given up, and a round not finished is not kept)
 function endgameNext(){
   ENDTOK++;ENDRUN=false;
   const rec=curRec();
