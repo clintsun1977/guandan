@@ -90,6 +90,7 @@ function finishDeal(){
   G.deck=[];
   for(const h of G.hands)sortHand(h,G.L);
   removeDeck();
+  if(mlOwn())mlMatch();
   recDeal();
   if(!G.prevOut){
     G.turn=G.firstLeader;

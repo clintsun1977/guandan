@@ -729,6 +729,10 @@ body.test .overlay.dock .panel .btn:not(.round){font-size:12px;padding:3px 10px;
   .cnt{font-size:20px;padding:2px 6px 1px}
   .cnt small{font-size:12px}
 }
+/* 继续上一把: under the lobby table, offered when this browser remembers a match that was stopped; lit once 选级 holds it */
+.lobby-cont{align-self:center;font-size:16px;padding:6px 14px;border-radius:12px;border:1.5px dashed var(--gold);color:var(--gold);background:transparent;cursor:pointer}
+.lobby-cont.on{border-style:solid;background:var(--gold);color:var(--on-gold);font-weight:700}
+.lobby-cont[hidden]{display:none}
 /* finishing moments: first place gets a gold badge and confetti, second and third a small badge,
    last place a stamp, a grey-out and a crying face */
 .fx{position:fixed;left:0;top:0;z-index:90;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap}
@@ -1238,6 +1242,7 @@ body.test .tside:not(.open){display:none}
       <button class="seat-btn t-blue" data-seat="E" style="grid-area:e"><b>东</b><span>空位</span></button>
       <button class="seat-btn t-red" data-seat="S" style="grid-area:s"><b>南</b><span>空位</span></button>
     </div>
+    <button class="link lobby-cont" id="contBtn" type="button" hidden></button>
     <button class="btn primary lobby-go" id="sitBtn" disabled>坐下开始</button>
     <div class="lobby-ver" id="verTag"></div>
   </div>
@@ -3270,6 +3275,7 @@ function finishDeal(){
   G.deck=[];
   for(const h of G.hands)sortHand(h,G.L);
   removeDeck();
+  if(mlOwn())mlMatch();
   recDeal();
   if(!G.prevOut){
     G.turn=G.firstLeader;
@@ -3829,6 +3835,7 @@ function finishRound(){
   G.prevOut=G.out.slice();
   G.lvlTeam=team;
   G.phase=win||draw?'over':'roundEnd';
+  mlRoundEnd();
   G.turn=-1;G.reveal=k0;
   render();
   // the end of a round plays out like a real table: the last trick stays face up for a moment,
@@ -6567,12 +6574,73 @@ const Outbox=(()=>{
   setTimeout(()=>flush(),3000);
   return{add,flush,status,pending:()=>memory.size};
 })();
+/* ---------- 接着上一把: a match (一把, from 2 up to A) can be stopped and taken up again later as the same match ---------- */
+// After every round the page that runs the table (alone or as host) remembers in this browser where the match stands, in
+// 选级's terms: each side's level, the side whose level is played, the finishing order, the tries at A. The lobby then offers
+// 「继续上一把」, which fills 选级 with it; a match started from exactly that state (by the button or by hand) is the same
+// match again: its rounds go up under the same match ID, numbered on from where it stopped, so all the rounds of one
+// match can be put together however many sittings it took. A match that is won or drawn is forgotten
+const MATCH_KEY='guandan-match-v1',MATCH_KEEP_MS=30*86400000;
+const ML={g:null,id:'',seats:[],base:0};
+function mlLoad(){
+  try{const m=JSON.parse(localStorage.getItem(MATCH_KEY)||'null');return m&&m.id&&m.state&&Date.now()-m.savedAt<MATCH_KEEP_MS?m:null}
+  catch(_){return null}
+}
+function mlStore(m){try{m?localStorage.setItem(MATCH_KEY,JSON.stringify(m)):localStorage.removeItem(MATCH_KEY)}catch(_){}}
+const mlOwn=()=>NET.mode!=='guest'&&!TEST&&!ENDG&&!SPEC;
+const mlHostDir=()=>NET.mode==='solo'?myDir:NET.hostDir;
+const mlDir=p=>DIRS[(DIRS.indexOf(mlHostDir())+toAbs(p))%4];
+const mlSide=t=>dirSide(mlDir(t)); // team t sits at seats t and t+2
+// the side whose level a 选级 state plays: chosen, or else the side of the last round's winner
+const mlPlays=s=>s.playSide||(s.order&&s.order.length===4&&s.order[0]?dirSide(s.order[0]):'');
+function mlSame(a,b){
+  return(a.lvSN||2)===b.lvSN&&(a.lvEW||2)===b.lvEW&&(a.aSN||0)===b.aSN&&(a.aEW||0)===b.aEW&&mlPlays(a)===mlPlays(b)&&
+    (a.order||[]).join()===b.order.join();
+}
+// the match this game belongs to (called as each round is dealt): the remembered one when the game started from its state
+function mlMatch(){
+  if(ML.g===G)return ML;
+  const m=G.round===1&&levelChosen()?mlLoad():null;
+  if(m&&mlSame(RULES,m.state)){
+    Object.assign(ML,{g:G,id:m.id,seats:m.seats.slice(),base:m.nextRound-1});
+    // 一次机会: a side that used up its tries at A, which 选级 has no button for
+    if(m.state.aOut)G.aOut=[0,1].find(t=>mlSide(t)===m.state.aOut)??null;
+  }else Object.assign(ML,{g:G,id:crypto.randomUUID(),seats:[0,1,2,3].map(()=>crypto.randomUUID()),base:0});
+  return ML;
+}
+// a round is over (after finishRound has set the next round's levels and order)
+function mlRoundEnd(){
+  if(!mlOwn()||ML.g!==G||!G.result)return;
+  if(G.result.win||G.result.draw){mlStore(null);return}
+  const st={playSide:mlSide(G.lvlTeam),order:G.prevOut.map(mlDir),aOut:G.aOut==null?'':mlSide(G.aOut)};
+  for(const t of [0,1]){const s=mlSide(t);st['lv'+s]=G.levels[t];st['a'+s]=(G.aFails||[0,0])[t]}
+  mlStore({id:ML.id,seats:ML.seats,nextRound:ML.base+G.round+1,state:st,savedAt:Date.now()});
+}
+// 「继续上一把」 in the lobby, for whoever plays alone or opens the room
+function mlRenderBtn(){
+  const b=$('#contBtn'),m=lobbyMode!=='join'?mlLoad():null;
+  b.hidden=!m;
+  if(!m)return;
+  const s=m.state,on=mlSame(RULES,s);
+  b.textContent=on?`已接上一把：南北打${rankName(s.lvSN)}，东西打${rankName(s.lvEW)}`:`继续上一把（南北打${rankName(s.lvSN)}，东西打${rankName(s.lvEW)}）`;
+  b.classList.toggle('on',on);
+}
+$('#contBtn').onclick=()=>{
+  const m=mlLoad();
+  if(!m||lobbyMode==='join')return;
+  const s=m.state;
+  Object.assign(RULES,{lvSN:s.lvSN,lvEW:s.lvEW,aSN:s.aSN,aEW:s.aEW,playSide:s.playSide,order:s.order.slice()});
+  Sound.unlock();Sound.play('select');
+  renderRules();
+  if(lobbyMode==='host')broadcastLobby();
+};
 /* ---------- 牌谱采集: every round with at least two people at the table goes to guandanai's collector, for AI training ---------- */
 // The record is the format of stevensun1005/guandanai's human-game collector (web/src/collection/record.mjs there; the server
 // checks it in validate.mjs by replaying the round): the dealt hands, the tribute, every play and pass with who made it
 // (human, bot or timeout) and the finishing order. Only the host records, only rounds that start with two or more people
 // seated, never the training version, a 残局 or a spectator, and nothing once the host has gone back to playing alone.
-// No nicknames, room number, chat, voice or IP: the four seats get random IDs that last for one match only.
+// No nicknames, room number, chat, voice or IP: the four seats get random IDs that last for one match only (a match taken up
+// again with 「继续上一把」 keeps its match ID, seat IDs and round numbers: see match-link.js).
 // Cards are the 0-107 ids of makeDeck(). appVersion starts with c1977 so these rounds can be told from guandanai's own.
 const REC={byGame:new WeakMap(),auto:-1};
 const recHumans=()=>[...NET.humans].sort((a,b)=>a-b);
@@ -6587,18 +6655,19 @@ const REC_TIMEOUT={id:'clint-rule',sha256:null,version:'clintsun1977-timeout'};
 // right after the deal, before any tribute
 function recDeal(){
   if(!recEligible())return;
+  const m=mlMatch(),round=m.base+G.round;
   let s=REC.byGame.get(G);
-  if(!s){s={match:crypto.randomUUID(),seats:[0,1,2,3].map(()=>crypto.randomUUID())};REC.byGame.set(G,s)}
+  if(!s){s={match:m.id,seats:m.seats};REC.byGame.set(G,s)}
   s.t0=performance.now();
   s.rec={schema:1,kind:new URLSearchParams(location.search).get('test')==='1'?'test':'game',encoding:'physical-108-v1',
-    id:`${s.match}:${G.round}`,matchId:s.match,round:G.round,appVersion:APP_HASH,startedAt:new Date().toISOString(),level:G.L,
+    id:`${s.match}:${round}`,matchId:s.match,round,appVersion:APP_HASH,startedAt:new Date().toISOString(),level:G.L,
     match:{levels:G.levels.slice(),lvlTeam:G.lvlTeam,L:G.L,aFails:(G.aFails||[0,0]).slice(),aOut:G.aOut??null},
     rules:{trib:!!RULES.trib,aFail:RULES.aFail},dealtHands:G.hands.map(h=>h.map(c=>c.id)),actions:[]};
 }
 // as play starts: the hands after the tribute, who leads, who is a person
 function recStart(leader){
   const s=REC.byGame.get(G),r=s&&s.rec;
-  if(!r||r.round!==G.round||r.hands||!recEligible())return;
+  if(!r||r.round!==ML.base+G.round||r.hands||!recEligible())return;
   const humans=recHumans(),bot=recModel(RULES.bot);
   r.leader=leader;r.hands=G.hands.map(h=>h.map(c=>c.id));r.humanMask=recMask(humans);
   r.seats=s.seats.map((id,p)=>({id,human:humans.includes(p),bot}));
@@ -6607,7 +6676,7 @@ function recStart(leader){
 // every play or pass, as the host applies it (before doPlay, while the turn's clock still shows how long it took)
 function recAction(p,e,play){
   const s=REC.byGame.get(G),r=s&&s.rec;
-  if(!r||!r.hands||r.round!==G.round||r.endedAt||NET.mode!=='host')return;
+  if(!r||!r.hands||r.round!==ML.base+G.round||r.endedAt||NET.mode!=='host')return;
   const humans=recHumans(),human=humans.includes(p),actor=human?(REC.auto===p?'timeout':'human'):'bot',c=G.clock;
   r.actions.push({seat:p,cards:play?play.cards.map(c=>c.id):null,...(play?{type:play.type,value:play.value,n:play.n}:{}),actor,
     ...(actor==='human'&&e.as?{assisted:true}:{}),humanMask:recMask(humans),
@@ -6618,7 +6687,7 @@ function recAction(p,e,play){
 // the round is over: the record goes into the outbox, which keeps it until the collector has stored it
 function recDone(){
   const s=REC.byGame.get(G),r=s&&s.rec;
-  if(!r||!r.hands||r.round!==G.round||!G.result||NET.mode!=='host'||TEST)return;
+  if(!r||!r.hands||r.round!==ML.base+G.round||!G.result||NET.mode!=='host'||TEST)return;
   if(r.endedAt)return;
   r.endedAt=new Date().toISOString();r.order=G.result.order.slice();
   Outbox.add(JSON.parse(JSON.stringify(r)));
@@ -6681,6 +6750,7 @@ function renderRules(){
     b.disabled=!mine;
   }
   $('#rulesNote').textContent=mine?'':'规则由房主选定';
+  mlRenderBtn();
   // 牌谱采集: said to everyone in a room before they sit down
   $('#collectNote').textContent=lobbyMode==='solo'?'':'两名以上真人时，每局牌谱匿名上传到 guandanai，用于 AI 训练（不含昵称、房间号、语音）';
   renderLevel();
@@ -8136,9 +8206,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1246';
+const VERSION='1107-1255';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c197726518';
+const APP_HASH='c19773191b';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

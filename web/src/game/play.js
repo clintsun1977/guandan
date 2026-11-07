@@ -97,6 +97,7 @@ function finishRound(){
   G.prevOut=G.out.slice();
   G.lvlTeam=team;
   G.phase=win||draw?'over':'roundEnd';
+  mlRoundEnd();
   G.turn=-1;G.reveal=k0;
   render();
   // the end of a round plays out like a real table: the last trick stays face up for a moment,
