@@ -4,12 +4,13 @@ function render(){
   phoneRefit();
   syncPauseBtn();
   for(let p=0;p<4;p++){const el=p===0?$('#mebar'):$('#seat'+p);el.classList.toggle('t-red',isRedSeat(p));el.classList.toggle('t-blue',!isRedSeat(p))}
-  // a side playing A shows which try at A it is on: A1, A2 or A3 (the third is the last)
+  // a side playing A shows which try at A it is on: A1, A2 or A3 (the third is the last). A side that has missed A keeps showing the
+  // try it missed (A1) until its own turn at A comes round again: only then does it show the next one (A2), and so on
   for(const t of [0,1]){
     const n=(G.aFails||[0,0])[t];
     // (一次机会: once the other side has used its three tries, this side's turn at A is its one last try)
     const last=G.levels[t]===14&&G.aOut!=null&&G.aOut!==t;
-    $('#lv'+t).textContent=G.levels[t]===14?(last?'A末':`A${Math.min(3,n+1)}`):rankName(G.levels[t]);
+    $('#lv'+t).textContent=G.levels[t]===14?(last?'A末':`A${Math.max(1,Math.min(3,n+(G.lvlTeam===t?1:0)))}`):rankName(G.levels[t]);
     $('#lvx'+t).textContent='';
   }
   for(const t of [0,1]){

@@ -43,7 +43,7 @@ html:not(.phone) body:not(.test) #seat3 .whorow:has(>.clock:not(:empty)) .actlbl
    microphone mark. Not on a phone, nor in the test version, which has its own plates */
 html:not(.phone) body:not(.test) .seat .who,html:not(.phone) body:not(.test) #mebar .meinfo{box-sizing:border-box;width:108px;height:38px;padding:0 8px;justify-content:center;gap:6px;font-size:16px}
 html:not(.phone) body:not(.test) .seat .who .name,html:not(.phone) body:not(.test) #myName{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-html:not(.phone) body:not(.test) .seat .who .vc,html:not(.phone) body:not(.test) #mebar .meinfo .vc{position:absolute;top:auto;bottom:calc(100% + 2px);right:2px;z-index:6}
+html:not(.phone) body:not(.test) #mebar .meinfo .vc{position:absolute;top:auto;bottom:calc(100% + 2px);right:2px;z-index:6}
 html:not(.phone) body:not(.test) #seat2 .whorow>.clock{position:absolute;left:calc(100% + 10px);top:50%;translate:0 -50%;margin:0}
 /* your partner's count of cards stands right of the plate after the clock, as yours does */
 html:not(.phone) body:not(.test) #seat2 .whorow>.cnt{left:calc(100% + 60px);top:50%;translate:0 -50%}

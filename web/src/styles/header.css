@@ -37,6 +37,10 @@
 .vc svg{width:1.05em;height:1.05em;fill:var(--gold);display:none}
 .vc.talk svg{display:block;animation:vcTalk .45s ease-in-out infinite alternate}
 .vc.mute::after{content:"闭麦";font-size:11px;font-weight:400;line-height:1;padding:2px 5px;border-radius:999px;color:var(--muted);border:1px solid var(--line-strong)}
+/* the other three seats: the mic flashes inside the plate, at its right end, and takes no room (the name stays where it is) */
+.seat .who{position:relative}
+.seat .who .vc{position:absolute;top:50%;right:5px;translate:0 -50%;z-index:6;pointer-events:none}
+.seat .who .vc svg{width:1.1em;height:1.1em;filter:drop-shadow(0 0 2px rgba(0,0,0,.7))}
 @keyframes vcTalk{from{transform:scale(.8);opacity:.6}to{transform:scale(1.15);opacity:1}}
 /* who paid whom and what came back, kept in the corner while the round is played */
 .tribinfo{display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--ink);line-height:1.5;white-space:nowrap}

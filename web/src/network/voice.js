@@ -4,7 +4,7 @@
 // and turning it off only silences it, so the lines stay up. Whose microphone is on goes round through the host
 // (NET.mics, host's seat numbers); who is talking is measured on each page from the sound itself.
 const VC=(()=>{
-  const SPK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
+  const SPK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>';
   document.querySelectorAll('.vc').forEach(e=>e.innerHTML=SPK);
   let active=false,peers={},ac=null,blank=null,mic=null,on=false,timer=0;
   const lines=new Map(),meters=new Map(),heard=new Map(),talking=new Set(),waiting=[],buf=new Uint8Array(512);
@@ -135,7 +135,8 @@ const VC=(()=>{
     for(let q=0;q<4;q++){
       const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
       const a=toAbs(q),mine=q===0&&!SPEC?on:!!NET.mics[a];
-      el.className='vc'+(!active||!isHumanSeat(q)?'':talking.has(a)?' talk':mine?'':' mute');
+      // (a grey 闭麦 only on your own plate: the other three show only a mic flashing while they talk)
+      el.className='vc'+(!active||!isHumanSeat(q)?'':talking.has(a)?' talk':mine||q||SPEC?'':' mute');
     }
   }
   // browsers hold sound back until the page is touched: every tap wakes the listening and the lines up again

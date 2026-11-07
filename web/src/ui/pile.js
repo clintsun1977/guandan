@@ -257,19 +257,23 @@ function heapSpot(g){
   const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*Math.min(HEAP_R,g.L.width*.05);
   return pileT(g.cx+Math.cos(a)*r,g.hy+Math.sin(a)*r*.7,Math.random()*360,180,HEAP_SC);
 }
+// returns how long the turning over takes (ms; 0 when nothing is turned: a phone, a mini table)
+const SWEEP_MS=620; // the .5s of the turn (table.css) and up to .12s of delay
 function pileSweep(){
   const layer=pileEl(),g=pileGeo();
   pileGroups=[];TS=1;
   layer.querySelectorAll('.ktag').forEach(e=>e.remove());
   // a phone keeps no heap, nor does 极简出牌区: the finished trick simply goes, with no turning over
   // (nor does the card back 无: no turning over, no heap)
-  if(isPhone()||miniMode()||cardBack==='none'||watching()){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return}
-  layer.querySelectorAll('.pc.cur,.pc.old').forEach(el=>{
+  if(isPhone()||miniMode()||cardBack==='none'||watching()){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return 0}
+  const cards=layer.querySelectorAll('.pc.cur,.pc.old');
+  cards.forEach(el=>{
     el.classList.remove('cur','old');
     el.style.transitionDelay=(Math.random()*120|0)+'ms';
     el.style.zIndex=++heapZ;
     el.style.transform=heapSpot(g);
   });
+  return cards.length?SWEEP_MS:0;
 }
 // redraw the pile from state (page update or window resize), without animation
 function pileRebuild(){

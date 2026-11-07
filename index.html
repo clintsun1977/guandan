@@ -101,6 +101,10 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 .vc svg{width:1.05em;height:1.05em;fill:var(--gold);display:none}
 .vc.talk svg{display:block;animation:vcTalk .45s ease-in-out infinite alternate}
 .vc.mute::after{content:"闭麦";font-size:11px;font-weight:400;line-height:1;padding:2px 5px;border-radius:999px;color:var(--muted);border:1px solid var(--line-strong)}
+/* the other three seats: the mic flashes inside the plate, at its right end, and takes no room (the name stays where it is) */
+.seat .who{position:relative}
+.seat .who .vc{position:absolute;top:50%;right:5px;translate:0 -50%;z-index:6;pointer-events:none}
+.seat .who .vc svg{width:1.1em;height:1.1em;filter:drop-shadow(0 0 2px rgba(0,0,0,.7))}
 @keyframes vcTalk{from{transform:scale(.8);opacity:.6}to{transform:scale(1.15);opacity:1}}
 /* who paid whom and what came back, kept in the corner while the round is played */
 .tribinfo{display:flex;flex-direction:column;gap:2px;font-size:14px;color:var(--ink);line-height:1.5;white-space:nowrap}
@@ -483,7 +487,7 @@ html:not(.phone) body:not(.test) #seat3 .whorow:has(>.clock:not(:empty)) .actlbl
    microphone mark. Not on a phone, nor in the test version, which has its own plates */
 html:not(.phone) body:not(.test) .seat .who,html:not(.phone) body:not(.test) #mebar .meinfo{box-sizing:border-box;width:108px;height:38px;padding:0 8px;justify-content:center;gap:6px;font-size:16px}
 html:not(.phone) body:not(.test) .seat .who .name,html:not(.phone) body:not(.test) #myName{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-html:not(.phone) body:not(.test) .seat .who .vc,html:not(.phone) body:not(.test) #mebar .meinfo .vc{position:absolute;top:auto;bottom:calc(100% + 2px);right:2px;z-index:6}
+html:not(.phone) body:not(.test) #mebar .meinfo .vc{position:absolute;top:auto;bottom:calc(100% + 2px);right:2px;z-index:6}
 html:not(.phone) body:not(.test) #seat2 .whorow>.clock{position:absolute;left:calc(100% + 10px);top:50%;translate:0 -50%;margin:0}
 /* your partner's count of cards stands right of the plate after the clock, as yours does */
 html:not(.phone) body:not(.test) #seat2 .whorow>.cnt{left:calc(100% + 60px);top:50%;translate:0 -50%}
@@ -1850,7 +1854,7 @@ html.phone .handtools .emote-fab {
     <div class="lobby-rules" id="rulesBox">
       <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
       <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="once">一次机会</button></div>
-      <div class="rule-row"><span class="rule-k">电脑</span><button class="rule-btn" data-rule="bot" data-val="danmcai">danMCai</button><button class="rule-btn" data-rule="bot" data-val="clint">Clint</button><button class="rule-btn" data-rule="bot" data-val="guanzero">GuanZero</button></div>
+      <div class="rule-row"><span class="rule-k">电脑模型</span><button class="rule-btn" data-rule="bot" data-val="clint">默认</button><button class="rule-btn" data-rule="bot" data-val="danmcai">danMCai</button><button class="rule-btn" data-rule="bot" data-val="guanzero">GuanZero</button></div>
       <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
       <div class="rule-note" id="rulesNote"></div>
       <div class="rule-note" id="collectNote"></div>
@@ -4431,9 +4435,12 @@ function advance(){
     G.turn=-1;G.nextLeader=leader;
     render();
     later(()=>{
-      pileSweep();
+      const turning=pileSweep();
       G.heapN+=G.trickPlays.reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];
-      G.trick=null;G.passes=0;G.last=[null,null,null,null];G.turn=leader;startTurn();
+      G.trick=null;G.passes=0;G.last=[null,null,null,null];
+      // when you lead next, your buttons light up only after the trick has finished turning over onto the heap
+      if(leader===0&&turning&&!TEST){G.turn=-1;render();later(()=>{G.turn=leader;startTurn()},turning)}
+      else{G.turn=leader;startTurn()}
       if(jf)jieFeng(jf.from,jf.to);
     },trickHold());
     return;
@@ -5001,19 +5008,23 @@ function heapSpot(g){
   const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*Math.min(HEAP_R,g.L.width*.05);
   return pileT(g.cx+Math.cos(a)*r,g.hy+Math.sin(a)*r*.7,Math.random()*360,180,HEAP_SC);
 }
+// returns how long the turning over takes (ms; 0 when nothing is turned: a phone, a mini table)
+const SWEEP_MS=620; // the .5s of the turn (table.css) and up to .12s of delay
 function pileSweep(){
   const layer=pileEl(),g=pileGeo();
   pileGroups=[];TS=1;
   layer.querySelectorAll('.ktag').forEach(e=>e.remove());
   // a phone keeps no heap, nor does 极简出牌区: the finished trick simply goes, with no turning over
   // (nor does the card back 无: no turning over, no heap)
-  if(isPhone()||miniMode()||cardBack==='none'||watching()){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return}
-  layer.querySelectorAll('.pc.cur,.pc.old').forEach(el=>{
+  if(isPhone()||miniMode()||cardBack==='none'||watching()){layer.querySelectorAll('.pc.cur,.pc.old').forEach(e=>e.remove());return 0}
+  const cards=layer.querySelectorAll('.pc.cur,.pc.old');
+  cards.forEach(el=>{
     el.classList.remove('cur','old');
     el.style.transitionDelay=(Math.random()*120|0)+'ms';
     el.style.zIndex=++heapZ;
     el.style.transform=heapSpot(g);
   });
+  return cards.length?SWEEP_MS:0;
 }
 // redraw the pile from state (page update or window resize), without animation
 function pileRebuild(){
@@ -5122,12 +5133,13 @@ function render(){
   phoneRefit();
   syncPauseBtn();
   for(let p=0;p<4;p++){const el=p===0?$('#mebar'):$('#seat'+p);el.classList.toggle('t-red',isRedSeat(p));el.classList.toggle('t-blue',!isRedSeat(p))}
-  // a side playing A shows which try at A it is on: A1, A2 or A3 (the third is the last)
+  // a side playing A shows which try at A it is on: A1, A2 or A3 (the third is the last). A side that has missed A keeps showing the
+  // try it missed (A1) until its own turn at A comes round again: only then does it show the next one (A2), and so on
   for(const t of [0,1]){
     const n=(G.aFails||[0,0])[t];
     // (一次机会: once the other side has used its three tries, this side's turn at A is its one last try)
     const last=G.levels[t]===14&&G.aOut!=null&&G.aOut!==t;
-    $('#lv'+t).textContent=G.levels[t]===14?(last?'A末':`A${Math.min(3,n+1)}`):rankName(G.levels[t]);
+    $('#lv'+t).textContent=G.levels[t]===14?(last?'A末':`A${Math.max(1,Math.min(3,n+(G.lvlTeam===t?1:0)))}`):rankName(G.levels[t]);
     $('#lvx'+t).textContent='';
   }
   for(const t of [0,1]){
@@ -5408,7 +5420,7 @@ const actionInset=w=>Math.min(150,Math.max(colW/2+16,w*.12));
 // they mean to play) sit one per row; to the right the active zone, the rest of the cards, fanned or flat.
 // n: how many active cards, keys: their row-split keys. Also returns where each fixed card goes (fix), the row
 // tags (fixTags), the zone's size (fixW, fixH) and the line a dragged card crosses to land in the zone (fixEdge).
-const FIX_GAP=14,FIX_TAG=46;
+const FIX_GAP=14,FIX_TAG=62; // (FIX_TAG: room right of a group for its tag, the longest being 同花顺, clear of the frame)
 let fixPeak={k:'',w:0,h:0};
 function handGeo(n,keys){
   if(testGrouped())return testGeo();
@@ -9271,9 +9283,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1319';
+const VERSION='1107-1610';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977b6b0d';
+const APP_HASH='c1977b0bea';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -9284,7 +9296,7 @@ const peerReady=()=>{if(window.Peer&&!window.claude)return true;lobbyStatus('联
 // and turning it off only silences it, so the lines stay up. Whose microphone is on goes round through the host
 // (NET.mics, host's seat numbers); who is talking is measured on each page from the sound itself.
 const VC=(()=>{
-  const SPK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
+  const SPK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>';
   document.querySelectorAll('.vc').forEach(e=>e.innerHTML=SPK);
   let active=false,peers={},ac=null,blank=null,mic=null,on=false,timer=0;
   const lines=new Map(),meters=new Map(),heard=new Map(),talking=new Set(),waiting=[],buf=new Uint8Array(512);
@@ -9415,7 +9427,8 @@ const VC=(()=>{
     for(let q=0;q<4;q++){
       const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
       const a=toAbs(q),mine=q===0&&!SPEC?on:!!NET.mics[a];
-      el.className='vc'+(!active||!isHumanSeat(q)?'':talking.has(a)?' talk':mine?'':' mute');
+      // (a grey 闭麦 only on your own plate: the other three show only a mic flashing while they talk)
+      el.className='vc'+(!active||!isHumanSeat(q)?'':talking.has(a)?' talk':mine||q||SPEC?'':' mute');
     }
   }
   // browsers hold sound back until the page is touched: every tap wakes the listening and the lines up again

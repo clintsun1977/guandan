@@ -53,9 +53,12 @@ function advance(){
     G.turn=-1;G.nextLeader=leader;
     render();
     later(()=>{
-      pileSweep();
+      const turning=pileSweep();
       G.heapN+=G.trickPlays.reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];
-      G.trick=null;G.passes=0;G.last=[null,null,null,null];G.turn=leader;startTurn();
+      G.trick=null;G.passes=0;G.last=[null,null,null,null];
+      // when you lead next, your buttons light up only after the trick has finished turning over onto the heap
+      if(leader===0&&turning&&!TEST){G.turn=-1;render();later(()=>{G.turn=leader;startTurn()},turning)}
+      else{G.turn=leader;startTurn()}
       if(jf)jieFeng(jf.from,jf.to);
     },trickHold());
     return;

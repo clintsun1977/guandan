@@ -13,7 +13,7 @@ const actionInset=w=>Math.min(150,Math.max(colW/2+16,w*.12));
 // they mean to play) sit one per row; to the right the active zone, the rest of the cards, fanned or flat.
 // n: how many active cards, keys: their row-split keys. Also returns where each fixed card goes (fix), the row
 // tags (fixTags), the zone's size (fixW, fixH) and the line a dragged card crosses to land in the zone (fixEdge).
-const FIX_GAP=14,FIX_TAG=46;
+const FIX_GAP=14,FIX_TAG=62; // (FIX_TAG: room right of a group for its tag, the longest being 同花顺, clear of the frame)
 let fixPeak={k:'',w:0,h:0};
 function handGeo(n,keys){
   if(testGrouped())return testGeo();
