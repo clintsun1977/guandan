@@ -124,6 +124,7 @@ function guestOnData(d){
   if(d.t==='vpeers'){VC.update(d.peers);return}
   if(d.t==='vmuted'){VC.setMuted(d.ids||[]);return}
   // the host turned a move down: stop waiting for it and let the player try again
+  if(d.t==='emote'){Emotes.guestEmote(d.seat,d.id,d.to);return}
   if(d.t==='nope'){NET.pending=false;if(['play','pass','return','tribute'].includes(d.k))setMsg('这一步没有成功，请再试一次',true);render();return}
   if(d.t==='lobby'){
     NET.lobby=d.seats;myDir=d.you||'';

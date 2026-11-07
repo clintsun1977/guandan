@@ -40,7 +40,7 @@ $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return
 // since a drag or a sweep of the cards also ends in a click there)
 for(const z of ['#mebar','.handwrap'])$(z).addEventListener('click',e=>{if(e.target.closest('#hand,button,input,textarea,.meinfo'))return;clearPicked()});
 document.addEventListener('keydown',e=>{
-  if(TV.open||TV.edit||!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input,textarea'))return;
+  if(TV.open||TV.edit||!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input,textarea,#emotePanel'))return;
   if(SPEC){e.preventDefault();return}
   if(TEST&&e.key==='ArrowLeft'){e.preventDefault();testBack();return}
   // the test version's steps: the space bar lets the game go on to the next turn

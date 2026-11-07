@@ -1193,6 +1193,575 @@ body.test .tside:not(.open){display:none}
 .coach-side.pop{left:auto;right:8px;width:min(310px,calc(100vw - 16px));padding:9px 10px}
 .coach-side.pop h2{font-size:14px;margin:0}
 .coach-side.pop .coach-footnote{display:none}
+/* table emotes: gifts thrown between seats, emoji with effects and quick phrases beside a seat
+   (taken from stevensun1005/guandanai web/src/styles/social.css; the layers are raised over this table's played cards) */
+/* the round emote button at the bottom right, just right of 理牌 */
+.emote-fab {
+  --cool-ms: 2500ms;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  font-size: 21px;
+  line-height: 1;
+  border: 1px solid #ffffff3d;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #fff6c9 0%, #ffcf4a 38%, #f19a14 100%);
+  box-shadow:
+    0 4px 12px #0007,
+    inset 0 -3px 0 #c06a0a66,
+    inset 0 2px 0 #ffffff80;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease;
+}
+.emote-fab:hover {
+  transform: translateY(-1px) scale(1.06);
+}
+.emote-fab:active {
+  transform: scale(0.94);
+}
+.emote-fab:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+.emote-fab[aria-expanded='true'] {
+  transform: scale(1.06);
+  box-shadow:
+    0 0 0 3px #ffd76a66,
+    0 4px 12px #0007;
+}
+.emote-fab:disabled {
+  cursor: default;
+  filter: grayscale(0.75) brightness(0.8);
+}
+/* cooldown: a ring that sweeps round until the next emote may go */
+@property --cool {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+.emote-fab.cooling::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(#ffd76a var(--cool), #ffffff1f 0);
+  mask: radial-gradient(farthest-side, #0000 calc(100% - 3px), #000 calc(100% - 3px));
+  animation: emote-cool var(--cool-ms) linear forwards;
+}
+@keyframes emote-cool {
+  from {
+    --cool: 0%;
+  }
+  to {
+    --cool: 100%;
+  }
+}
+body.test #emoteBtn,
+body.spec #emoteBtn,
+body.endg #emoteBtn,
+#emoteBtn[hidden] {
+  display: none;
+}
+.handtools .emote-fab {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  margin-left: 2px;
+  font-size: 19px;
+  pointer-events: auto;
+}
+html.phone .handtools .emote-fab {
+  width: 30px;
+  height: 30px;
+  font-size: 17px;
+}
+
+/* the panel pops up above the button: frosted card, two tabs, large tiles */
+.emote-panel {
+  --arrow-x: 50%;
+  position: fixed;
+  z-index: 96;
+  width: min(360px, calc(100vw - 20px));
+  max-height: min(64dvh, 480px);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+  border: 1px solid #ffffff2e;
+  border-radius: 20px;
+  color: #fff;
+  background: linear-gradient(180deg, #1f4a3bf0, #0f2a20f2);
+  backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow:
+    0 18px 48px #000a,
+    inset 0 1px 0 #ffffff26;
+  transform-origin: var(--arrow-x) 100%;
+  animation: emote-panel-in 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.emote-panel[hidden] {
+  display: none;
+}
+.emote-panel::after {
+  content: '';
+  position: absolute;
+  left: var(--arrow-x);
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  translate: -50% 0;
+  rotate: 45deg;
+  background: #0f2a20;
+  border-right: 1px solid #ffffff2e;
+  border-bottom: 1px solid #ffffff2e;
+}
+@keyframes emote-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.92);
+  }
+}
+.emote-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  background: #00000040;
+}
+.emote-tabs [role='tab'] {
+  flex: 1;
+  padding: 6px 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffffa6;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.emote-tabs [role='tab'][aria-selected='true'] {
+  color: #3a2300;
+  background: linear-gradient(180deg, #ffe08a, #f5b532);
+  box-shadow: 0 2px 6px #0005;
+}
+.emote-tabs [role='tab']:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+.emote-page {
+  overflow: auto;
+  min-height: 0;
+}
+.emote-page[hidden] {
+  display: none;
+}
+.emote-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 2px;
+}
+.emote-choice {
+  font: inherit;
+  color: #fff;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
+}
+.emote-choice:focus-visible {
+  outline: 2px solid #ffd76a;
+  outline-offset: 1px;
+}
+.emote-choice.kind-gift,
+.emote-choice.kind-emoji {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 9px 0 7px;
+  border-radius: 16px;
+  background: var(--tile, #ffffff14);
+  box-shadow:
+    inset 0 1px 0 #ffffff33,
+    0 3px 8px #0004;
+}
+.emote-choice.kind-gift:hover,
+.emote-choice.kind-emoji:hover {
+  transform: translateY(-2px);
+}
+.emote-choice.kind-gift:active,
+.emote-choice.kind-emoji:active {
+  transform: scale(0.94);
+}
+.emote-choice[data-id='g01'] {
+  --tile: linear-gradient(160deg, #a8714a, #5b341c);
+}
+.emote-choice[data-id='g02'] {
+  --tile: linear-gradient(160deg, #f27aa0, #a8274f);
+}
+.emote-choice[data-id='g03'] {
+  --tile: linear-gradient(160deg, #ff8a3d, #8e1d12);
+}
+.emote-choice[data-id='e01'] {
+  --tile: linear-gradient(160deg, #ffd45c, #b97a06);
+}
+.emote-choice[data-id='e02'] {
+  --tile: linear-gradient(160deg, #6cb6ff, #23589c);
+}
+/* gifts carry a small badge: they are thrown at someone */
+.emote-choice.kind-gift::before {
+  content: '送';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 15px;
+  color: #3a2300;
+  border-radius: 6px;
+  background: #ffe08a;
+}
+.emote-choice[aria-pressed='true'] {
+  border-color: #ffe08a;
+  box-shadow:
+    0 0 0 2px #ffe08a88,
+    0 3px 8px #0004;
+}
+.emote-icon {
+  display: block;
+  height: 34px;
+  font-size: 28px;
+  line-height: 34px;
+  filter: drop-shadow(0 2px 2px #0005);
+}
+.emote-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fffe;
+  text-shadow: 0 1px 1px #0006;
+}
+.emote-targets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 14px;
+  background: #00000038;
+  animation: emote-panel-in 0.15s ease;
+}
+.emote-targets[hidden] {
+  display: none;
+}
+.emote-targets-title {
+  grid-column: 1 / -1;
+  color: #ffffffb3;
+  font-size: 12px;
+}
+.emote-target {
+  overflow: hidden;
+  padding: 8px 4px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border: 1px solid #ffffff30;
+  border-radius: 999px;
+  background: #ffffff1a;
+  cursor: pointer;
+}
+.emote-target:hover {
+  background: #ffffff2e;
+}
+.emote-target:focus-visible {
+  outline: 2px solid #ffd76a;
+  outline-offset: 1px;
+}
+.emote-phrases {
+  display: grid;
+  gap: 6px;
+}
+.emote-choice.kind-phrase {
+  padding: 9px 14px;
+  font-size: 14px;
+  text-align: left;
+  border-radius: 12px;
+  background: #ffffff12;
+}
+.emote-choice.kind-phrase:hover {
+  background: #ffffff24;
+}
+.emote-choice.kind-phrase:active {
+  transform: scale(0.98);
+}
+/* the mute option as a small switch */
+.emote-mute {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  color: #ffffffa6;
+  font-size: 12px;
+  cursor: pointer;
+}
+.emote-mute input {
+  position: absolute;
+  right: 0;
+  width: 30px;
+  height: 17px;
+  margin: 0;
+  opacity: 0;
+}
+.emote-switch {
+  position: relative;
+  order: 2;
+  width: 30px;
+  height: 17px;
+  border-radius: 999px;
+  background: #ffffff30;
+  transition: background 0.15s ease;
+}
+.emote-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  transition: translate 0.15s ease;
+}
+.emote-mute input:checked + .emote-switch {
+  background: #f5b532;
+}
+.emote-mute input:checked + .emote-switch::after {
+  translate: 13px 0;
+}
+.emote-mute input:focus-visible + .emote-switch {
+  outline: 2px solid #ffd76a;
+  outline-offset: 2px;
+}
+.emote-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.emote-bubble {
+  position: fixed;
+  z-index: 94;
+  pointer-events: none;
+  width: max-content;
+  max-width: min(260px, 70vw);
+  padding: 7px 12px;
+  border-radius: 16px;
+  color: #233b30;
+  background: #fffaf0;
+  box-shadow: 0 6px 18px #0006;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  animation: emote-pop 3.5s ease forwards;
+}
+.emote-bubble.kind-emoji {
+  padding: 4px 8px;
+  font-size: 34px;
+  line-height: 1;
+}
+@keyframes emote-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  8% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  14% {
+    transform: scale(1);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* sunglasses drop onto the face; crying wobbles */
+.emote-bubble.e01 {
+  animation:
+    emote-pop 3.5s ease forwards,
+    emote-shades 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.emote-bubble.e02 {
+  animation:
+    emote-pop 3.5s ease forwards,
+    emote-sob 0.5s ease-in-out 0.2s 4;
+}
+@keyframes emote-shades {
+  0% {
+    transform: translateY(-40px) rotate(-20deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes emote-sob {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-8deg) translateY(1px);
+  }
+  75% {
+    transform: rotate(8deg) translateY(1px);
+  }
+}
+
+/* gifts: the flight between plates, the landed gift, its particles and the bomb blast */
+.emote-flight,
+.emote-gift,
+.emote-particle,
+.emote-blast {
+  position: fixed;
+  z-index: 95;
+  pointer-events: none;
+  line-height: 1;
+}
+.emote-flight {
+  font-size: 38px;
+  filter: drop-shadow(0 6px 8px #0007);
+}
+.emote-gift {
+  font-size: 40px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 4px 8px #0008);
+  animation: emote-land 2.6s ease forwards;
+}
+.emote-gift.g03 {
+  animation-name: emote-land-bomb;
+}
+.emote-particle {
+  font-size: 20px;
+}
+.emote-particle.steam {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffef8e0, #fff0 70%);
+  filter: blur(1px);
+}
+.emote-blast {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #fff7d0 0%, #ffb02e 30%, #ff4d1a88 55%, #ff4d1a00 70%);
+  animation: emote-blast 0.7s ease-out forwards;
+}
+@keyframes emote-land {
+  0% {
+    transform: translate(-50%, -50%) scale(1.4);
+  }
+  12% {
+    transform: translate(-50%, -50%) scale(0.85);
+  }
+  22% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  30%,
+  85% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+@keyframes emote-land-bomb {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  10% {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 0.2;
+  }
+  25%,
+  85% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(-8deg);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes emote-blast {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+}
+.emote-shake {
+  animation: emote-shake 0.5s ease-in-out;
+}
+@keyframes emote-shake {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  20% {
+    translate: -6px 2px;
+  }
+  40% {
+    translate: 5px -3px;
+  }
+  60% {
+    translate: -4px 1px;
+  }
+  80% {
+    translate: 3px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emote-panel,
+  .emote-targets,
+  .emote-fab.cooling::after,
+  .emote-bubble,
+  .emote-bubble.e01,
+  .emote-bubble.e02,
+  .emote-gift,
+  .emote-shake {
+    animation: none;
+  }
+  .emote-blast {
+    display: none;
+  }
+}
 </style>
 </head>
 <body>
@@ -1233,6 +1802,13 @@ body.test .tside:not(.open){display:none}
     <output id="coachNow" aria-live="polite"></output>
     <output id="coachLast"></output>
   </aside>
+  <div class="emote-panel" id="emotePanel" role="dialog" aria-label="发送表情和快捷语" hidden>
+    <div class="emote-tabs" id="emoteTabs" role="tablist"><button type="button" role="tab" data-tab="emotes" aria-selected="true" aria-controls="emoteEmotes">表情</button><button type="button" role="tab" data-tab="phrases" aria-selected="false" aria-controls="emotePhrases">快捷语</button></div>
+    <div class="emote-page" id="emoteEmotes" role="tabpanel"><div class="emote-grid" id="emoteGrid"></div><div class="emote-targets" id="emoteTargets" hidden></div></div>
+    <div class="emote-page emote-phrases" id="emotePhrases" role="tabpanel" hidden></div>
+    <label class="emote-mute"><input type="checkbox" id="emoteMute"><span class="emote-switch" aria-hidden="true"></span>屏蔽他人表情</label>
+  </div>
+  <div class="emote-live" id="emoteLive" aria-live="polite"></div>
   <div class="mebar" id="mebar">
     <div class="left">
       <div class="whorow"><div class="meinfo"><span id="myName">你</span><span class="vc" id="myVc"></span><span class="stat"></span><span class="clock" id="myClock"></span></div><span class="cnt" id="myCnt"></span></div>
@@ -1248,7 +1824,7 @@ body.test .tside:not(.open){display:none}
       <button class="btn round" id="clearBtn">重选</button>
     </div>
     <div id="hand"></div>
-    <div class="handtools"><button class="link" id="fixBtn" title="把选中的牌放进左边的成组区，作为你拟定的一组牌">成组</button><span class="toolgap"></span><button class="link" id="fanBtn">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
+    <div class="handtools"><button class="link" id="fixBtn" title="把选中的牌放进左边的成组区，作为你拟定的一组牌">成组</button><span class="toolgap"></span><button class="link" id="fanBtn">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button><button type="button" class="emote-fab" id="emoteBtn" aria-haspopup="dialog" aria-controls="emotePanel" aria-expanded="false" aria-label="表情" title="发表情或快捷语" hidden><span aria-hidden="true">😊</span></button></div>
   </div>
 </div>
 
@@ -4676,6 +5252,7 @@ function renderControls(){
   $('#deckBtn').textContent=G.phase==='cut'?'切牌':'洗牌';
   placeActionBtns();
   renderCoach();
+  Emotes.sync();
 }
 // the table speaks for itself: only things you could not otherwise see get a line here
 // (what changed hands in the tribute, a lead passing to a partner, which card you still owe)
@@ -6409,7 +6986,7 @@ $('#table').addEventListener('click',e=>{if(e.target.closest('.who,.btn'))return
 // since a drag or a sweep of the cards also ends in a click there)
 for(const z of ['#mebar','.handwrap'])$(z).addEventListener('click',e=>{if(e.target.closest('#hand,button,input,textarea,.meinfo'))return;clearPicked()});
 document.addEventListener('keydown',e=>{
-  if(TV.open||TV.edit||!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input,textarea'))return;
+  if(TV.open||TV.edit||!$('#overlay').hidden||!$('#lobby').hidden||e.target.closest('input,textarea,#emotePanel'))return;
   if(SPEC){e.preventDefault();return}
   if(TEST&&e.key==='ArrowLeft'){e.preventDefault();testBack();return}
   // the test version's steps: the space bar lets the game go on to the next turn
@@ -6651,6 +7228,344 @@ $('#coach').addEventListener('click',e=>{
 });
 // a window that grows past 800px or shrinks below it switches between the column (open) and the pop-up (folded)
 addEventListener('resize',()=>{if(G&&!$('#coach').hidden&&coachTop5()&&top5Wide()!==CO.wasWide)renderTop5(isPhone());coachPlace();top5Pop()});
+/* ---------- 表情: gifts thrown between seats, emoji beside your own seat and quick phrases read aloud ---------- */
+// Taken from stevensun1005/guandanai (web/src/social/emotes.mjs and controller.js, https://github.com/stevensun1005/guandanai).
+// Players pick a preset: a gift thrown at another seat (卡布奇诺, 鲜花, 炸弹), an emoji with an effect beside their own seat
+// (墨镜, 哭) or a quick phrase that pops up and is read aloud. Only preset ids (plus the receiving seat for gifts) travel over
+// the room connection; the host checks the id, the receiver and a per-seat rate limit, then passes it on with the sender's
+// seat, so nobody can post free text or speak for another seat. A computer seat that gets a gift from a person answers with
+// an emote of its own. Emotes are not game actions: they are not logged, replayed or uploaded, and never change how a bot plays.
+// Everything lives inside one closure, so its helper names (later, place, ...) cannot clash with the page's own
+const Emotes=(()=>{
+  const entry=(id,kind,text,label)=>Object.freeze({id,kind,text,label});
+  const EMOTES=Object.freeze([
+    entry('g01','gift','☕','卡布奇诺'),
+    entry('g02','gift','🌹','鲜花'),
+    entry('g03','gift','💣','炸弹'),
+    entry('e01','emoji','😎','墨镜'),
+    entry('e02','emoji','😭','哭'),
+    // small talk only: nothing that tells a partner how to play (no "bomb now", "hold it"); ids as guandanai published them
+    ...[['p01','快点吧，我等的花儿都谢了'],['p02','给阿姨倒一杯卡布奇诺'],['p03','你的牌打得也太好了'],['p04','和你合作真是太愉快了'],
+      ['p05','不要走，决战到天亮'],['p06','大家好，很高兴见到各位'],['p07','不好意思，刚才网络卡了'],['p12','再来一局！']]
+      .map(([id,text])=>entry(id,'phrase',text,text)),
+  ]);
+  const byId=new Map(EMOTES.map(e=>[e.id,e]));
+  const emoteById=id=>(typeof id==='string'&&byId.get(id))||null;
+  // gifts need another seat as the receiver; every other kind must not name one
+  function validTarget(item,from,to){
+    if(!item)return false;
+    if(item.kind!=='gift')return to===undefined||to===null;
+    return Number.isInteger(to)&&to>=0&&to<=3&&to!==from;
+  }
+  const COOLDOWN_MS=2500;
+  function limiter(cooldown){
+    const last=new Map();
+    return seat=>{const t=Date.now();if(last.has(seat)&&t-last.get(seat)<cooldown)return false;last.set(seat,t);return true};
+  }
+  // a computer that gets a gift answers: 卡布奇诺 / 鲜花 come back or it puts on sunglasses, a bomb comes back or it cries
+  const BOT_REPLIES={g01:['g01','e01'],g02:['g02','e01'],g03:['g03','e02']};
+  const botReply=id=>{const o=BOT_REPLIES[id];return o?o[Math.floor(Math.random()*o.length)%o.length]:null};
+
+  const SHOW_MS=3500,FLIGHT_MS=750,LAND_MS=2600,BOT_COOLDOWN_MS=6000,MUTE_KEY='guandan-emote-muted-v1';
+  const SEAT_NAMES=['你','下家','对家','上家'];
+  const SEAT_PITCH=[1,1.35,.8,1.15]; // each seat's own voice pitch, so the phrases are told apart by ear
+  const hostLimiter=limiter(COOLDOWN_MS),botLimiter=limiter(BOT_COOLDOWN_MS),timers=new Map();
+  let muted=false,coolingUntil=0,pendingGift=null;
+  const reducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function seatName(local){
+    if(local===0)return'你';
+    const name=$(`#seat${local} .name`)?.textContent?.trim();
+    return name||SEAT_NAMES[local];
+  }
+  // the name plate a seat's emotes point at, in this page's own numbering (0 = you)
+  const plateOf=local=>local===0?$('#mebar .meinfo'):$(`#seat${local} .who`);
+  function centerOf(local){const r=plateOf(local)?.getBoundingClientRect();return r?{x:r.left+r.width/2,y:r.top+r.height/2}:null}
+  // beside the plate: below the far seat, inward for the sides, above your own; kept inside the window
+  function place(bubble,local){
+    const plate=plateOf(local);
+    if(!plate)return;
+    const r=plate.getBoundingClientRect(),gap=8;
+    const [left,top,translate]=local===2?[r.left+r.width/2,r.bottom+gap,'-50% 0']:local===3?[r.right+gap,r.top+r.height/2,'0 -50%']
+      :local===1?[r.left-gap,r.top+r.height/2,'-100% -50%']:[r.left+r.width/2,r.top-gap,'-50% -100%'];
+    Object.assign(bubble.style,{left:`${left}px`,top:`${top}px`,translate});
+    const box=bubble.getBoundingClientRect(),margin=6;
+    const shift=box.left<margin?margin-box.left:box.right>innerWidth-margin?innerWidth-margin-box.right:0;
+    if(shift)bubble.style.left=`${left+shift}px`;
+  }
+  function sound(name,arg){try{Sound.play(name,arg)}catch(_){}}
+  // a quick phrase read aloud by the browser's own speech synthesis (when it has a Chinese voice, and 音效 is on)
+  function speak(text,local){
+    try{
+      const synth=window.speechSynthesis,Utterance=window.SpeechSynthesisUtterance;
+      if(!synth||!Sound.prefs.sfx||typeof Utterance!=='function')return;
+      const say=new Utterance(text);
+      say.lang='zh-CN';say.rate=1.05;say.pitch=SEAT_PITCH[local]??1;
+      const voice=synth.getVoices().find(v=>/^zh(-|_)?CN/i.test(v.lang)||/^zh/i.test(v.lang));
+      if(voice)say.voice=voice;
+      synth.cancel();synth.speak(say);
+    }catch(_){}
+  }
+  function announce(text){const live=$('#emoteLive');if(live)live.textContent=text}
+  const removeLater=(el,ms)=>setTimeout(()=>el.remove(),ms);
+  // a few pieces flying out of (x, y) and fading: bomb fire, flower petals or coffee steam
+  function burst(x,y,kind){
+    if(reducedMotion())return;
+    const pieces={
+      g01:{text:['','','','',''],spread:30,rise:-70,ms:1300,cls:'steam'},
+      g02:{text:['🌸','🌸','🌹','🌸','💮','🌸','🌸','🌸'],spread:90,rise:70,ms:1500},
+      g03:{text:['💥','🔥','✨','🔥','💥','✨','🔥','💥'],spread:110,rise:0,ms:900},
+      e01:{text:['✨','⭐','✨','✨'],spread:45,rise:-10,ms:1100},
+      e02:{text:['💧','💧','💧','💧','💧','💧'],spread:28,rise:60,ms:1200},
+    }[kind];
+    if(!pieces)return;
+    pieces.text.forEach((text,i)=>{
+      const piece=document.createElement('div');
+      piece.className=`emote-particle ${pieces.cls||''}`;
+      piece.textContent=text;piece.style.left=`${x}px`;piece.style.top=`${y}px`;
+      document.body.append(piece);
+      const angle=(i/pieces.text.length)*Math.PI*2+Math.random()*.6;
+      const dx=Math.cos(angle)*pieces.spread*(.6+Math.random()*.4);
+      const dy=Math.sin(angle)*pieces.spread*.5+pieces.rise*(.6+Math.random()*.6);
+      piece.animate([
+        {transform:'translate(-50%, -50%) scale(0.4)',opacity:0},
+        {transform:'translate(-50%, -50%) scale(1)',opacity:1,offset:.15},
+        {transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.8) rotate(${dx}deg)`,opacity:0},
+      ],{duration:pieces.ms,delay:i*40,easing:'cubic-bezier(.2,.7,.3,1)',fill:'both'});
+      removeLater(piece,pieces.ms+i*40+60);
+    });
+  }
+  function shake(local){
+    const seat=local===0?$('#mebar'):$(`#seat${local}`);
+    if(!seat||reducedMotion())return;
+    seat.classList.remove('emote-shake');void seat.offsetWidth;seat.classList.add('emote-shake');
+    setTimeout(()=>seat.classList.remove('emote-shake'),600);
+  }
+  // the gift lands on the receiver's plate with its own effect and sound
+  function land(from,to,e){
+    const at=centerOf(to);
+    if(!at)return;
+    document.querySelector(`.emote-gift[data-to="${to}"]`)?.remove();
+    const gift=document.createElement('div');
+    gift.className=`emote-gift ${e.id}`;gift.dataset.from=String(from);gift.dataset.to=String(to);
+    gift.textContent=e.text;gift.title=`${seatName(from)} → ${seatName(to)}：${e.label}`;
+    gift.style.left=`${at.x}px`;gift.style.top=`${at.y}px`;
+    document.body.append(gift);
+    removeLater(gift,LAND_MS);
+    if(e.id==='g03'){
+      const blast=document.createElement('div');
+      blast.className='emote-blast';blast.style.left=`${at.x}px`;blast.style.top=`${at.y}px`;
+      document.body.append(blast);removeLater(blast,700);
+      shake(to);sound('bomb',true);
+    }else sound(e.id==='g02'?'ding':'pop');
+    burst(at.x,at.y,e.id);
+  }
+  // throw a gift from one seat to another (both in this page's numbering)
+  function throwGift(from,to,e){
+    const start=centerOf(from),end=centerOf(to);
+    if(!start||!end)return false;
+    announce(`${seatName(from)}送给${seatName(to)}：${e.label}`);
+    if(reducedMotion()||typeof document.body.animate!=='function'){land(from,to,e);return true}
+    const flight=document.createElement('div');
+    flight.className=`emote-flight ${e.id}`;flight.textContent=e.text;
+    flight.style.left=`${start.x}px`;flight.style.top=`${start.y}px`;
+    document.body.append(flight);
+    const dx=end.x-start.x,dy=end.y-start.y,lift=Math.min(140,40+Math.hypot(dx,dy)*.25);
+    const spin=e.id==='g03'?540:e.id==='g02'?200:0;
+    flight.animate([
+      {transform:'translate(-50%, -50%) scale(0.6) rotate(0deg)'},
+      {transform:`translate(calc(-50% + ${dx/2}px), calc(-50% + ${dy/2-lift}px)) scale(1.25) rotate(${spin/2}deg)`},
+      {transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1) rotate(${spin}deg)`},
+    ],{duration:FLIGHT_MS,easing:'ease-in-out',fill:'forwards'});
+    sound('whoosh');
+    setTimeout(()=>{flight.remove();land(from,to,e)},FLIGHT_MS);
+    return true;
+  }
+  // a bubble beside the sender's plate: the emoji with its effect, or the phrase (read aloud)
+  function popBubble(local,e){
+    if(!plateOf(local))return false;
+    document.querySelector(`.emote-bubble[data-seat="${local}"]`)?.remove();
+    const bubble=document.createElement('div');
+    bubble.className=`emote-bubble kind-${e.kind} ${e.id}`;bubble.dataset.seat=String(local);
+    bubble.textContent=e.text;bubble.title=e.label;
+    document.body.append(bubble);
+    place(bubble,local);
+    clearTimeout(timers.get(local));
+    timers.set(local,setTimeout(()=>bubble.remove(),SHOW_MS));
+    announce(`${seatName(local)}：${e.label}`);
+    if(e.kind==='phrase'){sound('pop');speak(e.text,local)}
+    else{const r=bubble.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,e.id);sound(e.id==='e02'?'sob':'whoosh')}
+    return true;
+  }
+  // show an emote from a seat in this page's own numbering (0 = you); gifts name the receiver in the same numbering
+  function showEmote(local,id,to){
+    const e=emoteById(id);
+    if(!e||!Number.isInteger(local)||local<0||local>3||!validTarget(e,local,to))return false;
+    if(muted&&local!==0)return false;
+    return e.kind==='gift'?throwGift(local,to,e):popBubble(local,e);
+  }
+  // to the friends at the table (the host's own connections; spectators do not get them)
+  function relay(msg){for(const v of NET.conns.values())if(v.conn&&v.conn.open)v.conn.send(msg)}
+  // on the host (or alone): show an emote from an absolute seat, tell the friends, let a computer answer a gift
+  function publish(seat,id,to){
+    const gift=Number.isInteger(to);
+    showEmote(toLocal(seat),id,gift?toLocal(to):undefined);
+    relay(gift?{t:'emote',seat,id,to}:{t:'emote',seat,id});
+    if(gift)answerGift(seat,id,to);
+  }
+  // a computer seat answers a person's gift after a short pause, at most once in six seconds, so two bots never ping-pong
+  function answerGift(from,id,to){
+    if(NET.mode==='guest')return;
+    if(isHumanSeat(toLocal(to))||!isHumanSeat(toLocal(from)))return;
+    if(!botLimiter(to))return;
+    const reply=botReply(id);
+    if(!reply)return;
+    setTimeout(()=>{
+      if(!G||isHumanSeat(toLocal(to)))return;
+      publish(to,reply,emoteById(reply).kind==='gift'?from:undefined);
+    },1000+Math.random()*1000);
+  }
+  // the host got an emote from a friend's seat (absolute numbering)
+  function hostEmote(seat,id,to){
+    const e=emoteById(id);
+    if(!e||!Number.isInteger(seat)||!validTarget(e,seat,to)||!hostLimiter(seat))return false;
+    publish(seat,id,e.kind==='gift'?to:undefined);
+    return true;
+  }
+  // a friend's page got the host's relay (absolute numbering); its own emote already showed when it was sent
+  function guestEmote(seat,id,to){
+    const e=emoteById(id);
+    if(!e||!Number.isInteger(seat)||seat<0||seat>3||!validTarget(e,seat,to)||seat===toAbs(0))return false;
+    return showEmote(toLocal(seat),id,e.kind==='gift'?toLocal(to):undefined);
+  }
+  // send one of the presets from this page's own seat; a gift names its receiver in this page's numbering
+  function sendEmote(id,toSeat){
+    const e=emoteById(id);
+    if(!e||!G||!validTarget(e,0,toSeat))return false;
+    const now=Date.now();
+    if(now<coolingUntil)return false;
+    coolingUntil=now+COOLDOWN_MS;
+    const to=e.kind==='gift'?toAbs(toSeat):undefined;
+    if(NET.mode==='guest'){
+      showEmote(0,id,toSeat);
+      if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send(e.kind==='gift'?{t:'emote',id,to}:{t:'emote',id});
+    }else{hostLimiter(toAbs(0));publish(toAbs(0),id,to)}
+    paintCooldown();
+    return true;
+  }
+  // the button stays disabled during the cooldown, with a ring that sweeps round until it is ready
+  function paintCooldown(){
+    const button=$('#emoteBtn'),wait=coolingUntil-Date.now();
+    button.disabled=wait>0;
+    if(wait>0&&!button.classList.contains('cooling')){button.style.setProperty('--cool-ms',`${wait}ms`);button.classList.add('cooling')}
+    else if(wait<=0)button.classList.remove('cooling');
+    if(wait>0)setTimeout(paintCooldown,wait+20);
+  }
+  function showTargets(e){
+    const box=$('#emoteTargets');
+    pendingGift=e;
+    box.replaceChildren();
+    const title=document.createElement('div');
+    title.className='emote-targets-title';title.textContent=`把${e.label}送给`;
+    box.append(title);
+    for(const local of [3,2,1]){
+      const b=document.createElement('button');
+      b.type='button';b.className='emote-target';b.dataset.to=String(local);
+      const name=seatName(local);
+      b.textContent=name===SEAT_NAMES[local]?name:`${SEAT_NAMES[local]} · ${name}`;
+      b.onclick=()=>{if(sendEmote(pendingGift.id,local))setPanel(false)};
+      box.append(b);
+    }
+    box.hidden=false;
+    for(const c of document.querySelectorAll('#emoteGrid .emote-choice'))c.setAttribute('aria-pressed',String(c.dataset.id===e.id));
+    box.querySelector('.emote-target')?.focus();
+  }
+  function hideTargets(){
+    pendingGift=null;
+    $('#emoteTargets').hidden=true;
+    for(const c of document.querySelectorAll('#emoteGrid .emote-choice'))c.removeAttribute('aria-pressed');
+  }
+  // the panel opens just above the button, kept inside the window
+  function placePanel(){
+    const panel=$('#emotePanel'),button=$('#emoteBtn');
+    if(panel.hidden)return;
+    const r=button.getBoundingClientRect(),margin=10,width=panel.offsetWidth,center=r.left+r.width/2;
+    const left=Math.max(margin,Math.min(innerWidth-margin-width,center-width/2));
+    panel.style.left=`${left}px`;
+    panel.style.bottom=`${Math.max(margin,innerHeight-r.top+10)}px`;
+    panel.style.setProperty('--arrow-x',`${Math.max(18,Math.min(width-18,center-left))}px`);
+  }
+  function setTab(name){
+    for(const tab of document.querySelectorAll('#emoteTabs [role=tab]')){
+      const on=tab.dataset.tab===name;
+      tab.setAttribute('aria-selected',String(on));tab.tabIndex=on?0:-1;
+      $(`#${tab.getAttribute('aria-controls')}`).hidden=!on;
+    }
+    hideTargets();
+  }
+  function setPanel(open){
+    const panel=$('#emotePanel');
+    hideTargets();
+    panel.hidden=!open;
+    $('#emoteBtn').setAttribute('aria-expanded',String(open));
+    if(!open)return;
+    placePanel();
+    panel.querySelector('.emote-page:not([hidden]) button')?.focus();
+  }
+  function buildPanel(){
+    const grid=$('#emoteGrid'),phrases=$('#emotePhrases');
+    for(const e of EMOTES){
+      const b=document.createElement('button');
+      b.type='button';b.className=`emote-choice kind-${e.kind}`;b.dataset.id=e.id;
+      b.title=e.kind==='gift'?`送${e.label}`:e.label;
+      b.setAttribute('aria-label',e.kind==='phrase'?e.text:b.title);
+      if(e.kind==='phrase')b.textContent=e.text;
+      else{
+        const icon=document.createElement('span');icon.className='emote-icon';icon.textContent=e.text;
+        const label=document.createElement('span');label.className='emote-label';label.textContent=e.label;
+        b.append(icon,label);
+      }
+      b.onclick=()=>{if(e.kind==='gift')showTargets(e);else if(sendEmote(e.id))setPanel(false)};
+      (e.kind==='phrase'?phrases:grid).append(b);
+    }
+    const mute=$('#emoteMute');
+    mute.checked=muted;
+    mute.onchange=()=>{
+      muted=mute.checked;
+      try{localStorage.setItem(MUTE_KEY,String(muted))}catch(_){}
+      if(muted){
+        for(const n of document.querySelectorAll('.emote-bubble:not([data-seat="0"]), .emote-gift:not([data-from="0"])'))n.remove();
+        try{window.speechSynthesis?.cancel()}catch(_){}
+      }
+    };
+  }
+  // the 😊 button is there while a game is on the table: not in the lobby, the training version, a 残局 or for a spectator
+  function sync(){
+    const on=!!G&&G.phase!=='start'&&!TEST&&!SPEC&&!ENDG&&$('#lobby').hidden;
+    $('#emoteBtn').hidden=!on;
+    if(!on&&!$('#emotePanel').hidden)setPanel(false);
+  }
+  try{muted=localStorage.getItem(MUTE_KEY)==='true'}catch(_){}
+  buildPanel();
+  for(const tab of document.querySelectorAll('#emoteTabs [role=tab]'))tab.onclick=()=>setTab(tab.dataset.tab);
+  $('#emoteTabs').addEventListener('keydown',ev=>{
+    if(ev.key!=='ArrowLeft'&&ev.key!=='ArrowRight')return;
+    const tabs=[...document.querySelectorAll('#emoteTabs [role=tab]')];
+    const next=tabs[(tabs.indexOf(document.activeElement)+1)%tabs.length]||tabs[0];
+    setTab(next.dataset.tab);next.focus();
+  });
+  setTab('emotes');
+  addEventListener('resize',placePanel);
+  $('#emoteBtn').onclick=ev=>{ev.stopPropagation();Sound.unlock();setPanel($('#emotePanel').hidden)};
+  $('#emotePanel').onclick=ev=>ev.stopPropagation();
+  document.addEventListener('click',()=>{if(!$('#emotePanel').hidden)setPanel(false)});
+  document.addEventListener('keydown',ev=>{
+    if(ev.key!=='Escape'||$('#emotePanel').hidden)return;
+    if(pendingGift){const id=pendingGift.id;hideTargets();$(`#emoteGrid .emote-choice[data-id="${id}"]`)?.focus();return}
+    setPanel(false);$('#emoteBtn').focus();
+  });
+  return{sendEmote,hostEmote,guestEmote,showEmote,sync,EMOTES};
+})();
 /* ---------- 牌谱上传: the outbox that sends finished rounds to guandanai's collector ---------- */
 // Ported from stevensun1005/guandanai web/src/collection/outbox.mjs and client.js. A finished round is kept in this browser
 // (IndexedDB) until the collector answers stored=true; a failed send is tried again later (after 10 s, 20 s, ... at most an hour),
@@ -8356,9 +9271,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1314';
+const VERSION='1107-1319';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19777635c';
+const APP_HASH='c1977b6b0d';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -8575,6 +9490,7 @@ function hostOnData(conn,d){
   info.seen=Date.now();
   if(d.t==='bye'){hostOnClose(conn,'quit');try{conn.close()}catch(_){}return}
   if(d.t==='watch'){hostWatch(conn,info,d);return}
+  if(d.t==='emote'){if(NET.started&&info.dir)Emotes.hostEmote(absOf(info.dir,NET.hostDir),d.id,d.to);return}
   if(d.t==='mic'){if(NET.started&&info.dir){NET.mics[absOf(info.dir,NET.hostDir)]=!!d.on;broadcast({t:'mics',m:NET.mics});VC.paint()}return}
   if(d.t==='sit'&&!NET.started){
     if(!DIRS.includes(d.dir)||(NET.lobby[d.dir]&&info.dir!==d.dir))return;
@@ -8885,6 +9801,7 @@ function guestOnData(d){
   if(d.t==='vpeers'){VC.update(d.peers);return}
   if(d.t==='vmuted'){VC.setMuted(d.ids||[]);return}
   // the host turned a move down: stop waiting for it and let the player try again
+  if(d.t==='emote'){Emotes.guestEmote(d.seat,d.id,d.to);return}
   if(d.t==='nope'){NET.pending=false;if(['play','pass','return','tribute'].includes(d.k))setMsg('这一步没有成功，请再试一次',true);render();return}
   if(d.t==='lobby'){
     NET.lobby=d.seats;myDir=d.you||'';

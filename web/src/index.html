@@ -24,6 +24,7 @@
 //@include web/src/styles/desktop.css
 //@include web/src/styles/training.css
 //@include web/src/styles/coach.css
+//@include web/src/styles/emotes.css
 </style>
 
 <div id="app">
@@ -63,6 +64,13 @@
     <output id="coachNow" aria-live="polite"></output>
     <output id="coachLast"></output>
   </aside>
+  <div class="emote-panel" id="emotePanel" role="dialog" aria-label="发送表情和快捷语" hidden>
+    <div class="emote-tabs" id="emoteTabs" role="tablist"><button type="button" role="tab" data-tab="emotes" aria-selected="true" aria-controls="emoteEmotes">表情</button><button type="button" role="tab" data-tab="phrases" aria-selected="false" aria-controls="emotePhrases">快捷语</button></div>
+    <div class="emote-page" id="emoteEmotes" role="tabpanel"><div class="emote-grid" id="emoteGrid"></div><div class="emote-targets" id="emoteTargets" hidden></div></div>
+    <div class="emote-page emote-phrases" id="emotePhrases" role="tabpanel" hidden></div>
+    <label class="emote-mute"><input type="checkbox" id="emoteMute"><span class="emote-switch" aria-hidden="true"></span>屏蔽他人表情</label>
+  </div>
+  <div class="emote-live" id="emoteLive" aria-live="polite"></div>
   <div class="mebar" id="mebar">
     <div class="left">
       <div class="whorow"><div class="meinfo"><span id="myName">你</span><span class="vc" id="myVc"></span><span class="stat"></span><span class="clock" id="myClock"></span></div><span class="cnt" id="myCnt"></span></div>
@@ -78,7 +86,7 @@
       <button class="btn round" id="clearBtn">重选</button>
     </div>
     <div id="hand"></div>
-    <div class="handtools"><button class="link" id="fixBtn" title="把选中的牌放进左边的成组区，作为你拟定的一组牌">成组</button><span class="toolgap"></span><button class="link" id="fanBtn">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button></div>
+    <div class="handtools"><button class="link" id="fixBtn" title="把选中的牌放进左边的成组区，作为你拟定的一组牌">成组</button><span class="toolgap"></span><button class="link" id="fanBtn">手持</button><button class="link" id="rowsBtn" title="改成两排">两排</button><button class="link" id="sortBtn" title="恢复成按大小排好的样子">复原</button><button type="button" class="emote-fab" id="emoteBtn" aria-haspopup="dialog" aria-controls="emotePanel" aria-expanded="false" aria-label="表情" title="发表情或快捷语" hidden><span aria-hidden="true">😊</span></button></div>
   </div>
 </div>
 
@@ -202,6 +210,7 @@
 //@include web/src/ui/options.js
 //@include web/src/ui/resize.js
 //@include web/src/coach/coach.js
+//@include web/src/social/emotes.js
 //@include web/src/collection/upload.js
 //@include web/src/collection/match-link.js
 //@include web/src/collection/record.js

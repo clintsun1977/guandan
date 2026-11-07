@@ -63,6 +63,7 @@ function hostOnData(conn,d){
   info.seen=Date.now();
   if(d.t==='bye'){hostOnClose(conn,'quit');try{conn.close()}catch(_){}return}
   if(d.t==='watch'){hostWatch(conn,info,d);return}
+  if(d.t==='emote'){if(NET.started&&info.dir)Emotes.hostEmote(absOf(info.dir,NET.hostDir),d.id,d.to);return}
   if(d.t==='mic'){if(NET.started&&info.dir){NET.mics[absOf(info.dir,NET.hostDir)]=!!d.on;broadcast({t:'mics',m:NET.mics});VC.paint()}return}
   if(d.t==='sit'&&!NET.started){
     if(!DIRS.includes(d.dir)||(NET.lobby[d.dir]&&info.dir!==d.dir))return;
