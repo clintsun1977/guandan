@@ -133,6 +133,7 @@ function renderControls(){
   $('#deckBtn').hidden=!deckTurn||!!G.busy;
   $('#deckBtn').textContent=G.phase==='cut'?'切牌':'洗牌';
   placeActionBtns();
+  renderCoach();
 }
 // the table speaks for itself: only things you could not otherwise see get a line here
 // (what changed hands in the tribute, a lead passing to a partner, which card you still owe)

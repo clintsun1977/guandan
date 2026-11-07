@@ -1131,6 +1131,21 @@ body.test *,body.test *::before,body.test *::after{animation:none!important;tran
 body.test .tside{width:min(var(--tside-w),92vw);box-shadow:-12px 0 32px rgba(0,0,0,.5)}
 body.test .tside:not(.open){display:none}
 @media (max-width:1279px){.tvl{display:none}}
+/* 出牌评价: a small box in the bottom-left corner, over the table, with the score of the picked cards and of your last move */
+.coach{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:var(--coach-bottom,260px);z-index:25;width:min(260px,calc(100vw - 24px));
+  display:flex;flex-direction:column;gap:2px;padding:6px 10px 8px;border-radius:12px;border:1px solid var(--line);background:var(--shade);
+  box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:auto}
+.coach[hidden]{display:none}
+.coach-head{display:flex;align-items:center;gap:6px}
+.coach-head small{flex:1;min-width:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coach-head .link{padding:0 6px;font-size:18px;line-height:1}
+#coachNow{font-size:17px;font-weight:700;color:var(--gold)}
+#coachLast{font-size:15px;color:var(--ink)}
+/* a phone: a two-line chip in the header, right of 选项 … 退出, without the title row */
+.coach.chip{top:var(--coach-top,60px);left:var(--coach-left,auto);right:8px;bottom:auto;width:auto;gap:0;padding:2px 8px;border-radius:9px;box-shadow:none}
+.coach.chip .coach-head{display:none}
+.coach.chip #coachNow{font-size:12px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coach.chip #coachLast{font-size:11px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -1166,6 +1181,11 @@ body.test .tside:not(.open){display:none}
     </section>
   </main>
 
+  <aside class="coach" id="coach" aria-label="出牌评价" hidden>
+    <div class="coach-head"><small title="当前所有能出的牌里，模型值最高的是 100%，最低的是 0%；不是胜率，也不是正确的概率"><span id="coachName"></span> · 相对分，非胜率</small><button class="link" id="coachClose" aria-label="关闭出牌评价" title="本局不再显示出牌评价">×</button></div>
+    <output id="coachNow" aria-live="polite"></output>
+    <output id="coachLast"></output>
+  </aside>
   <div class="mebar" id="mebar">
     <div class="left">
       <div class="whorow"><div class="meinfo"><span id="myName">你</span><span class="vc" id="myVc"></span><span class="stat"></span><span class="clock" id="myClock"></span></div><span class="cnt" id="myCnt"></span></div>
@@ -1201,6 +1221,7 @@ body.test .tside:not(.open){display:none}
       <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
       <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="once">一次机会</button></div>
       <div class="rule-row"><span class="rule-k">电脑</span><button class="rule-btn" data-rule="bot" data-val="danmcai">danMCai</button><button class="rule-btn" data-rule="bot" data-val="clint">Clint</button><button class="rule-btn" data-rule="bot" data-val="guanzero">GuanZero</button></div>
+      <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
       <div class="rule-note" id="rulesNote"></div>
     </div>
     <div class="lobby-join" id="joinRow" hidden>
@@ -2830,8 +2851,39 @@ const NeuralBot=(()=>{
     if(end)index=end.index;
     return plays[index];
   }
+  /* --- 出牌评价 (guandanai coach/evaluation.mjs): the network's value of each of your own legal moves, nothing added --- */
+  // the same card in either deck counts as the same move
+  const actionKey=ids=>cardsArray(ids).join(',');
+  // the strongest legal reading of the picked cards, as playing them would use
+  function reading(ids,L,cur){
+    const cards=ids.map(id=>deck[id]);
+    const shape=analyze(cards,L).filter(s=>beats(s,cur)).sort((a,b)=>strength(b)-strength(a))[0];
+    return shape?{...shape,cards,wu:cards.filter(c=>isWild(c,L)).length}:null;
+  }
+  // g as for decide, from seat 0's own view (seat 0's hand; the others only as counts). Without ids every legal move is
+  // scored; with ids only that one (a pass when empty)
+  async function rate(id,g,ids){
+    const m=models.get(id);if(!m)throw Error('unknown model '+id);
+    const cur=g.trick&&g.trick.play;
+    let plays;
+    if(ids){
+      if(!ids.length){if(!cur)throw Error('cannot pass when leading');plays=[null]}
+      else{const r=reading(ids,g.L,cur);if(!r)throw Error('illegal move');plays=[r]}
+    }else plays=candidates(g.hands[0],g.L,cur);
+    const state=observe(g,0,plays,0),o=await ort(),engine=await session(id);
+    return{actions:state.actions,values:await inferValues(o,engine,state,m.config)};
+  }
+  // 100 for the best of the moves compared, 0 for the worst: a relative score, not a chance of winning
+  function relativeRating(values,selected){
+    let low=selected,high=selected;
+    for(const v of values){low=Math.min(low,v);high=Math.max(high,v)}
+    const flat=high-low<1e-6;
+    return{percent:flat?100:Math.round(100*(selected-low)/(high-low)),flat};
+  }
+
   const preload=id=>session(id).then(()=>true);
-  return{decide,preload,has:id=>models.has(id),models:BOT_MODELS.models,_test:{encode,encodeHistory,candidates,replay,cardIndex}};
+  return{decide,preload,rate,actionKey,relativeRating,has:id=>models.has(id),models:BOT_MODELS.models,
+    _test:{encode,encodeHistory,candidates,replay,cardIndex}};
 })();
 /* ---------- game state ---------- */
 let G=null;
@@ -2852,7 +2904,7 @@ const TV={open:false};
 const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),specs:new Map(),lobby:{S:null,E:null,N:null,W:null},mics:{}};
 const isHost=()=>NET.mode!=='guest';
 // table rules, chosen in the lobby (online, by the host): tribute on or off, and what happens after three failed tries at A
-const RULES={trib:true,aFail:'draw',bot:'danmcai',lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
+const RULES={trib:true,aFail:'draw',bot:'danmcai',coach:true,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
 const isHumanSeat=p=>NET.humans.has(p);
 const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
 let hints=[],hintIdx=0;
@@ -3678,6 +3730,7 @@ function onPlay(){
   if(!ok.length){setMsg(`管不上${cur?TYPE_NAME[cur.type]:''}`,true);return}
   if(waitingHost())return;
   if(askConfirm())return;
+  coachRemember({...ok[0],cards});
   act(playEvt(0,{...ok[0],cards}));
 }
 // 出牌需确认 (an option): the first press only shows the picked cards large and turns 出牌 into 确认; pressing it again
@@ -3718,6 +3771,7 @@ function onPass(){
   if(ENDG)return;
   if(G.phase!=='play'||G.turn!==0||!G.trick||waitingHost())return;
   sel=new Set();
+  coachRemember(null);
   act(playEvt(0,null));
 }
 function onHint(){
@@ -4405,6 +4459,7 @@ function renderControls(){
   $('#deckBtn').hidden=!deckTurn||!!G.busy;
   $('#deckBtn').textContent=G.phase==='cut'?'切牌':'洗牌';
   placeActionBtns();
+  renderCoach();
 }
 // the table speaks for itself: only things you could not otherwise see get a line here
 // (what changed hands in the tribute, a lead passing to a partner, which card you still owe)
@@ -6202,6 +6257,100 @@ if(location.hash==='#debug'){
 let handW=0;
 if(window.ResizeObserver)new ResizeObserver(()=>{const w=handEl.clientWidth;if(w&&w!==handW){handW=w;layoutHand()}}).observe(handEl);
 
+/* ---------- 出牌评价: danMCai's score for the cards you pick, and for your last move ---------- */
+// On your own turn the danMCai network (bot/models.json) scores, once, every move you could make, from what you can see:
+// your own hand, the plays so far, how many cards each player holds and the levels (guandanai's 出牌评价, without its
+// Top 5 list). The cards you pick show as 合理性 N%: 100 for the move the network values most, 0 for the one it values
+// least. It is a relative score, not a chance of winning. After you play, that move's score stays as 上一手 until the
+// round is over. Whoever plays alone or opens the room turns it on or off in the lobby (出牌评价); × hides it on your own
+// page for the rest of the game
+const COACH_ID='danmcai';
+const CO={turn:null,last:null,hidden:false};
+const coachKey=()=>G.tok+':'+G.log.length;
+const coachShown=()=>RULES.coach!==false&&!CO.hidden&&!TEST&&!SPEC&&!ENDG&&NeuralBot.has(COACH_ID)&&isHumanSeat(0)&&!!G&&
+  ['play','roundEnd','over'].includes(G.phase);
+// the table as you see it at the start of your turn; the other hands go in only as counts
+function coachSnap(){
+  if(CO.turn&&CO.turn.key===coachKey())return CO.turn;
+  const s={key:coachKey(),G,round:G.round,scores:new Map(),values:null,error:false,extra:false,
+    g:{hands:G.hands.map((h,i)=>i===0?h.slice():new Array(h.length)),trick:G.trick?{player:G.trick.player,play:G.trick.play}:null,
+      passes:G.passes||0,log:G.log.slice(),levels:G.levels.slice(),L:G.L}};
+  CO.turn=s;
+  setTimeout(()=>NeuralBot.rate(COACH_ID,s.g)
+    .then(r=>{s.values=r.values;r.actions.forEach((ids,i)=>s.scores.set(NeuralBot.actionKey(ids),r.values[i]))},e=>{s.error=true;console.warn('出牌评价出错',e)})
+    .finally(renderCoach),150);
+  return s;
+}
+// the picked cards read the strongest legal way, as 出牌 plays them; nothing picked when you may pass is a pass
+function coachPick(){
+  const cards=selectedCards(),cur=G.trick?G.trick.play:null;
+  if(!cards.length)return cur?{ids:[],label:'过牌'}:null;
+  const shape=analyze(cards,G.L).filter(s=>beats(s,cur)).sort((a,b)=>strength(b)-strength(a))[0];
+  return shape?{ids:cards.map(c=>c.id),label:TYPE_NAME[shape.type]}:{invalid:true};
+}
+function coachGrade(s,a){
+  if(s.error)return'评价暂不可用';
+  if(!s.values)return'评价中…';
+  const k=NeuralBot.actionKey(a.ids);
+  if(!s.scores.has(k)){
+    // a legal move the list of moves leaves out is scored by itself and joins the comparison
+    if(!s.extra){
+      s.extra=true;
+      NeuralBot.rate(COACH_ID,s.g,a.ids).then(r=>{s.scores.set(k,r.values[0]);s.values.push(r.values[0])},()=>{s.error=true})
+        .finally(()=>{s.extra=false;renderCoach()});
+    }
+    return'评价中…';
+  }
+  const r=NeuralBot.relativeRating(s.values,s.scores.get(k));
+  return`合理性 ${r.percent}%${r.flat?' · 候选无明显分差':''}`;
+}
+// called as you play or pass (not for a move the clock made for you)
+function coachRemember(pl){
+  if(!coachShown()||G.phase!=='play'||G.turn!==0)return;
+  CO.last={s:coachSnap(),a:{ids:pl?pl.cards.map(c=>c.id):[],label:pl?TYPE_NAME[pl.type]:'过牌'}};
+}
+function renderCoach(){
+  const box=$('#coach'),on=coachShown();
+  box.hidden=!on;
+  if(!on)return;
+  if(CO.last&&(CO.last.s.G!==G||CO.last.s.round!==G.round))CO.last=null;
+  let now='轮到你时评价';
+  if(G.phase==='play'&&G.turn===0){
+    const s=coachSnap(),a=coachPick();
+    now=!a?'选牌查看合理性':a.invalid?'这几张牌不能出，不评分':`${a.label} · ${coachGrade(s,a)}`;
+  }
+  let last=CO.last?`上一手 ${CO.last.a.label} · ${coachGrade(CO.last.s,CO.last.a)}`:'出牌后保留上一手评价';
+  // a phone has room for a two-line chip only: the same, said shortly
+  const phone=isPhone();
+  if(phone){
+    const short=t=>t.replace('合理性 ','').replace(' · 候选无明显分差','').replace('上一手','上手').replace(' · ',' ');
+    now=G.phase==='play'&&G.turn===0?short(now).replace('选牌查看','选牌看').replace('这几张牌不能出，不评分','不能出'):'这手 —';
+    last=CO.last?short(last):'上手 —';
+  }
+  $('#coach').classList.toggle('chip',phone);
+  $('#coachNow').textContent=now;
+  $('#coachLast').textContent=last;
+  coachPlace();
+}
+// the box stands just over the 成组区 frame (bottom left), whatever its height on this screen
+function coachPlace(){
+  const box=$('#coach');
+  if(box.hidden)return;
+  if(box.classList.contains('chip')){
+    // a phone: right of the 选项 … 退出 row in the header
+    const a=$('.bar .acts').getBoundingClientRect();
+    box.style.setProperty('--coach-top',Math.round(a.top)+'px');
+    box.style.setProperty('--coach-left',Math.round(a.right+8)+'px');
+    return;
+  }
+  const f=$('#fixZone'),z=f?f.getBoundingClientRect():{height:0};
+  box.style.setProperty('--coach-bottom',(z.height>0?Math.max(8,innerHeight-z.top+8):Math.round(innerHeight*.42))+'px');
+}
+const coachModel=NeuralBot.models.find(m=>m.id===COACH_ID)||{};
+$('#coachName').textContent=coachModel.name||'';
+$('#coachName').parentElement.title=`${coachModel.label||''}：`+$('#coachName').parentElement.title;
+$('#coachClose').onclick=()=>{CO.hidden=true;renderCoach()};
+addEventListener('resize',()=>requestAnimationFrame(coachPlace));
 /* ---------- boot (keeps the game across live page updates) ---------- */
 function boot(data){
   if(data&&data.G&&data.G.hands&&data.G.phase!=='start'){
@@ -6249,14 +6398,14 @@ function showStart(){
 }
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
-  Object.assign(RULES,{trib:true,aFail:'draw',bot:'danmcai',lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
-  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.bot==='clint'||NeuralBot.has(r.bot))RULES.bot=r.bot}catch(_){}
+  Object.assign(RULES,{trib:true,aFail:'draw',bot:'danmcai',coach:true,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
+  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.bot==='clint'||NeuralBot.has(r.bot))RULES.bot=r.bot;if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){
   const mine=lobbyMode!=='join';
   for(const b of ruleBtns){
-    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'danmcai'):RULES.aFail));
+    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'danmcai'):b.dataset.rule==='coach'?(RULES.coach===false?'0':'1'):RULES.aFail));
     b.disabled=!mine;
   }
   $('#rulesNote').textContent=mine?'':'规则由房主选定';
@@ -6333,8 +6482,8 @@ $('#levelPick').addEventListener('click',e=>{
 });
 ruleBtns.forEach(b=>b.addEventListener('click',()=>{
   if(lobbyMode==='join')return;
-  if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else if(b.dataset.rule==='bot'){RULES.bot=b.dataset.val;botPreload()}else RULES.aFail=b.dataset.val;
-  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot}))}catch(_){}
+  if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else if(b.dataset.rule==='bot'){RULES.bot=b.dataset.val;botPreload()}else if(b.dataset.rule==='coach')RULES.coach=b.dataset.val==='1';else RULES.aFail=b.dataset.val;
+  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,coach:RULES.coach}))}catch(_){}
   Sound.unlock();Sound.play('select');
   renderRules();
   if(lobbyMode==='host')broadcastLobby();
@@ -7823,7 +7972,7 @@ function endgameBatchPanel(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1226';
+const VERSION='1107-1231';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

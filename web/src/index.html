@@ -23,6 +23,7 @@
 //@include web/src/styles/celebrations.css
 //@include web/src/styles/desktop.css
 //@include web/src/styles/training.css
+//@include web/src/styles/coach.css
 </style>
 
 <div id="app">
@@ -57,6 +58,11 @@
     </section>
   </main>
 
+  <aside class="coach" id="coach" aria-label="出牌评价" hidden>
+    <div class="coach-head"><small title="当前所有能出的牌里，模型值最高的是 100%，最低的是 0%；不是胜率，也不是正确的概率"><span id="coachName"></span> · 相对分，非胜率</small><button class="link" id="coachClose" aria-label="关闭出牌评价" title="本局不再显示出牌评价">×</button></div>
+    <output id="coachNow" aria-live="polite"></output>
+    <output id="coachLast"></output>
+  </aside>
   <div class="mebar" id="mebar">
     <div class="left">
       <div class="whorow"><div class="meinfo"><span id="myName">你</span><span class="vc" id="myVc"></span><span class="stat"></span><span class="clock" id="myClock"></span></div><span class="cnt" id="myCnt"></span></div>
@@ -92,6 +98,7 @@
       <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
       <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="once">一次机会</button></div>
       <div class="rule-row"><span class="rule-k">电脑</span><button class="rule-btn" data-rule="bot" data-val="danmcai">danMCai</button><button class="rule-btn" data-rule="bot" data-val="clint">Clint</button><button class="rule-btn" data-rule="bot" data-val="guanzero">GuanZero</button></div>
+      <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
       <div class="rule-note" id="rulesNote"></div>
     </div>
     <div class="lobby-join" id="joinRow" hidden>
@@ -185,6 +192,7 @@
 //@include web/src/ui/watch.js
 //@include web/src/ui/options.js
 //@include web/src/ui/resize.js
+//@include web/src/coach/coach.js
 //@include web/src/app/boot.js
 //@include web/src/lobby/lobby.js
 //@include web/src/lobby/rules.js

@@ -21,6 +21,7 @@ function onPlay(){
   if(!ok.length){setMsg(`管不上${cur?TYPE_NAME[cur.type]:''}`,true);return}
   if(waitingHost())return;
   if(askConfirm())return;
+  coachRemember({...ok[0],cards});
   act(playEvt(0,{...ok[0],cards}));
 }
 // 出牌需确认 (an option): the first press only shows the picked cards large and turns 出牌 into 确认; pressing it again
@@ -61,6 +62,7 @@ function onPass(){
   if(ENDG)return;
   if(G.phase!=='play'||G.turn!==0||!G.trick||waitingHost())return;
   sel=new Set();
+  coachRemember(null);
   act(playEvt(0,null));
 }
 function onHint(){

@@ -293,6 +293,37 @@ const NeuralBot=(()=>{
     if(end)index=end.index;
     return plays[index];
   }
+  /* --- 出牌评价 (guandanai coach/evaluation.mjs): the network's value of each of your own legal moves, nothing added --- */
+  // the same card in either deck counts as the same move
+  const actionKey=ids=>cardsArray(ids).join(',');
+  // the strongest legal reading of the picked cards, as playing them would use
+  function reading(ids,L,cur){
+    const cards=ids.map(id=>deck[id]);
+    const shape=analyze(cards,L).filter(s=>beats(s,cur)).sort((a,b)=>strength(b)-strength(a))[0];
+    return shape?{...shape,cards,wu:cards.filter(c=>isWild(c,L)).length}:null;
+  }
+  // g as for decide, from seat 0's own view (seat 0's hand; the others only as counts). Without ids every legal move is
+  // scored; with ids only that one (a pass when empty)
+  async function rate(id,g,ids){
+    const m=models.get(id);if(!m)throw Error('unknown model '+id);
+    const cur=g.trick&&g.trick.play;
+    let plays;
+    if(ids){
+      if(!ids.length){if(!cur)throw Error('cannot pass when leading');plays=[null]}
+      else{const r=reading(ids,g.L,cur);if(!r)throw Error('illegal move');plays=[r]}
+    }else plays=candidates(g.hands[0],g.L,cur);
+    const state=observe(g,0,plays,0),o=await ort(),engine=await session(id);
+    return{actions:state.actions,values:await inferValues(o,engine,state,m.config)};
+  }
+  // 100 for the best of the moves compared, 0 for the worst: a relative score, not a chance of winning
+  function relativeRating(values,selected){
+    let low=selected,high=selected;
+    for(const v of values){low=Math.min(low,v);high=Math.max(high,v)}
+    const flat=high-low<1e-6;
+    return{percent:flat?100:Math.round(100*(selected-low)/(high-low)),flat};
+  }
+
   const preload=id=>session(id).then(()=>true);
-  return{decide,preload,has:id=>models.has(id),models:BOT_MODELS.models,_test:{encode,encodeHistory,candidates,replay,cardIndex}};
+  return{decide,preload,rate,actionKey,relativeRating,has:id=>models.has(id),models:BOT_MODELS.models,
+    _test:{encode,encodeHistory,candidates,replay,cardIndex}};
 })();
