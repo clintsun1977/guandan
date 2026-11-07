@@ -844,64 +844,16 @@ html.phone #specBtn,html.phone #specRow{display:none!important}
 .tm-card span{font-size:16px;line-height:1.5;color:var(--muted);text-align:center}
 .tm-card:not(:disabled):hover{border-color:var(--gold);background:rgba(221,176,80,.12);transform:translateY(-2px)}
 .tm-card:disabled{opacity:.45;cursor:default}
-.arr{position:fixed;inset:0;z-index:72;overflow:auto;display:flex;flex-direction:column;gap:12px;padding:14px max(20px,env(safe-area-inset-left,0px)) 18px;
-  background:radial-gradient(ellipse at 50% 30%,var(--felt) 0%,var(--felt-deep) 100%)}
-.arr[hidden]{display:none}
-.ar-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.ar-title{font-family:var(--font-display);font-size:26px;letter-spacing:.15em;color:var(--gold);margin-right:6px}
-.ar-seats{display:flex;gap:8px}
-.ar-seat{font:inherit;font-size:18px;font-weight:700;min-width:4.2em;padding:6px 14px;border-radius:999px;cursor:pointer;color:var(--muted);background:var(--shade);border:2px solid var(--line-strong)}
-.ar-seat.done{color:var(--ink);border-color:#5fb97b}
-.ar-seat.done::after{content:" ✓";color:#7fe0a0}
-.ar-seat.now{color:var(--on-gold);background:var(--gold);border-color:var(--gold);box-shadow:0 0 14px rgba(221,176,80,.5)}
-.ar-seat:disabled{opacity:.4;cursor:default}
-.ar-info{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:17px;color:var(--muted)}
-.ar-info b{color:var(--ink)}
-.ar-info select{font:inherit;font-size:15px;background:var(--felt-deep);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:3px 6px}
-.ar-pnl{display:flex;flex-direction:column;gap:8px;padding:10px 14px 12px;border-radius:14px;background:rgba(0,0,0,.2);border:1px solid var(--line)}
-.ar-pnl.mine{background:rgba(0,0,0,.28);border:2px solid var(--gold)}
-.ar-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-.ar-head h2{margin:0;font-size:19px;font-weight:700;color:var(--ink)}
-.ar-head .sub{font-size:14px;color:var(--muted)}
-.ar-pw{margin-left:auto;display:flex;align-items:baseline;gap:8px}
-.ar-pw .n{font-family:Georgia,"Times New Roman",serif;font-size:40px;font-weight:700;line-height:1;color:var(--ink)}
-.ar-pw .t{font-size:15px;color:var(--muted)}
-.ar-pw .d{font-size:20px;font-weight:700}
-.ar-pw .d.up{color:#7fe0a0}.ar-pw .d.down{color:#ff8f8f}.ar-pw .d.same{color:var(--muted)}
-.ar-rows{display:flex;flex-direction:column;gap:6px}
-.ar-row{display:flex;gap:calc(var(--cw)*.28);align-items:flex-start;flex-wrap:nowrap}
-.ag{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:4px 5px 4px;border-radius:10px;border:2px solid transparent;position:relative}
-.ag.diff{border-color:var(--gold);background:rgba(221,176,80,.1)}
-.ar-pnl:not(.mine) .ag.diff{border-style:dashed;border-color:var(--muted);background:rgba(255,255,255,.05)}
-.agc{display:flex}
-.agc .card{cursor:default;position:relative}
-.agc .card+.card{margin-left:calc(var(--cw)*-.58)}
-.mine .agc .card{cursor:pointer;transition:transform .1s}
-.agc .card.sel{transform:translateY(-14%);box-shadow:0 0 0 2.5px var(--latest),0 0 12px 2px var(--latest-glow);z-index:2}
-.agl{font-size:13px;color:var(--muted);line-height:1.1}
-.agl.bomb{color:var(--gold)}
-.agl.bad{color:var(--warn)}
-.agj{font:inherit;font-size:12px;font-weight:700;padding:1px 9px;border-radius:999px;cursor:pointer;color:var(--on-gold);background:var(--gold);border:0}
-.ar-diff{display:flex;flex-direction:column;gap:5px;padding:9px 14px;border-radius:12px;background:rgba(0,0,0,.18);font-size:15px;line-height:1.5}
-.ar-diff .l{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
-.ar-diff .k{flex:none;min-width:7.5em;color:var(--muted)}
-.ar-diff .g{padding:1px 9px;border-radius:999px;background:rgba(255,255,255,.1);white-space:nowrap}
-.ar-diff .g.mine{background:rgba(221,176,80,.22);color:#ffe08a}
-.ar-diff .ok{color:#7fe0a0}
-.ar-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.ar-bar .sp{flex:1}
-.ar-btn{font:inherit;font-size:18px;font-weight:700;padding:9px 22px;border-radius:999px;cursor:pointer;color:var(--on-gold);background:var(--gold);border:0;box-shadow:0 0 14px rgba(221,176,80,.4)}
-.ar-btn:disabled{opacity:.4;cursor:default;box-shadow:none;background:var(--shade);color:var(--muted)}
-.ar-btn.alt{color:var(--gold);background:var(--felt-deep);border:2px solid var(--gold);box-shadow:none}
-.ar-btn.alt:disabled{color:var(--muted);border-color:var(--line-strong)}
-.ar-btn.big{font-size:20px;padding:11px 28px}
-.ar-link{font:inherit;font-size:15px;color:var(--muted);background:none;border:0;cursor:pointer;text-decoration:underline;padding:4px 6px}
-.ar-tip{font-size:14px;color:var(--muted)}
-.ar-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:80;padding:10px 22px;border-radius:999px;background:rgba(0,0,0,.78);color:var(--ink);font-size:17px;border:1px solid var(--gold)}
-.ar-sum{border-collapse:collapse;width:100%;font-size:17px}
-.ar-sum th,.ar-sum td{padding:8px 12px;text-align:center;border-bottom:1px solid var(--line)}
-.ar-sum th{color:var(--muted);font-weight:400;font-size:15px}
-.ar-sum td.up{color:#7fe0a0}.ar-sum td.down{color:#ff8f8f}
+body.endg #btns,body.endg #fixBtn,body.endg #splitBtn,body.endg #sortBtn,body.endg #sfBtn,body.endg #undoBtn,body.endg #goBtn{display:none!important}
+#etrain{display:none}
+body.endg #etrain{display:block;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;width:min(440px,86vw);max-height:62vh;overflow:auto;padding:14px 18px;
+  background:rgba(8,22,17,.9);border:1px solid var(--gold);border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#etrain h3{margin:0 0 6px;font-size:18px;color:var(--gold)}
+#etrain .eh{font-size:16px;line-height:1.5}
+#etrain .er{margin:8px 0;padding-left:1.4em;font-size:15px;color:var(--muted);line-height:1.6}
+#etrain .eb{display:flex;gap:8px;flex-wrap:wrap}
+#etrain .btn{font-size:16px;padding:6px 18px}
+#endMs{font:inherit;font-size:14px;background:var(--felt-deep);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:3px 6px}
 body.test{--tside-w:340px}
 body.test #app{max-width:none;margin:0}
 body.test #fanBtn,body.test #rowsBtn{display:none}
@@ -1281,14 +1233,12 @@ body.test .tside:not(.open){display:none}
   <div class="tm-box">
     <h1 class="tm-title">训练</h1>
     <div class="tm-btns">
-      <button class="tm-card" id="tmArr"><b>配牌</b><span>把一手牌配成一组一组，和电脑的配法比牌力</span></button>
       <button class="tm-card" id="tmPlay"><b>牌局</b><span>打一整局，每一手都能写评语</span></button>
-      <button class="tm-card" id="tmEnd" disabled><b>残局</b><span>还在准备</span></button>
+      <button class="tm-card" id="tmEnd"><b>残局</b><span>四家都是电脑，每家 15 张以内，明牌，自己摸索怎么打</span></button>
     </div>
     <button class="link" id="tmBack">返回大厅</button>
   </div>
 </div>
-<div class="arr" id="arr" hidden></div>
 
 <!-- PeerJS: browser-to-browser connections for playing with friends (room codes) -->
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -1840,14 +1790,18 @@ function mateLead(p,pool,st){
   if(!ns[1])return null;
   const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
   const cards=makeDeck().filter(c=>!gone.has(c.id));
-  if(cards.length<need)return null;
+  if(cards.length<need&&!G.open)return null;
   const by=(a,b)=>a.value-b.value||b.n-a.n,kinds={};
   for(const u of pool)(kinds[u.type+u.n]||(kinds[u.type+u.n]=[])).push(u);
   const firsts=Object.values(kinds).map(g=>g.slice().sort(by)[0]),mc=firsts.map(()=>0),nc=firsts.map(()=>0);
-  const N=AIP.mateSamples;
+  const N=G.open?1:AIP.mateSamples;
   for(let t=0;t<N;t++){
-    for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(cards.length-i));[cards[i],cards[j]]=[cards[j],cards[i]]}
-    const nh=genPlays(cards.slice(0,ns[0]),G.L),mh=genPlays(cards.slice(ns[0],ns[0]+ns[1]),G.L).filter(x=>!isBomb(x));
+    let nh,mh;
+    if(G.open){nh=genPlays(G.hands[nx],G.L);mh=genPlays(G.hands[m],G.L).filter(x=>!isBomb(x))} // (the true hands, once)
+    else{
+      for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(cards.length-i));[cards[i],cards[j]]=[cards[j],cards[i]]}
+      nh=genPlays(cards.slice(0,ns[0]),G.L);mh=genPlays(cards.slice(ns[0],ns[0]+ns[1]),G.L).filter(x=>!isBomb(x));
+    }
     firsts.forEach((u,i)=>{if(mh.some(x=>beats(x,u)))mc[i]++;if(ns[0]&&nh.some(x=>beats(x,u)))nc[i]++});
   }
   const c=firsts.map((u,i)=>({u,m:mc[i]/N,x:nc[i]/N})).filter(o=>o.m>=AIP.leadMateMin&&o.x<=AIP.leadNextMax);
@@ -1933,6 +1887,8 @@ function eventFactor(x,k){
 }
 // weighted deals of the unseen cards to the other three (worked out once per move)
 function inferDeals(p){
+  // an open table (残局): the one deal there is, the true hands, in the order the others are counted
+  if(G.open)return[{ks:[1,2,3].map(k=>handCounts(G.hands[(p+k)%4],G.L)),w:1}];
   const log=G.log||[],key=p+':'+log.length;
   if(G.inf&&G.inf.key===key&&G.inf.hands===G.hands&&G.inf.aip===AIP)return G.inf.deals;
   const L=G.L,others=[1,2,3].map(k=>(p+k)%4);
@@ -1973,7 +1929,8 @@ function inferBeat(p,pl,who){
   return t?s/t:0;
 }
 // the late game: the player who played last, or you, hold 10 cards or fewer
-const inferNow=p=>AIP.rInfer&&(G.hands[p].length<=10||!!G.trick&&G.hands[G.trick.player].length<=10);
+// (in a 残局 the hands are open: always the true hands)
+const inferNow=p=>!!G.open||AIP.rInfer&&(G.hands[p].length<=10||!!G.trick&&G.hands[G.trick.player].length<=10);
 // how likely the partner holds a play (not a bomb) over this one, by the inferred hands
 function inferMateBeat(p,cur){
   const m=(p+2)%4;
@@ -2471,11 +2428,116 @@ function hintOrder(hand,L,cur,plays){
   return fin.concat(list).filter(pl=>{const k=pl.cards.map(c=>c.id).sort((a,b)=>a-b).join();return!seen.has(k)&&seen.add(k)});
 }
 
+/* ---------- 残局: the computers explore by themselves (Monte Carlo tree search) ---------- */
+// In a 残局 all four players are computers and every hand is open. They use none of the playing rules above: a computer to play looks
+// at every play it could make (or a pass) and tries them out, each many times to the end of the round, the others playing at random;
+// the plays that did best are tried more (UCT), and in the end it plays the one tried most. What it is after is the levels won (or lost)
+// by its side as at the end of a real round: the side whose player goes out first gains 3 if that side's second player is second out,
+// 2 if third, 1 if last. Nothing is learnt from round to round: each move is worked out afresh from the position, and the more time
+// (the more tries) it has the better the move.
+// A position: h the four hands (arrays of cards, never changed, only replaced), tr the play to beat {p, play} or null, ps how many have
+// passed on it, t whose turn, out who is out so far (in order), L the level.
+const mcOver=S=>(!S.h[0].length&&!S.h[2].length)||(!S.h[1].length&&!S.h[3].length);
+// the levels the side of seats 0 and 2 wins (+) or loses (-) in a finished round (the players not out fill the last places in turn order)
+function mcReward(S){
+  const out=S.out.slice();
+  for(let k=1;k<=4;k++){const j=(out[out.length-1]+k)%4;if(!out.includes(j))out.push(j)}
+  const first=out[0],pos=out.indexOf((first+2)%4),up=pos===1?3:pos===2?2:1;
+  return first%2===0?up:-up;
+}
+// every play of the cards each hand can make is worked out once, whatever the position (the hand array is the key)
+const mcPlaysCache=new WeakMap();
+function mcPlays(hand,L){let r=mcPlaysCache.get(hand);if(!r){r=genPlays(hand,L);mcPlaysCache.set(hand,r)}return r}
+// the plays open to the player to move: leading, any; following, those that beat the play on the table, and a pass (null)
+function mcMoves(S){
+  const all=mcPlays(S.h[S.t],S.L);
+  if(!S.tr)return all;
+  const cur=S.tr.play,mv=[];
+  for(const pl of all)if(beats(pl,cur))mv.push(pl);
+  mv.push(null);
+  return mv;
+}
+// the position after the player to move plays `pl` (null: passes), as the round goes on at the table
+function mcStep(S,pl){
+  const p=S.t,T={h:S.h.slice(),tr:S.tr,ps:S.ps,t:p,out:S.out,L:S.L};
+  if(pl){
+    const ids=new Set(pl.cards.map(c=>c.id));
+    T.h[p]=S.h[p].filter(c=>!ids.has(c.id));
+    T.tr={p,play:pl};T.ps=0;
+    if(!T.h[p].length){T.out=S.out.concat(p);if(mcOver(T))return T}
+  }else T.ps=S.ps+1;
+  const w=T.tr.p;
+  let others=0;
+  for(let i=0;i<4;i++)if(i!==w&&T.h[i].length)others++;
+  const next=i=>{for(let k=1;k<=4;k++){const j=(i+k)%4;if(T.h[j].length)return j}return i};
+  if(T.ps>=others){
+    // the trick is won: its winner leads, or, if out, the partner, or else the next player still in
+    T.t=T.h[w].length?w:T.h[(w+2)%4].length?(w+2)%4:next(w);
+    T.tr=null;T.ps=0;
+  }else T.t=next(p);
+  return T;
+}
+function mcRollout(S){
+  let T=S;
+  for(let n=0;n<600&&!mcOver(T);n++){const mv=mcMoves(T);T=mcStep(T,mv[Math.random()*mv.length|0])}
+  return mcOver(T)?mcReward(T)/3:0;
+}
+const mcNode=S=>({S,mv:null,un:null,ch:[],N:0,W:0,done:mcOver(S)});
+// one try: down the tree by the best-looking plays to a play not yet tried, then a random game to the end, and the result back up
+// (W adds the results as they stand for the side of seats 0 and 2, between -1 and 1; each player looks at it from their own side)
+function mcIter(root,C){
+  const path=[root];let node=root,r;
+  for(;;){
+    if(node.done){r=mcReward(node.S)/3;break}
+    if(!node.mv){
+      node.mv=mcMoves(node.S);node.un=node.mv.map((_,i)=>i);
+      for(let i=node.un.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[node.un[i],node.un[j]]=[node.un[j],node.un[i]]}
+    }
+    if(node.un.length){
+      const i=node.un.pop(),c=mcNode(mcStep(node.S,node.mv[i]));
+      c.mi=i;node.ch.push(c);path.push(c);
+      r=c.done?mcReward(c.S)/3:mcRollout(c.S);
+      break;
+    }
+    const sg=node.S.t%2?-1:1,ln=Math.log(node.N);
+    let best=null,bv=-Infinity;
+    for(const c of node.ch){const v=sg*c.W/c.N+C*Math.sqrt(ln/c.N);if(v>bv){bv=v;best=c}}
+    node=best;path.push(node);
+  }
+  for(const n of path){n.N++;n.W+=r}
+}
+// the play tried most (null: a pass)
+function mcBest(root){
+  if(!root.mv)root.mv=mcMoves(root.S);
+  let b=null;
+  for(const c of root.ch)if(!b||c.N>b.N)b=c;
+  return b?root.mv[b.mi]:root.mv[0];
+}
+// a position from the game's own state: whose turn it is is given
+const mcFromGame=t=>({h:G.hands.map(h=>h.slice()),tr:G.trick?{p:G.trick.player,play:G.trick.play}:null,ps:G.passes||0,t,out:(G.out||[]).slice(),L:G.L});
+const mcNow=()=>typeof performance!=='undefined'?performance.now():Date.now();
+// the best play for the player to move: by time (ms, at most `max` tries: a position that is as good as decided needs no more) or by number
+// of tries (iters); only one play open: no search. UCT constant C
+function mcSearch(S,{ms=1000,iters=0,C=1,max=20000}={}){
+  const mv=mcMoves(S);
+  if(mv.length===1)return{pl:mv[0],n:0,q:0};
+  const root=mcNode(S);
+  if(iters)for(let i=0;i<iters;i++)mcIter(root,C);
+  else{const end=mcNow()+ms;let n=0;while(n++<8||n<max&&mcNow()<end)mcIter(root,C)}
+  const pl=mcBest(root),ch=root.ch.find(c=>root.mv[c.mi]===pl);
+  return{pl,n:root.N,q:ch?(S.t%2?-1:1)*ch.W/ch.N*3:0};
+}
+
 /* ---------- game state ---------- */
 let G=null;
 let sel=new Set();
 // the test version (entered from the lobby with a password): every hand face up, every play numbered; TV is its look-back view
 let TEST=false;
+// 残局 (a kind of practice in the test version): every round starts with each hand at most 15 cards, and the computers see every hand
+let ENDG=false;
+// (in a 残局 the four computers train by search: ENDMS is the time each move may take in the first round, doubled in each round after;
+// ENDAUTO goes on to the next position by itself; ENDTOK stops the training that is running when it changes)
+let ENDAUTO=true,ENDMS=100,ENDTOK=0;
 // 观战 (a spectator's page): the test version's picture, fed by the host, nothing to press
 let SPEC=false;
 const TV={open:false};
@@ -2556,7 +2618,71 @@ function startRound(e){
   sel=new Set();
   hideOverlay();
   removeDeck();
+  if(ENDG){endgameDeal();return}
   startShuffle();
+}
+// 残局: the cards are dealt as in any round (no tribute, no sorting) and the computers play all four hands, yours too, from the start, with
+// no screen to draw, until every hand holds at most 15 cards: there play stops, wherever in a trick it is (the next player to play
+// is whoever comes after the last), and the practice begins from that table. The plays so far stay in the record; the hands are open:
+// G.open is set, the computers see every hand, yours too, and work with the true hands instead of guessing. (A deal in which a player
+// goes out before the rest are down to 15 is dropped, and dealt again)
+function endgameSim(leader){
+  G.trick=null;G.passes=0;G.out=[];G.log=[];G.seen=[];G.pw=[];G.open=false;
+  let turn=leader;
+  for(let n=0;n<1500;n++){
+    const p=turn;
+    let pl=aiDecide(p);
+    if(!pl&&!G.trick)pl=genPlays(G.hands[p],G.L)[0]; // (a lead is always something)
+    if(pl){
+      G.seen.push(...pl.cards);
+      G.log.push({p,cards:pl.cards,lead:!G.trick,type:pl.type,value:pl.value,n:pl.n});
+      const ids=new Set(pl.cards.map(c=>c.id));
+      G.hands[p]=G.hands[p].filter(c=>!ids.has(c.id));
+      if(!G.hands[p].length)return null;
+      G.trick={player:p,play:pl};G.passes=0;
+      if(G.hands.every(h=>h.length<=15))return(p+1)%4;
+    }else{G.passes++;G.log.push({p,cards:null})}
+    if(G.passes>=3){turn=G.trick.player;G.trick=null;G.passes=0}else turn=(p+1)%4;
+  }
+  return null;
+}
+// the trick on the table (who played what in it, who passed, the play to beat) worked out from the log, as the screen needs it
+function endgameRestoreTrick(){
+  const lg=G.log;let s0=-1;
+  for(let i=lg.length-1;i>=0;i--)if(lg[i].cards&&lg[i].lead){s0=i;break}
+  G.trick=null;G.passes=0;G.trickPlays=[];G.last=[null,null,null,null];
+  if(s0<0)return;
+  let top=null;
+  for(let i=s0;i<lg.length;i++){
+    const e=lg[i];
+    if(e.cards){top=e;G.passes=0;G.last[e.p]={play:e};G.trickPlays.push({p:e.p,play:{type:e.type,value:e.value,n:e.n,cards:e.cards}})}
+    else{G.passes++;G.last[e.p]='pass'}
+  }
+  G.trick={player:top.p,play:{type:top.type,value:top.value,n:top.n,cards:top.cards,wu:top.cards.filter(c=>isWild(c,G.L)).length}};
+}
+function endgameDeal(){
+  // (the level is 2 to K: passing A would end a match, and every 残局 stands on its own)
+  const L=2+Math.floor(Math.random()*12);
+  G.levels=[L,L];G.L=L;
+  let deck=G.deck.slice();
+  for(let tries=0;tries<40;tries++){
+    if(tries)deck=shuffle(makeDeck());
+    for(let p=0;p<4;p++)G.hands[p]=sortHand(deck.slice(p*27,p*27+27),L);
+    G.preHands=G.hands.map(h=>h.map(c=>c.id));
+    const turn=endgameSim(G.firstLeader);
+    if(turn==null)continue;
+    G.deck=[];G.open=true;G.endgame=true;
+    G.out=[];G.heapN=0;
+    endgameRestoreTrick();
+    G.notice=`残局：电脑已经自动打了 ${G.log.length} 手，现在每家都不超过 15 张，所有人的牌都看得见。`;
+    startPlay(turn);
+    return;
+  }
+  // (never in practice) no deal gave an endgame: a table of a few cards dealt at random
+  deck=shuffle(makeDeck());
+  for(let p=0;p<4;p++)G.hands[p]=sortHand(deck.splice(0,5+Math.floor(Math.random()*11)),L);
+  G.seen=deck;G.deck=[];G.log=[];G.trick=null;G.open=true;G.endgame=true;G.preHands=null;
+  startPlay(G.firstLeader);
 }
 // the deck travels to whoever is handling it: it is shuffled right in front of the shuffler, slid across to
 // the cutter and cut in front of them, then comes back to the middle to be dealt; their plate glows meanwhile
@@ -2819,6 +2945,9 @@ function later(fn,ms){const t=G.tok;setTimeout(()=>{if(G.tok===t)fn()},ms)}
 
 function startTurn(){
   hints=[];hintIdx=0;
+  // 残局: the table shows the position as it stands; nobody plays it here. The computers work on it by themselves (see endgameTrain), and
+  // what they come to is looked at in the replay
+  if(ENDG&&G.endgame&&G.phase==='play'){G.stepWait=null;G.clock=null;render();endgameTrain();return}
   // the test version stops before every turn, yours as much as a computer's, until the space bar (or 继续) is pressed,
   // so each step can be looked at and commented on before the next one is made
   // (your own turn needs no stop: after 4号 the game goes straight to you; a copy of the game is kept at its start all the same)
@@ -3078,7 +3207,8 @@ function doPlay(p,play){
     pileThrow(p,play,origins,true);
     G.trickPlays.push({p,play:{type:play.type,value:play.value,n:play.n,cards:play.cards}});
     G.seen.push(...play.cards); // every card played this round, for the computer's card memory
-    G.log.push({p,cards:play.cards,lead:!G.trick,type:play.type,value:play.value,n:play.n}); // and who played what, in order, leading or following
+    G.log.push({p,cards:play.cards,lead:!G.trick,type:play.type,value:play.value,n:play.n,...(G.mcNote&&G.mcNote.p===p?{mq:G.mcNote.q,mn:G.mcNote.n}:null)}); // and who played what, in order, leading or following
+    G.mcNote=null; // (in a 残局: how many levels the search expected from the move, and how many tries it made)
     const ids=new Set(play.cards.map(c=>c.id));
     G.hands[p]=G.hands[p].filter(c=>!ids.has(c.id));
     G.trick={player:p,play};
@@ -3180,6 +3310,7 @@ function selectedCards(){return G.hands[0].filter(c=>sel.has(c.id))}
 // waiting for the host to confirm your last move; never for more than four seconds
 const waitingHost=()=>NET.pending&&Date.now()-(NET.pendingAt||0)<4000;
 function onPlay(){
+  if(ENDG)return;
   // you lead next but the finished trick is still on show: the play goes out the moment your turn starts
   if(G.phase==='play'&&G.turn===-1&&G.nextLeader===0){
     if(!selectedCards().length){setMsg('先选几张牌',true);return}
@@ -3234,11 +3365,13 @@ function syncCfmShow(){
 }
 addEventListener('resize',()=>{if(cfm)syncCfmShow()});
 function onPass(){
+  if(ENDG)return;
   if(G.phase!=='play'||G.turn!==0||!G.trick||waitingHost())return;
   sel=new Set();
   act(playEvt(0,null));
 }
 function onHint(){
+  if(ENDG)return;
   if(G.phase!=='play'||G.turn!==0)return;
   if(!hints.length){setMsg('没有能管上的牌，可以点“过”');return}
   const h=hints[hintIdx%hints.length];hintIdx++;
@@ -5980,8 +6113,8 @@ $('#testGo').onclick=()=>{
   // the right password opens the choice of practice: 配牌, 牌局 (the practice that was here before) or 残局
   $('#lobby').hidden=true;$('#trainMenu').hidden=false;
 };
-$('#tmPlay').onclick=()=>{$('#trainMenu').hidden=true;enterTest()};
-$('#tmArr').onclick=()=>{$('#trainMenu').hidden=true;arrOpen()};
+$('#tmPlay').onclick=()=>{ENDG=false;$('#trainMenu').hidden=true;enterTest()};
+$('#tmEnd').onclick=()=>{ENDG=true;document.body.classList.add('endg');$('#trainMenu').hidden=true;enterTest()};
 $('#tmBack').onclick=()=>{$('#trainMenu').hidden=true;$('#lobby').hidden=false};
 function enterTest(spec){
   TEST=true;SPEC=!!spec;document.body.classList.add('test');document.body.classList.toggle('spec',!!spec);syncPhone();
@@ -6053,6 +6186,24 @@ function enterTest(spec){
   $('#tsBtn').onclick=()=>{s.classList.toggle('open');$('#tsBtn').classList.toggle('on',s.classList.contains('open'));$('#tsList').dataset.k='';testList()};
   document.body.classList.toggle('fsok',!!(document.fullscreenEnabled||document.webkitFullscreenEnabled));
   $('#fsBtn').onclick=testFull;
+  if(ENDG){
+    // 残局: the controls: how long a move may take in the first round, going on to the next position by itself, another position now, a batch against the old rules
+    $('.acts').insertAdjacentHTML('afterbegin','<select id="endMs" title="摸索第一轮每手想多久，以后每一轮加倍"><option value="50">起步每手 0.05 秒</option><option value="100" selected>起步每手 0.1 秒</option><option value="300">起步每手 0.3 秒</option><option value="1000">起步每手 1 秒</option></select><button class="link tog" id="autoBtn" aria-pressed="true" title="一个局面摸索完了，自己接着摸索下一个局面">自动下一局</button><button class="link" id="nextEndBtn" title="不等这个局面了，换一个新的">换一局</button><button class="link" id="batchBtn" title="后台打一批残局，看这种摸索对老规则的胜负">批量对比</button>');
+    $('#endMs').onchange=e=>{ENDMS=+e.target.value};
+    $('#autoBtn').onclick=()=>{
+      ENDAUTO=!ENDAUTO;$('#autoBtn').setAttribute('aria-pressed',ENDAUTO);
+      if(ENDAUTO&&G.phase==='roundEnd'&&!ENDRUN)endgameNext();
+    };
+    $('#nextEndBtn').onclick=endgameNext;
+    $('#batchBtn').onclick=endgameBatchPanel;
+    const tb=document.createElement('div');tb.id='etrain';document.body.appendChild(tb);
+    tb.addEventListener('click',e=>{
+      const b=e.target.closest('button');if(!b)return;
+      if(b.id==='etView'){testView(TREC.rounds.indexOf(ENDREC),0,true)}
+      else if(b.id==='etStop'){ENDTOK++;ENDRUN=false;endgameShow('停下来了。可以“换一局”，或者回放已经打完的局。',true)}
+      else if(b.id==='etNext')endgameNext();
+    });
+  }
   testFull(true);fsMark();
   testSize();
   // the boxes of plays follow the table when it changes size (the hand below it getting shorter, say)
@@ -6109,7 +6260,7 @@ const playName=e=>e.type==='bomb'?e.n+'张炸弹':TYPE_NAME[e.type];
 const esc=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
 // how a trick ended: its winner leads the next, or went out and the lead passed on
 const trickEnd=(w,lead)=>w===lead?`${NAMES[w]}收回出牌权`:`${NAMES[w]}出完，${NAMES[lead]}接风`;
-const roundName=r=>`第 ${r.no} 局${r.replayOf?`（重打第 ${r.replayOf} 局）`:''}`;
+const roundName=r=>`第 ${r.no} 局${r.endgame?'（残局）':''}${r.replayOf?`（重打第 ${r.replayOf} 局）`:''}`;
 
 /* your own hand: arranged the computer's way once dealt (and again while the tribute changes it, until you change a group
    yourself); every card stays in a group, and the 牌力 is worked out from your groups */
@@ -6358,7 +6509,9 @@ function testRoundStart(){
     hands:G.hands.map(h=>h.slice()),power,myGroups:mine,myPower:mine?scorePower(armScore(myUnits())):power[0],userGroups:ug,userPower:up,rawGroups:raw,
     trib:rp?rp.trib:(G.trib||[]).map(t=>`${NAMES[t.g]}进贡 ${cardText(t.tc)} 给${NAMES[t.r]}`+(t.rc?`，${NAMES[t.r]}还 ${cardText(t.rc)}`:'')),
     kang:rp?rp.kang:G.kang?kangHtml(true).replace(/<[^>]+>/g,''):'',
-    log:G.log,result:'',notes:{},nk:'all',nv:0,replayOf:rp?rp.of:null});
+    log:G.log,result:'',notes:{},nk:'all',nv:0,replayOf:rp?rp.of:null,endgame:!!G.endgame,preHands:G.endgame?G.preHands||null:null,
+    // a 残局 starts in the middle of the round: the plays so far, who is next, the 牌力 tiers worked out at the deal
+    endStart:G.endgame?{turn:G.turn,pw:(G.pw||[]).map(x=>x==null?null:x),pre:G.log.map(e=>({p:e.p,c:e.cards?e.cards.map(c=>c.id):null,lead:e.lead,type:e.type,value:e.value,n:e.n}))}:null});
   recName(curRec());
   testStore();
 }
@@ -6373,8 +6526,8 @@ function testRoundEnd(){
 // kept in this browser (the last 200 rounds), cards by their number in the deck
 const TKEY='guandan-test-records',DECK=makeDeck();
 const recOut=r=>({uid:r.uid,no:r.no,at:r.at,L:r.L,lvlTeam:r.lvlTeam,levels:r.levels,leader:r.leader,hands:r.hands.map(h=>h.map(c=>c.id)),
-  power:r.power,myGroups:r.myGroups,myPower:r.myPower,userGroups:r.userGroups,userPower:r.userPower,rawGroups:r.rawGroups,done:!!r.done,name:r.name,trib:r.trib,kang:r.kang,result:r.result,notes:r.notes,nk:'all',replayOf:r.replayOf,
-  log:r.log.map(e=>({p:e.p,c:e.cards?e.cards.map(c=>c.id):null,lead:e.lead,type:e.type,value:e.value,n:e.n}))});
+  power:r.power,myGroups:r.myGroups,myPower:r.myPower,userGroups:r.userGroups,userPower:r.userPower,rawGroups:r.rawGroups,done:!!r.done,name:r.name,trib:r.trib,kang:r.kang,result:r.result,notes:r.notes,nk:'all',replayOf:r.replayOf,endgame:!!r.endgame,preHands:r.preHands,endStart:r.endStart,train:r.train,
+  log:r.log.map(e=>({p:e.p,c:e.cards?e.cards.map(c=>c.id):null,lead:e.lead,type:e.type,value:e.value,n:e.n,mq:e.mq,mn:e.mn}))});
 // every turn has its number, a 过 as much as a play; records kept before then numbered the plays alone
 function notesIn(o){
   if(o.nk==='all'||!o.notes)return o.notes||{};
@@ -6384,7 +6537,7 @@ function notesIn(o){
   return m;
 }
 const recIn=o=>({...o,nv:0,notes:notesIn(o),nk:'all',userGroups:o.userGroups||{},userPower:o.userPower||{},hands:o.hands.map(h=>h.map(id=>DECK[id])),
-  log:o.log.map(e=>({p:e.p,cards:e.c?e.c.map(id=>DECK[id]):null,lead:e.lead,type:e.type,value:e.value,n:e.n}))});
+  log:o.log.map(e=>({p:e.p,cards:e.c?e.c.map(id=>DECK[id]):null,lead:e.lead,type:e.type,value:e.value,n:e.n,mq:e.mq,mn:e.mn}))});
 let storeT=0;
 function testStore(){
   if(SPEC)return;
@@ -6733,7 +6886,7 @@ function testChanges(rec){
 // the k-th turn in words: who played what, or who passed on what
 function turnHTML(rec,k){
   const e=rec.log[k-1];
-  if(e.cards)return`${NAMES[e.p]}${e.lead?'领出':'跟'} ${playName(e)} ${displayOrder(e,rec.L).map(cardTag).join('')}`;
+  if(e.cards)return`${NAMES[e.p]}${e.lead?'领出':'跟'} ${playName(e)} ${displayOrder(e,rec.L).map(cardTag).join('')}${e.mq!=null?`（搜索估计${e.p%2?'我方':'本方'}${e.mq>=0?'赚':'亏'} ${Math.abs(e.mq).toFixed(1)} 级，试了 ${e.mn} 次）`:''}`;
   const t=passedOn(rec,k);
   return`${NAMES[e.p]} 过${t?`（桌上是${NAMES[t.p]}的${playName(t)} ${displayOrder(t,rec.L).map(cardTag).join('')}）`:''}`;
 }
@@ -6782,6 +6935,80 @@ function testSnap(){
 // a computer's move is remembered by how the round had gone to that point: taking a step back and going on plays the same
 // move again (a different move of yours before it makes the position a new one, and it is thought out afresh)
 const TDEC=new Map();
+// 残局: the computers train on the position by themselves. They play it out from where it stands, all four hands by search (mcSearch's way: a play
+// tried many times to the end of the round, the best-looking tried more), each move for ENDMS milliseconds; then again, each move
+// given twice the time, and again... Every play-through is a whole round. They stop when two play-throughs in a row (from the third) come to
+// the same result (the levels won or lost), or after ENDMAX of them; the last, the one with the longest thinking, is the line they
+// settle on, and is what 回放 shows. The work is done a slice at a time (nothing is drawn meanwhile), so the page stays alive.
+const ENDMAX=6;
+let ENDRUN=false,ENDREC=null;
+// the training's box over the table: where it is, the play-throughs so far, and the buttons
+function endgameShow(head,done,rounds=[]){
+  const box=$('#etrain');if(!box)return;
+  const t=ms=>ms<1000?(ms/1000).toFixed(2).replace(/0$/,''):(ms/1000).toFixed(ms%1000?1:0);
+  const res=r=>r>0?`1号3号一方赢 ${r} 级`:r<0?`2号4号一方赢 ${-r} 级`:'平';
+  box.innerHTML=`<h3>残局 · 四家电脑自己摸索</h3><div class="eh">${head}</div>
+    <ol class="er">${rounds.map(r=>`<li>第 ${r.k} 轮（每手想 ${t(r.ms)} 秒，${r.moves} 手）：${res(r.reward)}</li>`).join('')}</ol>
+    <div class="eb">${ENDREC&&!ENDREC.training?'<button class="btn primary" id="etView">回放最后这一轮</button>':''}${ENDRUN?'<button class="btn" id="etStop">停</button>':''}<button class="btn" id="etNext">换一局</button></div>`;
+}
+async function endgameLine(S0,ms,tok,prog){
+  let S=S0;const line=[];
+  for(let moves=0;!mcOver(S)&&moves<800;moves++){
+    if(tok!==ENDTOK)return null;
+    const p=S.t,mv=mcMoves(S);
+    let pl,q=0,n=0;
+    if(mv.length===1)pl=mv[0];
+    else{
+      const root=mcNode(S),end=mcNow()+ms;let k=0;
+      do{
+        const t1=mcNow()+30;
+        while(mcNow()<t1&&(k<8||(mcNow()<end&&k<20000))){mcIter(root,1);k++}
+        await new Promise(r=>setTimeout(r,0));
+        if(tok!==ENDTOK)return null;
+      }while(k<8||(mcNow()<end&&k<20000));
+      pl=mcBest(root);
+      const ch=root.ch.find(c=>root.mv[c.mi]===pl);
+      q=ch?(p%2?-1:1)*ch.W/ch.N*3:0;n=root.N;
+    }
+    line.push(pl?{p,cards:pl.cards,lead:!S.tr,type:pl.type,value:pl.value,n:pl.n,mq:q,mn:n}:{p,cards:null});
+    S=mcStep(S,pl);
+    if(prog)prog(line.length);
+  }
+  return mcOver(S)?{line,reward:mcReward(S),S}:null;
+}
+async function endgameTrain(){
+  const tok=++ENDTOK,rec=curRec(),S0=mcFromGame(G.turn),rounds=[];
+  ENDREC=rec;ENDRUN=true;rec.training=true;rec.log=[];
+  let ms=ENDMS,stable=false,last=null;
+  for(let k=1;k<=ENDMAX;k++){
+    endgameShow(`第 ${k} 轮：每手想 ${ms<1000?(ms/1000).toFixed(2):ms/1000} 秒，正在打…`,false,rounds);
+    last=await endgameLine(S0,ms,tok,m=>{if(m%4===0)endgameShow(`第 ${k} 轮：每手想 ${ms<1000?(ms/1000).toFixed(2):ms/1000} 秒，打到第 ${m} 手…`,false,rounds)});
+    if(tok!==ENDTOK)return;
+    if(!last){ENDRUN=false;endgameShow('这一轮没有打完（出牌太多手），停下了。可以换一局。',true,rounds);return}
+    rounds.push({k,ms,reward:last.reward,moves:last.line.length});
+    if(k>=3&&rounds[k-1].reward===rounds[k-2].reward){stable=true;break}
+    ms*=2;
+  }
+  // the line they settle on
+  const S=last.S,order=S.out.slice();
+  for(let k=1;k<=4;k++){const j=(order[order.length-1]+k)%4;if(!order.includes(j))order.push(j)}
+  const r=last.reward;
+  rec.log=last.line;rec.live=false;rec.training=false;
+  rec.result=order.map((p,i)=>PLACE[i]+' '+NAMES[p]).join('，')+'；'+(r>0?'1号3号一方':'2号4号一方')+`赢 ${Math.abs(r)} 级`;
+  rec.train={stable,rounds:rounds.map(x=>({ms:x.ms,reward:x.reward,moves:x.moves}))};
+  rec.nv++;testStore();testList();
+  ENDRUN=false;G.phase='roundEnd';
+  endgameShow(stable?`摸索稳定了：连着两轮结果一样。最后一轮的打法就是它认为这一局最好的打法。`:`打满 ${ENDMAX} 轮，结果还在变，用最后一轮的打法。`,true,rounds);
+  if(ENDAUTO)setTimeout(function wait(){if(tok!==ENDTOK||!ENDAUTO)return;if(TV.open||TV.edit){setTimeout(wait,1000);return}endgameNext()},3000);
+}
+// another position now (what is being trained on is given up, and a round not finished is not kept)
+function endgameNext(){
+  ENDTOK++;ENDRUN=false;
+  const rec=curRec();
+  if(rec&&rec.training){TREC.rounds.pop();testStore();testList()}
+  G.phase='roundEnd';hideOverlay();
+  act(roundEvt(false));
+}
 function testDecide(who){
   const sig=G.round+'#'+G.log.map(e=>e.p+':'+(e.cards?e.cards.map(c=>c.id).join('.'):'p')).join('|');
   const hit=TDEC.get(sig);
@@ -6911,6 +7138,15 @@ function tvDraw(){
   let s=-1;
   for(let i=end-1;i>=0;i--)if(done[i].cards&&done[i].lead){s=i;break}
   const trick=s<0?[]:done.slice(s);
+  // a 残局 begins in the middle of a trick: what was already on the table
+  let pre='';
+  if(s<0&&rec.endgame&&rec.endStart){
+    const pl=rec.endStart.pre;let i0=-1;
+    for(let i=pl.length-1;i>=0;i--)if(pl[i].c&&pl[i].lead){i0=i;break}
+    if(i0>=0)pre=`<div class="tvnote">桌上原来的牌（这一圈）：</div>`+pl.slice(i0).map(e=>e.c?
+      `<div class="tvp"><span class="tw">${NAMES[e.p]} ${e.lead?'领出':'跟'}</span><span class="grp">${displayOrder({type:e.type,value:e.value,n:e.n,cards:e.c.map(id=>DECK[id])},L).map(c=>cardHTML(c,L)).join('')}</span><small>${playName(e)}</small></div>`:
+      `<div class="tvp pass"><span class="tw">${NAMES[e.p]}</span>过</div>`).join('');
+  }
   let note='';
   if(s>0)for(let i=s-1;i>=0;i--)if(done[i].cards){note='上一圈：'+trickEnd(done[i].p,done[s].p);break}
   const pw=p=>p===0&&rec.myGroups&&rec.myPower!==rec.power[0]?`${powerText(rec.myPower)}，电脑配牌 ${rec.power[0]}`:
@@ -6918,10 +7154,10 @@ function tvDraw(){
   const seat=p=>`<div class="tvs" data-p="${p}"><div class="tvn">${NAMES[p]}<small>${
     hands[p].length?`剩 ${hands[p].length} 张`:PLACE[outs.indexOf(p)]||''} · ${pw(p)}</small></div>
     <div class="peek"><div class="prows">${hands[p].length?rowsHTML(recUnits(rec,p,hands[p]),L):''}</div></div></div>`;
-  const mid=`<div class="tvmid">${note?`<div class="tvnote">${note}</div>`:''}${trick.map(e=>e.cards?
+  const mid=`<div class="tvmid">${note?`<div class="tvnote">${note}</div>`:''}${pre}${trick.map(e=>e.cards?
     `<div class="tvp${e===cur?' cur':''}"><span class="no">${done.indexOf(e)+1}</span><span class="tw">${NAMES[e.p]} ${e.lead?'领出':'跟'}</span><span class="grp">${displayOrder(e,L).map(c=>cardHTML(c,L)).join('')}</span><small>${playName(e)}</small></div>`:
     `<div class="tvp pass${e===cur?' cur':''}"><span class="no">${done.indexOf(e)+1}</span><span class="tw">${NAMES[e.p]}</span>过</div>`).join('')}${
-    k?'':`<div class="tvnote">${NAMES[rec.leader]}先出</div>`}${k===n&&rec.result?`<div class="tvnote">${rec.result}</div>`:''}${tvBreak(rec,plays,cur)}</div>`;
+    k?'':`<div class="tvnote">${NAMES[rec.leader]}${rec.endgame?'接着出':'先出'}</div>`}${k===n&&rec.result?`<div class="tvnote">${rec.result}</div>`:''}${tvBreak(rec,plays,cur)}</div>`;
   const cm=`<div class="tvcm"><label for="tvNote">${k?`对第 ${k} 手的评语`:'对这一局开局（配牌）的评语'}</label>
       <textarea id="tvNote" rows="2" placeholder="${!k?'比如：这手牌应该配成…':cur.cards?'比如：这里应该出…，因为…':'比如：这里不该过，应该出…，因为…'}">${esc(rec.notes[k]||'')}</textarea></div>`;
   const v=$('#tview');
@@ -6954,6 +7190,16 @@ function testReplay(rec){
   G.tgRound=null;G.ua=null;NET.pending=false;sel=new Set();
   removeDeck();pileRebuild();
   G.replay={of:rec.replayOf||rec.no,trib:rec.trib,kang:rec.kang};
+  // a 残局 is played again as it began: the same plays so far, the same next player, the cards not in a hand out of the game, the hands open
+  if(rec.endgame&&rec.endStart){
+    const es=rec.endStart;
+    G.log=es.pre.map(e=>({p:e.p,cards:e.c?e.c.map(id=>byId.get(id)):null,lead:e.lead,type:e.type,value:e.value,n:e.n}));
+    G.seen=G.log.flatMap(e=>e.cards||[]);
+    G.pw=(es.pw||[]).map(x=>x==null?undefined:x);G.preHands=rec.preHands;
+    G.open=true;G.endgame=true;
+    endgameRestoreTrick();
+    startPlay(es.turn);return;
+  }
   startPrep(rec.leader);
 }
 
@@ -6969,7 +7215,12 @@ function testText(rounds=TREC.rounds){
   for(const r of rounds){
     const ct=c=>cardText(c)+(isWild(c,r.L)?'*':'');
     const shown=(cards,p,grouped)=>(grouped?recUnits(r,p,cards):handUnits(cards,r.L,false)).map(u=>grouped?'['+u.cards.map(ct).join(' ')+']':u.cards.map(ct).join(' ')).join(grouped?' ':'  ');
-    out.push('='.repeat(48),`${recName(r)}　${roundName(r)}　打 ${rankName(r.L)}（${r.lvlTeam===0?'我方':'对方'}的级）　${NAMES[r.leader]}先出　${r.at||''}`);
+    out.push('='.repeat(48),`${recName(r)}　${roundName(r)}　打 ${rankName(r.L)}（${r.lvlTeam===0?'我方':'对方'}的级）　${NAMES[r.leader]}${r.endgame?'接着出':'先出'}　${r.at||''}`);
+    if(r.endgame){
+      out.push(`  残局：先正常发牌（每家 27 张），电脑四家用老规则自动打了 ${r.endStart?r.endStart.pre.length:0} 手，打到每家都不超过 15 张就停下；这个局面是从那里开始的（明牌）。`);
+      out.push('  之后四家都是电脑，不用任何出牌规则：电脑自己反复打这个局面，每一手用搜索（把每种出法各模拟很多次打到底），一轮比一轮想得久；后面带“搜索估计”的是它对这一手的估计。下面的出牌是最后一轮（想得最久）的打法。');
+      if(r.train)out.push('  摸索过程：'+r.train.rounds.map((x,i)=>`第 ${i+1} 轮每手 ${x.ms/1000} 秒：${x.reward>0?'1号3号一方赢':x.reward<0?'2号4号一方赢':'平'}${x.reward?' '+Math.abs(x.reward)+' 级':''}`).join('；')+(r.train.stable?'；结果稳定':'；到上限停下'));
+    }
     for(const t of r.trib)out.push('  '+t);
     if(r.kang)out.push('  '+r.kang);
     out.push('','开局手牌（进贡、还贡之后）：');
@@ -7129,265 +7380,93 @@ function testClear(){
   $('#trecClose').onclick=testBackToGame;
 }
 
-/* ---------- 训练 · 配牌 ---------- */
-// Four hands are dealt at random. One hand is on the screen at a time: the computer's arrangement (with its 牌力) above, and below it
-// the same hand as the player arranges it, which starts out as the computer's. 成组 / 拆开 / 并入 change it (the cards left behind in
-// the groups they were taken from are arranged again the computer's way), and its 牌力 is worked out afresh at every change, with the
-// difference to the computer's shown. 完成 keeps the pair of arrangements as a record (kept in this browser, saved as a text file, and
-// in the claude.ai viewer written to the page's own store), so that what the player does differently from the computer can be read
-// and turned into the computer's way of arranging
-const ARKEY='guandan-arrange-records';
-const AR={hands:null,L:2,deal:0,seat:0,done:[false,false,false,false],comp:[null,null,null,null],mine:[null,null,null,null],recOf:[null,null,null,null],
-  sel:new Set(),view:'seat',recs:[],byId:null,lv:'r',cache:new Map(),uk:new Map()};
-function arrOpen(){
-  try{AR.recs=JSON.parse(localStorage.getItem(ARKEY)||'[]')}catch(_){AR.recs=[]}
-  $('#arr').hidden=false;
-  if(!AR.hands)arrDeal();
-  arrRender();
-}
-function arrDeal(){
-  AR.deal++;
-  const L=AR.lv==='r'?2+Math.floor(Math.random()*13):+AR.lv;
-  const deck=shuffle(makeDeck());
-  AR.L=L;AR.byId=new Map(deck.map(c=>[c.id,c]));
-  AR.hands=[0,1,2,3].map(p=>sortHand(deck.slice(p*27,p*27+27),L));
-  AR.seat=0;AR.done=[false,false,false,false];AR.comp=[null,null,null,null];AR.mine=[null,null,null,null];AR.recOf=[null,null,null,null];
-  AR.sel=new Set();AR.view='seat';AR.cache.clear();AR.uk=new Map();
-}
-const arrKey=gr=>gr.slice().sort((a,b)=>a-b).join('.');
-// groups of card numbers for an arrangement, in the order the computer's are shown in
-// (a group the computer's arranging made keeps its own reading, by its cards, so it is scored as the computer scored it)
-function arrIds(units,L){
-  for(const u of units)AR.uk.set(arrKey(u.cards.map(c=>c.id)),u);
-  return units.map(u=>displayOrder(u,L).map(c=>c.id));
-}
-function arrOrder(groups,L){return sortGroups(groups,AR.byId,L)}
-// the computer's arrangement of a seat's hand, and its 牌力
-function arrComp(p){
-  if(!AR.comp[p]){
-    const h=AR.hands[p],L=AR.L,units=arrange(h,L);
-    AR.comp[p]={groups:arrOrder(arrIds(units,L),L),power:arrPow(units)};
-  }
-  return AR.comp[p];
-}
-// the player's arrangement of the seat's hand now (the computer's until changed) and its 牌力
-function arrMine(p){
-  if(!AR.mine[p])AR.mine[p]=arrComp(p).groups.map(g=>g.slice());
-  const L=AR.L,by=AR.byId,groups=AR.mine[p];
-  const units=groups.flatMap(gr=>{const u=AR.uk.get(arrKey(gr));return u?[u]:groupUnits(gr.map(id=>by.get(id)),L)});
-  return{groups,power:arrPow(units)};
-}
-// (the sum of the scores is rounded first: the same groups added up in another order can differ by 1e-16, enough to tip a 牌力)
-const arrPow=units=>scorePower(+armScore(units).toFixed(9));
-// cards that are left without their group are arranged again the computer's way
-function arrAuto(ids){
-  if(!ids.length)return[];
-  const L=AR.L,key=L+':'+ids.slice().sort((a,b)=>a-b).join();
-  let a=AR.cache.get(key);
-  if(!a)AR.cache.set(key,a=arrIds(arrange(ids.map(id=>AR.byId.get(id)),L),L));
-  return a;
-}
-// several cards as one group, laid out the way their combination reads
-function arrTidy(ids){
-  const L=AR.L,cards=ids.map(id=>AR.byId.get(id)),u=readGroup(cards,L);
-  return(u?displayOrder(u,L):sortHand(cards.slice(),L)).map(c=>c.id);
-}
-// 成组: the picked cards become one group; 拆开: each becomes a single; 并入: they join the group at index `to`
-function arrEdit(mode,to){
-  const p=AR.seat,L=AR.L,ids=[...AR.sel];
-  if(!ids.length||(mode==='group'&&ids.length<2))return;
-  const gone=new Set(ids),keep=[],left=[];
-  let base=[];
-  AR.mine[p].forEach((gr,i)=>{
-    if(mode==='join'&&i===to){base=gr.filter(id=>!gone.has(id));return}
-    if(gr.some(id=>gone.has(id)))left.push(...gr.filter(id=>!gone.has(id)));else keep.push(gr);
-  });
-  const made=mode==='split'?ids.map(id=>[id]):[arrTidy(mode==='join'?base.concat(ids):ids)];
-  AR.mine[p]=arrOrder(keep.concat(arrAuto(left),made),L);
-  AR.sel=new Set();
-  Sound.play('play');arrRender();
-}
-// how a group reads: its kind and its cards
-function arrName(cards,L){
-  const u=readGroup(cards,L);
-  return u?(u.type==='jokers'?'天王炸':isBomb(u)&&u.type==='bomb'?u.n+'张炸弹':TYPE_NAME[u.type]):'不成牌型';
-}
-const arrLabel=(c,L)=>c.r===17?'大王':c.r===16?'小王':isWild(c,L)?'百搭':rankName(c.r)+(c.r===L?'(级)':'');
-function arrText(ids,L,by){
-  const cards=ids.map(id=>by.get(id)),u=readGroup(cards,L),ord=u?displayOrder(u,L):cards;
-  return arrName(cards,L)+' '+ord.map(c=>arrLabel(c,L)).join(' ');
-}
-// the widest fit: how many card widths a row of groups takes (a group is 1 card, 0.42 more for each further card, and a gap)
-function arrLayout(groups,rowsMax,W,hAvail,cwMax,cwMin){
-  const us=groups.map((g,i)=>({cards:g,gi:i}));
-  let best=null;
-  for(let k=1;k<=rowsMax;k++){
-    const rows=rowsOf(us,k);
-    const wide=Math.max(...rows.map(r=>r.reduce((t,u)=>t+1.22+.42*(u.cards.length-1),0)+.06*r.length));
-    const most=Math.max(...rows.map(r=>r.length));
-    const cw=Math.max(cwMin,Math.min(cwMax,Math.floor((W-most*16)/wide),Math.floor((hAvail/rows.length-34)/1.4)));
-    if(!best||cw>best.cw)best={cw,rows};
-  }
-  return best;
-}
-function arrRowsHTML(lay,groups,mine,otherKeys){
-  const L=AR.L,by=AR.byId;
-  return`<div class="ar-rows" style="--cw:${lay.cw}px">`+lay.rows.map(r=>`<div class="ar-row">`+r.map(u=>{
-    const gr=groups[u.gi],cards=gr.map(id=>by.get(id)),rd=readGroup(cards,L);
-    const diff=!otherKeys.has(arrKey(gr));
-    const nm=arrName(cards,L),cls=rd?(isBomb(rd)?' bomb':''):' bad';
-    const join=mine&&AR.sel.size&&[...AR.sel].some(id=>!gr.includes(id));
-    return`<div class="ag${diff?' diff':''}" data-gi="${u.gi}"><div class="agc">${cards.map(c=>cardHTML(c,L,AR.sel.has(c.id)?'sel':'')).join('')}</div>`+
-      `<span class="agl${cls}">${nm}</span>${join?'<button class="agj" data-act="join">并入这组</button>':''}</div>`;
-  }).join('')+`</div>`).join('')+`</div>`;
-}
-function arrRender(){
-  const el=$('#arr');if(!AR.hands)return;
-  const keep=el.scrollTop;
-  el.innerHTML=AR.view==='sum'?arrSumHTML():arrSeatHTML();
-  el.scrollTop=keep;
-}
-function arrTop(){
-  const L=AR.L;
-  const seats=[0,1,2,3].map(p=>{
-    const now=AR.view==='seat'&&p===AR.seat,ok=AR.done[p]||now;
-    return`<button class="ar-seat${AR.done[p]?' done':''}${now?' now':''}" data-act="seat" data-n="${p}"${ok?'':' disabled'}>${p+1}号</button>`;
-  }).join('');
-  const opts=['<option value="r">随机</option>'].concat(Array.from({length:13},(_,i)=>`<option value="${i+2}">${rankName(i+2)}</option>`)).map(o=>o.replace(`value="${AR.lv}"`,`value="${AR.lv}" selected`)).join('');
-  return`<div class="ar-top"><span class="ar-title">配牌</span><span class="ar-seats">${seats}</span>
-    <span class="ar-info">第 <b>${AR.deal}</b> 副　本副打 <b>${rankName(L)}</b>　下一副打<select id="arrL">${opts}</select><button class="ar-link" data-act="home">训练首页</button></span></div>`;
-}
-function arrSeatHTML(){
-  const p=AR.seat,L=AR.L,c=arrComp(p),m=arrMine(p),el=$('#arr');
-  const W=Math.max(300,el.clientWidth-40-30),avail=Math.max(300,el.clientHeight-400);
-  const compH=Math.max(120,Math.round(avail*.36)),mineH=Math.max(200,avail-compH);
-  const ck=new Set(c.groups.map(arrKey)),mk=new Set(m.groups.map(arrKey));
-  const lc=arrLayout(c.groups,2,W,compH,40,24),lm=arrLayout(m.groups,3,W,mineH,66,32);
-  const d=m.power-c.power,cls=d>0?'up':d<0?'down':'same',txt=d>0?`牌力比电脑高 ${d}`:d<0?`牌力比电脑低 ${-d}`:'牌力和电脑一样';
-  const compOnly=c.groups.filter(g=>!mk.has(arrKey(g))),mineOnly=m.groups.filter(g=>!ck.has(arrKey(g)));
-  const by=AR.byId;
-  const diff=compOnly.length||mineOnly.length
-    ?`<div class="l"><span class="k">电脑有、你没有</span>${compOnly.map(g=>`<span class="g">${arrText(g,L,by)}</span>`).join('')||'<span class="ok">（没有）</span>'}</div>
-       <div class="l"><span class="k">你有、电脑没有</span>${mineOnly.map(g=>`<span class="g mine">${arrText(g,L,by)}</span>`).join('')||'<span class="ok">（没有）</span>'}</div>`
-    :'<div class="l"><span class="ok">和电脑的配法完全一样。点牌可以改：选几张牌，再点“成组”“拆开”，或点某一组上的“并入这组”。</span></div>';
-  // the next seat still to arrange (after this one), for the button
-  const nxt=[1,2,3].map(k=>(p+k)%4).find(q=>!AR.done[q]);
-  const doneText=AR.done[p]?`重新记录 ${p+1}号`:nxt==null?`完成 ${p+1}号，看总结`:`完成 ${p+1}号，配 ${nxt+1}号 ▶`;
-  const n=AR.recs.length,ch=AR.recs.filter(r=>!r.same).length;
-  return arrTop()+`
-    <div class="ar-pnl"><div class="ar-head"><h2>电脑的配牌</h2><span class="sub">${p+1}号 · ${AR.hands[p].length} 张 · 只能看</span>
-      <span class="ar-pw"><span class="n">${c.power}</span><span class="t">牌力 · 第 ${tierNum(c.power)} 档</span></span></div>${arrRowsHTML(lc,c.groups,false,mk)}</div>
-    <div class="ar-pnl mine"><div class="ar-head"><h2>你的配牌</h2><span class="sub">点牌选中（可以选好几张），再点下面的按钮</span>
-      <span class="ar-pw"><span class="n">${m.power}</span><span class="t">牌力 · 第 ${tierNum(m.power)} 档</span><span class="d ${cls}">${txt}</span></span></div>${arrRowsHTML(lm,m.groups,true,ck)}</div>
-    <div class="ar-diff">${diff}</div>
-    <div class="ar-bar"><button class="ar-btn alt" data-act="group"${AR.sel.size>=2?'':' disabled'}>成组</button><button class="ar-btn alt" data-act="split"${AR.sel.size?'':' disabled'}>拆开</button>
-      <button class="ar-btn alt" data-act="restore"${compOnly.length||mineOnly.length?'':' disabled'}>改回电脑的配法</button>
-      <span class="sp"></span>${AR.done[p]?'':'<button class="ar-link" data-act="skip">这家不记了</button>'}<button class="ar-btn big" data-act="done">${doneText}</button></div>
-    <div class="ar-tip">每家配好点“完成”，电脑就把你和它的不同记下来（现在已记 ${n} 手，其中你改过 ${ch} 手）。屏幕上一次只有一家的牌。</div>`;
-}
-function arrSumHTML(){
-  const rows=[0,1,2,3].map(p=>{
-    const c=arrComp(p),m=arrMine(p),r=AR.recOf[p]!=null?AR.recs[AR.recOf[p]]:null,d=m.power-c.power;
-    const k=new Set(c.groups.map(arrKey)),n=m.groups.filter(g=>!k.has(arrKey(g))).length;
-    return`<tr><td>${p+1}号</td><td>${r?c.power:'—'}</td><td>${r?m.power:'—'}</td><td class="${r?d>0?'up':d<0?'down':'':''}">${r?(d>0?'+':'')+d:'—'}</td><td>${r?(n?n+' 组不同':'一样'):'没记'}</td></tr>`;
-  }).join('');
-  const n=AR.recs.length,ch=AR.recs.filter(r=>!r.same).length,hi=AR.recs.filter(r=>r.minePower>r.compPower).length,lo=AR.recs.filter(r=>r.minePower<r.compPower).length;
-  return arrTop()+`
-    <div class="ar-pnl mine"><div class="ar-head"><h2>这副牌四家都配完了</h2><span class="sub">第 ${AR.deal} 副 · 打 ${rankName(AR.L)}</span></div>
-      <table class="ar-sum"><tr><th></th><th>电脑牌力</th><th>你的牌力</th><th>差</th><th>配法</th></tr>${rows}</table></div>
-    <div class="ar-diff"><div class="l"><span class="k">累计记录</span>共 ${n} 手，你改过 ${ch} 手；牌力比电脑高 ${hi} 手、低 ${lo} 手。</div></div>
-    <div class="ar-bar"><button class="ar-btn alt" data-act="save">保存记录（txt）</button><button class="ar-btn alt" data-act="copy">复制记录</button><span class="sp"></span>
-      <button class="ar-btn big" data-act="newdeal">再发一副 ▶</button></div>
-    <div class="ar-tip">点上面的 1号～4号 可以回去看那一家的配牌，改了再点“重新记录”。</div>`;
-}
-function arrToast(t){
-  const e=document.createElement('div');e.className='ar-toast';e.textContent=t;document.body.appendChild(e);
-  setTimeout(()=>e.remove(),2200);
-}
-// 完成: the two arrangements of this seat go into the records
-function arrDone(){
-  const p=AR.seat,L=AR.L,c=arrComp(p),m=arrMine(p);
-  const ck=new Set(c.groups.map(arrKey)),mk=new Set(m.groups.map(arrKey));
-  const only={comp:c.groups.filter(g=>!mk.has(arrKey(g))),mine:m.groups.filter(g=>!ck.has(arrKey(g)))};
-  const rec={uid:Date.now().toString(36)+Math.random().toString(36).slice(2,6),at:new Date().toLocaleString(),deal:AR.deal,L,seat:p+1,
-    hand:AR.hands[p].map(x=>x.id),comp:c.groups,mine:m.groups,compPower:c.power,minePower:m.power,same:!only.comp.length&&!only.mine.length,only};
-  if(AR.recOf[p]!=null)AR.recs[AR.recOf[p]]=rec;else{AR.recOf[p]=AR.recs.length;AR.recs.push(rec)}
-  try{localStorage.setItem(ARKEY,JSON.stringify(AR.recs.slice(-500)))}catch(_){}
-  arrDb(rec);
-  AR.done[p]=true;
-  arrToast(rec.same?`已记录：${p+1}号和电脑配得一样`:`已记录：${p+1}号有 ${only.mine.length} 组和电脑不同，牌力 ${c.power} → ${m.power}`);
-  const nxt=[1,2,3].map(k=>(p+k)%4).find(q=>!AR.done[q]);
-  AR.sel=new Set();
-  if(nxt==null)AR.view='sum';else{AR.seat=nxt;AR.view='seat'}
-  arrRender();$('#arr').scrollTop=0;
-}
-// in the claude.ai viewer each record is also kept in the page's own store, for Claude to read
-async function arrDb(r){
-  try{
-    if(!window.claude||!window.claude.use)return;
-    const db=await window.claude.use('db').catch(()=>null);if(!db)return;
-    await db.collection('arranges').doc(r.uid).set({uid:r.uid,at:r.at,deal:r.deal,L:r.L,seat:r.seat,compPower:r.compPower,minePower:r.minePower,same:r.same,text:arrRecText(r),data:r});
-  }catch(_){}
-}
-const ARDECK=new Map(makeDeck().map(c=>[c.id,c]));
-function arrRecText(r){
-  const by=ARDECK,L=r.L,line=gs=>gs.map(g=>arrText(g,L,by)).join('　｜　');
-  const d=r.minePower-r.compPower;
-  return`第 ${r.deal} 副 · 打 ${rankName(L)} · ${r.seat}号　牌力 电脑 ${r.compPower} → 你 ${r.minePower}（${d>0?'+':''}${d}）${r.same?'　配法一样':''}\n`+
-    `  电脑的配牌：${line(r.comp)}\n  你的配牌：${line(r.mine)}\n`+(r.same?'':`  电脑有、你没有：${line(r.only.comp)||'（没有）'}\n  你有、电脑没有：${line(r.only.mine)||'（没有）'}\n`);
-}
-function arrAllText(){
-  const head=`掼蛋配牌训练记录\n保存时间：${new Date().toLocaleString()}　页面版本：${VERSION}\n共 ${AR.recs.length} 手；每手是一家的牌：电脑怎么配、你怎么配、牌力、有哪些组不同\n\n`;
-  return head+AR.recs.map(arrRecText).join('\n')+'\n#DATA '+JSON.stringify(AR.recs.map(r=>({...r,only:undefined})))+'\n';
-}
-function arrSave(){
-  const t=arrAllText();
-  try{
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));
-    const d=new Date();a.download=`掼蛋配牌记录-${d.getMonth()+1}月${d.getDate()}日.txt`;
-    document.body.appendChild(a);a.click();a.remove();
-    arrToast('记录已保存成 txt 文件');
-  }catch(_){arrCopy()}
-}
-function arrCopy(){
-  const t=arrAllText();
-  const ok=()=>arrToast('记录已复制，可以粘贴给 Claude');
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(()=>arrToast('复制没有成功，请用“保存记录”'));return}
-  const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();
-  try{document.execCommand('copy');ok()}catch(_){arrToast('复制没有成功，请用“保存记录”')}
-  ta.remove();
-}
-$('#arr').addEventListener('click',e=>{
-  const card=e.target.closest('.ar-pnl.mine .card');
-  if(card&&AR.view==='seat'){
-    const id=+card.dataset.id;
-    if(AR.sel.has(id))AR.sel.delete(id);else AR.sel.add(id);
-    Sound.play('select');arrRender();return;
-  }
-  const b=e.target.closest('[data-act]');if(!b)return;
-  switch(b.dataset.act){
-    case'group':arrEdit('group');break;
-    case'split':arrEdit('split');break;
-    case'join':arrEdit('join',+b.closest('.ag').dataset.gi);break;
-    case'restore':AR.mine[AR.seat]=null;AR.sel=new Set();arrRender();break;
-    case'done':arrDone();break;
-    case'skip':{
-      AR.done[AR.seat]=true;
-      const nxt=[1,2,3].map(k=>(AR.seat+k)%4).find(q=>!AR.done[q]);
-      AR.sel=new Set();
-      if(nxt==null)AR.view='sum';else AR.seat=nxt;
-      arrRender();$('#arr').scrollTop=0;break;
+/* ---------- 残局: a batch against the old rules ---------- */
+// Positions made as in a 残局 (dealt, played down by the old rules to at most 15 cards each, one trick in progress); each is played twice,
+// the search on seats 0 and 2 and the other side by the old rules (open hands), then the sides changed over; the result is how many
+// levels the search side wins per round (the side going out first gains, as in a real round). The game on the screen waits meanwhile.
+function endgamePosition(){
+  for(;;){
+    const L=2+Math.floor(Math.random()*13),deck=shuffle(makeDeck()),hands=[[],[],[],[]];
+    for(let i=0;i<108;i++)hands[i%4].push(deck[i]);
+    for(const h of hands)sortHand(h,L);
+    G={hands,trick:null,L,seen:[],log:[],pw:[],open:false,out:[],passes:0};
+    let turn=Math.floor(Math.random()*4),passes=0,ok=null;
+    for(let n=0;n<1500&&ok===null;n++){
+      const p=turn;
+      let pl=aiDecide(p);
+      if(!pl&&!G.trick)pl=genPlays(G.hands[p],L)[0];
+      if(pl){
+        G.seen.push(...pl.cards);G.log.push({p,cards:pl.cards,lead:!G.trick,type:pl.type,value:pl.value,n:pl.n});
+        G.hands[p]=G.hands[p].filter(c=>!pl.cards.includes(c));
+        if(!G.hands[p].length){ok=false;break}
+        G.trick={player:p,play:pl};passes=0;
+        if(G.hands.every(h=>h.length<=15)){ok=true;turn=(p+1)%4;break}
+      }else{passes++;G.log.push({p,cards:null})}
+      if(passes>=3){turn=G.trick.player;G.trick=null;passes=0}else turn=(p+1)%4;
     }
-    case'seat':AR.seat=+b.dataset.n;AR.view='seat';AR.sel=new Set();arrRender();break;
-    case'newdeal':arrDeal();arrRender();$('#arr').scrollTop=0;break;
-    case'save':arrSave();break;
-    case'copy':arrCopy();break;
-    case'home':$('#arr').hidden=true;$('#trainMenu').hidden=false;break;
+    if(ok)return{hands:G.hands,trick:G.trick,L,seen:G.seen,log:G.log,passes,turn};
   }
-});
-$('#arr').addEventListener('change',e=>{if(e.target.id==='arrL')AR.lv=e.target.value});
-addEventListener('resize',()=>{if(!$('#arr').hidden)arrRender()});
+}
+// plays the position out, the search on the side `mcTeam`, the old rules on the other; the levels won by the search side
+async function endgamePlayOut(pos,mcTeam,ms,opp){
+  G={hands:pos.hands.slice(),trick:pos.trick,L:pos.L,seen:pos.seen.slice(),log:pos.log.slice(),pw:[],open:true,out:[],passes:pos.passes};
+  let S={h:G.hands.slice(),tr:pos.trick?{p:pos.trick.player,play:pos.trick.play}:null,ps:pos.passes,t:pos.turn,out:[],L:pos.L},moves=0;
+  while(!mcOver(S)&&moves++<800){
+    const p=S.t;let pl;
+    if(p%2===mcTeam){
+      const mv=mcMoves(S);
+      if(mv.length===1)pl=mv[0];
+      else{
+        const root=mcNode(S),end=mcNow()+ms;let n=0;
+        while(n<8||(mcNow()<end&&n<20000)){
+          const t1=mcNow()+30;
+          while(mcNow()<t1&&(n<8||(mcNow()<end&&n<20000))){mcIter(root,1);n++}
+          await new Promise(r=>setTimeout(r,0));
+        }
+        pl=mcBest(root);
+      }
+    }else if(opp==='random'){const mv=mcMoves(S);pl=mv[Math.floor(Math.random()*mv.length)]}
+    else{G.hands=S.h.slice();G.trick=S.tr?{player:S.tr.p,play:S.tr.play}:null;G.passes=S.ps;G.out=S.out.slice();pl=aiDecide(p)}
+    if(pl){G.seen.push(...pl.cards);G.log.push({p,cards:pl.cards,lead:!S.tr,type:pl.type,value:pl.value,n:pl.n})}else G.log.push({p,cards:null});
+    S=mcStep(S,pl);
+  }
+  if(!mcOver(S))return 0;
+  const r=mcReward(S);
+  return mcTeam===0?r:-r;
+}
+let ENDBATCH=false;
+async function endgameBatch(games,ms,opp,show){
+  const keep=G,res=[];
+  ENDBATCH=true;
+  try{
+    for(let g=0;g<games&&ENDBATCH;g++){
+      const pos=endgamePosition();
+      for(const t of [0,1]){res.push(await endgamePlayOut(pos,t,ms,opp));show(g+(t+1)/2,games,res)}
+    }
+  }finally{G=keep;ENDBATCH=false}
+  return res;
+}
+function endgameBatchPanel(){
+  const stat=res=>{
+    const n=res.length;if(!n)return'';
+    const m=res.reduce((a,b)=>a+b,0)/n,sd=Math.sqrt(Math.max(0,res.reduce((a,b)=>a+b*b,0)/n-m*m)),w=res.filter(x=>x>0).length;
+    return`${n} 局：搜索队平均每局净赢 <b>${m.toFixed(2)}</b> 级（±${(1.96*sd/Math.sqrt(n)).toFixed(2)}），头游率 <b>${(w/n*100).toFixed(0)}%</b>`;
+  };
+  showPanel(`<h2>批量对比：自己摸索 对 老规则</h2>
+    <p class="muted">每个局面打两次（搜索队坐 1、3 号位，再换过来），老规则队明牌。局面是电脑按老规则打到每家 ≤15 张的残局。打的时候牌桌上的局先停着。</p>
+    <p><label>局面数 <input id="bN" type="number" min="1" max="500" value="20" style="width:5em"></label>　<label>搜索每手 <select id="bMs"><option value="30">0.03 秒</option><option value="100" selected>0.1 秒</option><option value="300">0.3 秒</option><option value="1000">1 秒</option></select></label>　<label>对手 <select id="bOpp"><option value="rules" selected>老规则</option><option value="random">随机出牌</option></select></label></p>
+    <div class="trec" id="bOut" style="min-height:2.6em"></div>
+    <div class="btns"><button class="btn primary" id="bGo">开始</button><button class="btn" id="bStop">停</button><button class="btn" id="bClose">关闭</button></div>`);
+  $('#bGo').onclick=async()=>{
+    $('#bGo').disabled=true;
+    const out=$('#bOut');
+    const res=await endgameBatch(+$('#bN').value||20,+$('#bMs').value,$('#bOpp').value,(k,N,r)=>{out.innerHTML=`已打 ${Math.floor(k)}/${N} 个局面<br>${stat(r)}`});
+    out.innerHTML=`<b>完成</b><br>${stat(res)}<br><span class="muted">大于 0：搜索（自己摸索）比对手强。多局之间差别大，局数越多越准。</span>`;
+    $('#bGo').disabled=false;
+  };
+  $('#bStop').onclick=()=>{ENDBATCH=false};
+  $('#bClose').onclick=()=>{ENDBATCH=false;hideOverlay()};
+}
 
 /* ---------- connections (PeerJS: browsers talk to each other directly, matched by the room number) ---------- */
 const ROOM_PREFIX='guandan-room-';
@@ -8047,4 +8126,5 @@ setInterval(()=>{
 },2000);
 window.claude?.hot?.snapshot?.(()=>({G}));
 window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??{});
+
 </script>
