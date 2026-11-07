@@ -116,7 +116,7 @@ function tvDraw(){
 function testReplay(rec){
   tvClose();hideOverlay();
   if(G.paused)setPaused(false);
-  G.tok++;G.round++;
+  G.tok++;G.round++;G.shown=null;
   const byId=new Map(makeDeck().map(c=>[c.id,c]));
   G.levels=rec.levels?rec.levels.slice():G.levels.slice();G.levels[rec.lvlTeam]=rec.L;
   G.lvlTeam=rec.lvlTeam;G.L=rec.L;

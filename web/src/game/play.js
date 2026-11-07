@@ -66,6 +66,8 @@ function advance(){
   startTurn();
 }
 function finishRound(){
+  // the top-left 打几 keeps showing the levels as they were while this round was played, until the next round begins (render.js)
+  G.shown={levels:G.levels.slice(),lvlTeam:G.lvlTeam,aFails:(G.aFails||[0,0]).slice(),aOut:G.aOut};
   // the losing side's remaining players fill in the last places, in turn order
   let i=G.out[G.out.length-1];
   const k0=G.out.length;

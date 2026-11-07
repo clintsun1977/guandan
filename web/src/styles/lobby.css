@@ -76,6 +76,10 @@
 .rule-btn{font:inherit;font-size:17px;padding:6px 4px;border-radius:10px;cursor:pointer;background:transparent;color:var(--ink);border:1.5px solid var(--line-strong)}
 .rule-btn.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700}
 .rule-btn:disabled{cursor:default}
+/* a phone's lobby: the two network models go by three letters (dMC, GZe) */
+.rule-btn .sh{display:none}
+html.phone .rule-btn .sh{display:inline}
+html.phone .rule-btn .fl{display:none}
 /* entering someone's room: 进房间 itself and the host's choices show on a dull gold, and the choices cannot be changed */
 .rule-btn:disabled.on{background:#7a6630;border-color:#7a6630;color:#e9dfbf}
 .mode-btn.on[data-mode="join"]{background:#7a6630;border-color:#7a6630;color:#e9dfbf}

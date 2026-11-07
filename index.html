@@ -751,6 +751,10 @@ body.test .overlay.dock .panel .btn:not(.round){font-size:12px;padding:3px 10px;
 .rule-btn{font:inherit;font-size:17px;padding:6px 4px;border-radius:10px;cursor:pointer;background:transparent;color:var(--ink);border:1.5px solid var(--line-strong)}
 .rule-btn.on{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700}
 .rule-btn:disabled{cursor:default}
+/* a phone's lobby: the two network models go by three letters (dMC, GZe) */
+.rule-btn .sh{display:none}
+html.phone .rule-btn .sh{display:inline}
+html.phone .rule-btn .fl{display:none}
 /* entering someone's room: 进房间 itself and the host's choices show on a dull gold, and the choices cannot be changed */
 .rule-btn:disabled.on{background:#7a6630;border-color:#7a6630;color:#e9dfbf}
 .mode-btn.on[data-mode="join"]{background:#7a6630;border-color:#7a6630;color:#e9dfbf}
@@ -1887,7 +1891,7 @@ html.phone .handtools .emote-fab {
     <div class="lobby-rules" id="rulesBox">
       <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
       <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="once">一次机会</button></div>
-      <div class="rule-row"><span class="rule-k">电脑模型</span><button class="rule-btn" data-rule="bot" data-val="clint">默认</button><button class="rule-btn" data-rule="bot" data-val="danmcai">danMCai</button><button class="rule-btn" data-rule="bot" data-val="guanzero">GuanZero</button></div>
+      <div class="rule-row"><span class="rule-k">电脑模型</span><button class="rule-btn" data-rule="bot" data-val="clint">默认</button><button class="rule-btn" data-rule="bot" data-val="danmcai"><span class="fl">danMCai</span><span class="sh">dMC</span></button><button class="rule-btn" data-rule="bot" data-val="guanzero"><span class="fl">GuanZero</span><span class="sh">GZe</span></button></div>
       <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
       <div class="rule-note" id="rulesNote"></div>
       <div class="rule-note" id="collectNote"></div>
@@ -3521,6 +3525,7 @@ function startRound(e){
   if(G.paused)setPaused(false);
   G.tok++;
   G.round++;
+  G.shown=null; // the new round's levels show now
   G.L=G.levels[G.lvlTeam];
   const byId=new Map(makeDeck().map(c=>[c.id,c]));
   G.deck=e.deck.map(id=>byId.get(id));
@@ -4153,6 +4158,8 @@ function advance(){
   startTurn();
 }
 function finishRound(){
+  // the top-left 打几 keeps showing the levels as they were while this round was played, until the next round begins (render.js)
+  G.shown={levels:G.levels.slice(),lvlTeam:G.lvlTeam,aFails:(G.aFails||[0,0]).slice(),aOut:G.aOut};
   // the losing side's remaining players fill in the last places, in turn order
   let i=G.out[G.out.length-1];
   const k0=G.out.length;
@@ -4832,19 +4839,21 @@ function render(){
   for(let p=0;p<4;p++){const el=p===0?$('#mebar'):$('#seat'+p);el.classList.toggle('t-red',isRedSeat(p));el.classList.toggle('t-blue',!isRedSeat(p))}
   // a side playing A shows which try at A it is on: A1, A2 or A3 (the third is the last). A side that has missed A keeps showing the
   // try it missed (A1) until its own turn at A comes round again: only then does it show the next one (A2), and so on
+  // (once a round is over, the levels as they were while it was played: the change shows when the next round begins)
+  const D=G.shown||G;
   for(const t of [0,1]){
-    const n=(G.aFails||[0,0])[t];
+    const n=(D.aFails||[0,0])[t];
     // (一次机会: once the other side has used its three tries, this side's turn at A is its one last try)
-    const last=G.levels[t]===14&&G.aOut!=null&&G.aOut!==t;
-    $('#lv'+t).textContent=G.levels[t]===14?(last?'A末':`A${Math.max(1,Math.min(3,n+(G.lvlTeam===t?1:0)))}`):rankName(G.levels[t]);
+    const last=D.levels[t]===14&&D.aOut!=null&&D.aOut!==t;
+    $('#lv'+t).textContent=D.levels[t]===14?(last?'A末':`A${Math.max(1,Math.min(3,n+(D.lvlTeam===t?1:0)))}`):rankName(D.levels[t]);
     $('#lvx'+t).textContent='';
   }
   for(const t of [0,1]){
     const el=$('#team'+t);
-    el.classList.toggle('playing',G.lvlTeam===t);
+    el.classList.toggle('playing',D.lvlTeam===t);
     el.classList.toggle('t-red',isRedSeat(t));el.classList.toggle('t-blue',!isRedSeat(t));
-    el.title=G.lvlTeam===t?'本局打这一方的级':'';
-    $('#tn'+t).textContent=(t===0?'我方':'对方')+(G.lvlTeam===t?'打':'');
+    el.title=D.lvlTeam===t?'本局打这一方的级':'';
+    $('#tn'+t).textContent=(t===0?'我方':'对方')+(D.lvlTeam===t?'打':'');
   }
   const lv=$('#curLv');if(lv.dataset.v!==rankName(G.L)){lv.dataset.v=lv.textContent=rankName(G.L);centerRank()}
   // the disc takes the colour of the side whose level is played; once a round is over it keeps that side's colour
@@ -8800,7 +8809,7 @@ function tvDraw(){
 function testReplay(rec){
   tvClose();hideOverlay();
   if(G.paused)setPaused(false);
-  G.tok++;G.round++;
+  G.tok++;G.round++;G.shown=null;
   const byId=new Map(makeDeck().map(c=>[c.id,c]));
   G.levels=rec.levels?rec.levels.slice():G.levels.slice();G.levels[rec.lvlTeam]=rec.L;
   G.lvlTeam=rec.lvlTeam;G.L=rec.L;
@@ -8990,9 +8999,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1710';
+const VERSION='1107-1829';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19779ecbf';
+const APP_HASH='c19770856b';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

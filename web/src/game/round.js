@@ -20,6 +20,7 @@ function startRound(e){
   if(G.paused)setPaused(false);
   G.tok++;
   G.round++;
+  G.shown=null; // the new round's levels show now
   G.L=G.levels[G.lvlTeam];
   const byId=new Map(makeDeck().map(c=>[c.id,c]));
   G.deck=e.deck.map(id=>byId.get(id));
