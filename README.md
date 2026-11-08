@@ -25,7 +25,7 @@
 | --- | --- |
 | **默认** | Clint 的规则机器人（本项目自己的），开局默认选中 |
 | **danMCai** | 神经网络 `danMCai-v000855042`，**引用自 [guandanai](https://github.com/stevensun1005/guandanai)** 的 danMCai 现任冠军 |
-| GuanZero | 神经网络 `guanzero-adp-io48-229609`，**引用自 guandanai** 最新发布的 GuanZero |
+| GuanZero | 神经网络 `guanzero-adp-io48-303975`，**引用自 guandanai** 最新发布的 GuanZero |
 
 神经网络在房主的浏览器里运行（onnxruntime-web），只看自己的手牌和公开信息；进贡、还贡仍按 Clint 规则。
 模型加载失败时，牌桌会提示一次，电脑改用 Clint 规则继续打。
@@ -66,7 +66,7 @@
   整把打完（打过 A 或平局）后就不再提示。需要同一台电脑、同一个浏览器开房。
 - 断网或上传失败时先存在房主浏览器里（IndexedDB），之后自动重试，收到云端确认才删除。
 - 本项目上传的牌谱 `appVersion` 以 `c1977` 开头，可与 guandanai 自己网站的牌谱区分；电脑 ID 用 guandanai 的发布编号
-  （danMCai `017`、GuanZero `021`），Clint 规则为 `clint-rule`、版本 `clintsun1977-…`。
+  （danMCai `017`、GuanZero `023`），Clint 规则为 `clint-rule`、版本 `clintsun1977-…`。
 - 网址加 `?test=1` 时上传为测试局（`kind=test`），guandanai 默认导出时不包含。
 
 代码在 `web/src/collection/`（移植自 guandanai 的 `web/src/collection/`）。
@@ -79,7 +79,7 @@ danMCai、GuanZero 两个神经网络机器人和出牌评价**不是本项目�
 | 引用的内容 | 来自 guandanai | 在本项目 |
 | --- | --- | --- |
 | danMCai 权重 | Release [`web-model-017`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-017)（训练任务 `mac-20261105`，版本 `v000855042`） | `bot/danmcai/danmcai-v000855042.onnx` |
-| GuanZero 权重 | Release [`web-model-021`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-021)（训练任务 `guanzero-adp-io48`，步数 229609） | `bot/guanzero/guanzero-adp-io48-229609.onnx` |
+| GuanZero 权重 | Release [`web-model-023`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-023)（训练任务 `guanzero-adp-io48`，步数 303975） | `bot/guanzero/guanzero-adp-io48-303975.onnx` |
 | 浏览器推理代码 | `web/src/ai/` 的 `encoding.mjs`、`history.mjs`、`candidates.js`、`observation.js`、`endgame.js`、`policy-inference.mjs`、`table-policy.mjs` | 移植为 `bot/neural/neural-bot.js` |
 | 出牌评价 | `web/src/coach/evaluation.mjs`、`controller.js` | `bot/neural/neural-bot.js`（打分）、`web/src/coach/coach.js`（显示） |
 

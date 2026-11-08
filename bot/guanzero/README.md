@@ -1,14 +1,14 @@
 # GuanZero（引用自 guandanai）
 
-`guanzero-adp-io48-229609.onnx` 来自 [stevensun1005/guandanai](https://github.com/stevensun1005/guandanai) 的 Release [`web-model-021`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-021)（原文件名 `bot-021.onnx`），
+`guanzero-adp-io48-303975.onnx` 来自 [stevensun1005/guandanai](https://github.com/stevensun1005/guandanai) 的 Release [`web-model-023`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-023)（原文件名 `bot-023.onnx`），
 本项目没有修改或重新训练。
 
 | 项目 | 值 |
 | --- | --- |
 | 训练任务 | `guanzero-adp-io48` |
-| 版本 | `model-000000229609` |
-| 步数 | 229609 |
-| SHA-256 | `43d72b65e773fb5acb6b8f86baed16a69a1977a97fb6fddf4fe5f23ee25261bc` |
+| 版本 | `model-000000303975` |
+| 步数 | 303975 |
+| SHA-256 | `e02bd26f3d90cb9ef90f7075ad1acd845c709bebac734611c44eb66d48fdbd4b` |
 | 大小 | 6,346,014 字节 |
 | 网络输入 | `state [1,513]`、`actions [N,54]`、`history [1,5,216]`，输出 `values [N,1]` |
 
