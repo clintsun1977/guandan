@@ -4,7 +4,7 @@
 
 | 目录 | 内容 |
 | --- | --- |
-| [clint/](clint) | Clint 规则机器人（`clint-bot.js`），构建时原样放回页面 |
+| [clint/](clint) | Clint 规则机器人（`clint-bot.js`）和它的残局大脑（`endgame-brain.js`），构建时原样放回页面 |
 | [neural/](neural) | 神经网络电脑的浏览器代码：特征编码、候选出牌、两人残局求解、onnxruntime-web 推理 |
 | [danmcai/](danmcai) | `danmcai-v000855042.onnx`：guandanai 发布编号 017，danMCai 现任门控冠军（大厅里选“danMCai”） |
 | [guanzero/](guanzero) | `guanzero-adp-io48-303975.onnx`：guandanai 发布编号 023，最新 GuanZero（带 20 步公开出牌历史） |

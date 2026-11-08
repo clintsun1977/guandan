@@ -23,7 +23,7 @@
 
 | 选项 | 说明 |
 | --- | --- |
-| **默认** | Clint 的规则机器人（本项目自己的），开局默认选中 |
+| **默认** | Clint 的规则机器人（本项目自己的），开局默认选中。四家都只剩 6 张以内时换上**残局大脑**：把没见过的牌随机发给另外三家（按他们出牌、过牌的表现加权，16 种），每种用精确求解器算每个出法的结果，只有别的出法明显比规则的出法好（≥0.2 级）才改；只用公开信息和自己的手牌，不偷看别人的牌 |
 | **danMCai** | 神经网络 `danMCai-v000855042`，**引用自 [guandanai](https://github.com/stevensun1005/guandanai)** 的 danMCai 现任冠军 |
 | GuanZero | 神经网络 `guanzero-adp-io48-303975`，**引用自 guandanai** 最新发布的 GuanZero |
 
@@ -98,7 +98,7 @@ web/                网页端（每个功能一个文件，见 web/README.md）
   build.py          把 web/src 和 bot/ 合成根目录的 index.html
 bot/                电脑玩家
   models.json       大厅里可选的电脑：名称、文件、SHA-256、来源
-  clint/            Clint 规则机器人
+  clint/            Clint 规则机器人与残局大脑（精确求解器）
   neural/           神经网络电脑：特征编码、候选出牌、残局求解、ONNX 推理（移植自 guandanai）
   danmcai/          danMCai 权重（引用自 guandanai）
   guanzero/         GuanZero 权重（引用自 guandanai）

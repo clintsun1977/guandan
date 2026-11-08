@@ -18,7 +18,7 @@ function testDecide(who){
     const cards=hit.ids.map(id=>G.hands[who].find(c=>c.id===id));
     if(cards.every(Boolean))return{...hit.rest,cards};
   }
-  const pl=aiDecide(who);
+  const pl=rulesMove(who);
   if(pl){const{cards,...rest}=pl;TDEC.set(sig,{p:who,ids:cards.map(c=>c.id),rest})}else TDEC.set(sig,{p:who,ids:null});
   return pl;
 }
