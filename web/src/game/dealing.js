@@ -55,7 +55,7 @@ function markActor(p,text){
   // on your own turn the button is the only thing to look at, so no label competes with it
   if(p===0)return;
   // the label belongs to the plate's row, so it moves with the plate: over it for the side players (above their tags),
-  // to the right of the row for the player across the table
+  // under the plate for the player across the table (the turn clock stands to its right)
   const e=document.createElement('div');
   e.className='fx-act actlbl';e.textContent=text;
   $('#seat'+p+' .whorow').appendChild(e);

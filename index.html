@@ -97,10 +97,9 @@ body{background:radial-gradient(ellipse at 50% 40%,var(--felt) 0%,var(--felt-dee
 #micBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700;opacity:1}
 #micBtn.on::before{background:var(--on-gold)}
 .vc{display:none;align-items:center;flex:none}
-.vc.talk,.vc.mute{display:inline-flex}
+.vc.talk{display:inline-flex}
 .vc svg{width:1.05em;height:1.05em;fill:var(--gold);display:none}
 .vc.talk svg{display:block;animation:vcTalk .45s ease-in-out infinite alternate}
-.vc.mute::after{content:"闭麦";font-size:11px;font-weight:400;line-height:1;padding:2px 5px;border-radius:999px;color:var(--muted);border:1px solid var(--line-strong)}
 /* the other three seats: the mic flashes inside the plate, at its right end, and takes no room (the name stays where it is) */
 .seat .who{position:relative}
 .seat .who .vc{position:absolute;top:50%;right:5px;translate:0 -50%;z-index:6;pointer-events:none}
@@ -216,7 +215,7 @@ body.test #seat3,body.test #seat1{justify-content:flex-start;transform:none}
 .whorow{display:flex;align-items:center;gap:12px;position:relative}
 .actlbl{position:absolute;z-index:5;pointer-events:none;white-space:nowrap}
 #seat1 .actlbl,#seat3 .actlbl{bottom:calc(100% + 30px);left:50%;translate:-50% 0}
-#seat2 .actlbl{left:calc(100% + 12px);top:50%;translate:0 -50%}
+#seat2 .actlbl{left:50%;top:calc(100% + 8px);translate:-50% 0}
 /* card counts stay hidden until a player is down to 10 or fewer, then they shout */
 .cnt{display:inline-flex;align-items:baseline;gap:2px;font-family:var(--font-display);font-weight:900;font-size:26px;line-height:1;
   font-variant-numeric:tabular-nums;color:var(--felt-deep);background:var(--warn);border-radius:8px;padding:3px 7px 2px;animation:pop .35s ease-out}
@@ -3606,7 +3605,7 @@ function markActor(p,text){
   // on your own turn the button is the only thing to look at, so no label competes with it
   if(p===0)return;
   // the label belongs to the plate's row, so it moves with the plate: over it for the side players (above their tags),
-  // to the right of the row for the player across the table
+  // under the plate for the player across the table (the turn clock stands to its right)
   const e=document.createElement('div');
   e.className='fx-act actlbl';e.textContent=text;
   $('#seat'+p+' .whorow').appendChild(e);
@@ -5194,7 +5193,7 @@ function handGeo(n,keys){
     g.fixAt=px=>rows.findIndex((r,i)=>px>=i*vdx&&px<i*vdx+(i<rows.length-1?vdx:cw));
   }else{
     if(rows.length>1)gap=Math.max(ch*.3,Math.min(gap,(Math.max(base,ch*2.4)-lift-ch-pad)/(rows.length-1)));
-    rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:r.w+5,y,gr:r.gr})});
+    rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:r.w+5,y:y+ch-26,gr:r.gr})}); // (the tag stands at the lower right of its group's cards)
     need=lift+ch+(rows.length-1)*gap+6;
   }
   // an empty frame stands as tall as the hand (never less than one card and its margin)
@@ -6132,7 +6131,9 @@ function jieFeng(from,to){
     // the label rises as it fades, so it starts where there is room above it: below the plate of the player
     // across the table (at the top of the screen), above everyone else's
     const r=plate&&plate.getBoundingClientRect();
-    const q=!r?actPoint(to):to===2?{x:r.left+r.width/2,y:r.bottom+44}:{x:r.left+r.width/2,y:r.top-30};
+    // (a computer or tablet: beside the side players' plates, on the table's side of them, clear of the turn clock above the plate)
+    const side=!isPhone()&&(to===1||to===3);
+    const q=!r?actPoint(to):to===2?{x:r.left+r.width/2,y:r.bottom+44}:side?{x:to===3?r.right+62:r.left-62,y:r.top+r.height/2}:{x:r.left+r.width/2,y:r.top-30};
     fxEl('fx-tag first','接风',q.x,q.y);
     Sound.play('ding');
     if(plate){plate.classList.add('acting');setTimeout(()=>plate.classList.remove('acting'),2400)}
@@ -9024,9 +9025,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-2046';
+const VERSION='1108-0855';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19779854a';
+const APP_HASH='c1977aaf5c';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -9168,8 +9169,8 @@ const VC=(()=>{
     for(let q=0;q<4;q++){
       const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
       const a=toAbs(q),mine=q===0&&!SPEC?on:!!NET.mics[a];
-      // (a grey 闭麦 only on your own plate: the other three show only a mic flashing while they talk)
-      el.className='vc'+(!active||!isHumanSeat(q)?'':talking.has(a)?' talk':mine||q||SPEC?'':' mute');
+      // (no 闭麦 label anywhere: a plate shows only a mic flashing while its player talks)
+      el.className='vc'+(active&&isHumanSeat(q)&&talking.has(a)?' talk':'');
     }
   }
   // browsers hold sound back until the page is touched: every tap wakes the listening and the lines up again

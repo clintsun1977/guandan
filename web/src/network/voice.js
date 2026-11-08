@@ -135,8 +135,8 @@ const VC=(()=>{
     for(let q=0;q<4;q++){
       const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
       const a=toAbs(q),mine=q===0&&!SPEC?on:!!NET.mics[a];
-      // (a grey 闭麦 only on your own plate: the other three show only a mic flashing while they talk)
-      el.className='vc'+(!active||!isHumanSeat(q)?'':talking.has(a)?' talk':mine||q||SPEC?'':' mute');
+      // (no 闭麦 label anywhere: a plate shows only a mic flashing while its player talks)
+      el.className='vc'+(active&&isHumanSeat(q)&&talking.has(a)?' talk':'');
     }
   }
   // browsers hold sound back until the page is touched: every tap wakes the listening and the lines up again

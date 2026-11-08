@@ -69,7 +69,7 @@ body.test #seat3,body.test #seat1{justify-content:flex-start;transform:none}
 .whorow{display:flex;align-items:center;gap:12px;position:relative}
 .actlbl{position:absolute;z-index:5;pointer-events:none;white-space:nowrap}
 #seat1 .actlbl,#seat3 .actlbl{bottom:calc(100% + 30px);left:50%;translate:-50% 0}
-#seat2 .actlbl{left:calc(100% + 12px);top:50%;translate:0 -50%}
+#seat2 .actlbl{left:50%;top:calc(100% + 8px);translate:-50% 0}
 /* card counts stay hidden until a player is down to 10 or fewer, then they shout */
 .cnt{display:inline-flex;align-items:baseline;gap:2px;font-family:var(--font-display);font-weight:900;font-size:26px;line-height:1;
   font-variant-numeric:tabular-nums;color:var(--felt-deep);background:var(--warn);border-radius:8px;padding:3px 7px 2px;animation:pop .35s ease-out}

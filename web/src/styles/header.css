@@ -33,10 +33,9 @@
 #micBtn.on{color:var(--on-gold);background:var(--gold);border-color:var(--gold);font-weight:700;opacity:1}
 #micBtn.on::before{background:var(--on-gold)}
 .vc{display:none;align-items:center;flex:none}
-.vc.talk,.vc.mute{display:inline-flex}
+.vc.talk{display:inline-flex}
 .vc svg{width:1.05em;height:1.05em;fill:var(--gold);display:none}
 .vc.talk svg{display:block;animation:vcTalk .45s ease-in-out infinite alternate}
-.vc.mute::after{content:"闭麦";font-size:11px;font-weight:400;line-height:1;padding:2px 5px;border-radius:999px;color:var(--muted);border:1px solid var(--line-strong)}
 /* the other three seats: the mic flashes inside the plate, at its right end, and takes no room (the name stays where it is) */
 .seat .who{position:relative}
 .seat .who .vc{position:absolute;top:50%;right:5px;translate:0 -50%;z-index:6;pointer-events:none}
