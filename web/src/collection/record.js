@@ -3,8 +3,9 @@
 // checks it in validate.mjs by replaying the round): the dealt hands, the tribute, every play and pass with who made it
 // (human, bot or timeout) and the finishing order. Only the host records, only rounds that start with two or more people
 // seated, never the training version, a 残局 or a spectator, and nothing once the host has gone back to playing alone.
-// No nicknames, room number, chat, voice or IP: the four seats get random IDs that last for one match only (a match taken up
-// again (选级 set by hand to the state it stopped in) keeps its match ID, seat IDs and round numbers: see match-link.js).
+// With the room number (room) and each person's nickname (seats[].name, null for a computer's seat), which guandanai's
+// collector takes from this site only; no chat, voice or IP. The four seats also get random IDs that last for one match (a match
+// taken up again (选级 set by hand to the state it stopped in) keeps its match ID, seat IDs and round numbers: see match-link.js).
 // Cards are the 0-107 ids of makeDeck(). appVersion starts with c1977 so these rounds can be told from guandanai's own.
 const REC={byGame:new WeakMap(),auto:-1};
 const recHumans=()=>[...NET.humans].sort((a,b)=>a-b);
@@ -15,6 +16,12 @@ function recModel(id){
   const m=NeuralBot.models.find(x=>x.id===id&&x.file);
   return m?{id:m.guandanaiId,sha256:m.sha256,version:m.source.version}:{id:'clint-rule',sha256:null,version:'clintsun1977-'+VERSION};
 }
+// as the collector takes them: no spaces at either end, no control characters, at most 24 characters (16 for the room), else none
+function recLabel(v,max){
+  const t=[...String(v??'').replace(/[\u0000-\u001f\u007f]/g,'').trim()].slice(0,max).join('').trim();
+  return t||null;
+}
+const recNick=p=>recLabel(p===0?(NET.names[0]||myNick):NET.names[p],24);
 const REC_TIMEOUT={id:'clint-rule',sha256:null,version:'clintsun1977-timeout'};
 // right after the deal, before any tribute
 function recDeal(){
@@ -34,7 +41,8 @@ function recStart(leader){
   if(!r||r.round!==ML.base+G.round||r.hands||!recEligible())return;
   const humans=recHumans(),bot=recModel(RULES.bot);
   r.leader=leader;r.hands=G.hands.map(h=>h.map(c=>c.id));r.humanMask=recMask(humans);
-  r.seats=s.seats.map((id,p)=>({id,human:humans.includes(p),bot}));
+  r.seats=s.seats.map((id,p)=>({id,human:humans.includes(p),bot,name:humans.includes(p)?recNick(p):null}));
+  const room=recLabel(NET.code,16);if(room)r.room=room;
   r.tribute=(G.trib||[]).map(t=>({from:t.g,to:t.r,card:t.tc.id,returnCard:t.rc?t.rc.id:null}));
 }
 // every play or pass, as the host applies it (before doPlay, while the turn's clock still shows how long it took)
