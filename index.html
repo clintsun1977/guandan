@@ -1889,7 +1889,7 @@ html.phone .handtools .emote-fab {
 <div class="lobby" id="lobby" hidden>
   <div class="lobby-box">
     <h1 class="lobby-title">掼蛋</h1>
-    <div class="lobby-by">made by Clint</div>
+    <div class="lobby-by">made by Clint &amp; SteZero</div>
     <div class="lobby-name"><label class="lobby-label" for="nick">玩家昵称</label><input class="lobby-nick" id="nick" maxlength="8" autocomplete="off" placeholder="输入你的昵称"></div>
     <div class="lobby-modes">
       <button class="mode-btn on" data-mode="solo">单人</button>
@@ -9016,9 +9016,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-2024';
+const VERSION='1107-2026';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19779af71';
+const APP_HASH='c19779fb4b';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
