@@ -560,6 +560,14 @@ html.phone.rows body:not(.test) .mebar{padding-right:56px;gap:6px}
 html.phone.rows body:not(.test) .mebar .stat{display:none}
 html.phone.rows body:not(.test) .mebar .link{font-size:13px;padding:3px 8px}
 html.phone.rows body:not(.test) .mebar .left{gap:6px}
+/* upright: your name plate stands under your partner's, in the middle of the table, and keeps that place whatever else is on the row
+   (the 同花顺 and 成组 buttons stand to its left; the row's right end is the play buttons' column, hence the 28px: half of the row's padding) */
+html.phone.rows body:not(.test) #mebar .left{position:relative;width:100%;min-height:33px;justify-content:flex-start;flex-wrap:nowrap}
+html.phone.rows body:not(.test) #mebar .left .whorow{position:absolute;left:calc(50% + 28px);top:50%;transform:translate(-50%,-50%);z-index:1}
+/* (the clock hangs off the plate's right edge, so the plate alone is what is centred) */
+html.phone.rows body:not(.test) #myClock{position:absolute;left:calc(100% + 8px);top:50%;translate:0 -50%;margin:0}
+html.phone.rows body:not(.test) #myCnt{position:absolute;left:calc(100% + 46px);top:50%;translate:0 -50%}
+html.phone.rows body:not(.test) #myName{max-width:5.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* the finishing places at half size; your partner's beside the plate rather than under it, where their cards lie */
 html.phone body:not(.test) .place{font-size:14px;padding:3px 7px 3px 9px;border-radius:7px}
 html.phone body:not(.test) #seat2 .place{top:50%;left:100%;transform:translateY(-50%);margin:0 0 0 8px}
@@ -5452,6 +5460,8 @@ function placeCard(c,slot,i){
   c.style.setProperty('--rot',slot.rot.toFixed(2)+'deg');
   if(fresh){c.getBoundingClientRect();c.style.transition=''}
 }
+// a phone: the tallest the hand area has been this round (reset with a new round or a new window size)
+let handPeak={k:'',h:0};
 function layoutHand(){
   phoneRefit();
   const el=$('#hand'),cards=[...el.children],n=cards.length;
@@ -5460,7 +5470,9 @@ function layoutHand(){
   // so cards already dealt never shift and the hand's height (and the table above it) stays put
   const dealing=G&&(G.phase==='deal'||G.phase==='shuffle'||G.phase==='cut');
   // (the test version keeps the hand area's height once your last card has gone, and to the end of the round, so the plates below it do not move)
-  if(!n&&!dealing){if(!(TEST&&['play','roundEnd','over'].includes(G.phase)))el.style.height='';drawFixZone(null);placeActionBtns();return}
+  // (a phone keeps the hand area's height, and so the name row above it, where the round's full hand put them: see handPeak)
+  const keepH=!TEST&&isPhone()&&handPeak.h>0&&['play','roundEnd','over'].includes(G.phase);
+  if(!n&&!dealing){if(keepH)el.style.height=handPeak.h+'px';else if(!(TEST&&['play','roundEnd','over'].includes(G.phase)))el.style.height='';drawFixZone(null);placeActionBtns();return}
   let probe=null;
   if(!n){probe=document.createElement('div');probe.className='card';probe.style.visibility='hidden';el.appendChild(probe)}
   const fixed=new Set((G.fixed||[]).flat()),act=cards.filter(c=>!fixed.has(+c.dataset.id));
@@ -5470,6 +5482,11 @@ function layoutHand(){
   cards.filter(c=>fixed.has(+c.dataset.id)).forEach((c,i)=>{const s=g.fix.get(+c.dataset.id);placeCard(c,s,s.z??i)});
   // a phone marks the cards of its groups with a gold edge along the top
   cards.forEach(c=>c.classList.toggle('grp',isPhone()&&fixed.has(+c.dataset.id)));
+  if(!TEST&&isPhone()){
+    const pk=G.round+'|'+innerWidth+'x'+innerHeight+'|'+handView;
+    if(handPeak.k!==pk)handPeak={k:pk,h:0};
+    handPeak.h=Math.max(handPeak.h,g.height);g.height=handPeak.h;
+  }
   el.style.height=g.height+'px';
   drawFixZone(g);
   placeLastPlay();
@@ -7631,7 +7648,7 @@ function showStart(){
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
   Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
-  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.bot==='clint'||NeuralBot.has(r.bot))RULES.bot=r.bot;if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
+  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2&&(r.bot==='clint'||NeuralBot.has(r.bot)))RULES.bot=r.bot; /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){
@@ -7718,7 +7735,7 @@ $('#levelPick').addEventListener('click',e=>{
 ruleBtns.forEach(b=>b.addEventListener('click',()=>{
   if(lobbyMode==='join')return;
   if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else if(b.dataset.rule==='bot'){RULES.bot=b.dataset.val;botPreload()}else if(b.dataset.rule==='coach')RULES.coach=b.dataset.val==='1';else RULES.aFail=b.dataset.val;
-  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,coach:RULES.coach}))}catch(_){}
+  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,botV:2,coach:RULES.coach}))}catch(_){}
   Sound.unlock();Sound.play('select');
   renderRules();
   if(lobbyMode==='host')broadcastLobby();
@@ -8999,9 +9016,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1829';
+const VERSION='1107-1912';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19770856b';
+const APP_HASH='c1977f49a4';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

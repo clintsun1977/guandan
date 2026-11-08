@@ -1,7 +1,7 @@
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
   Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
-  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.bot==='clint'||NeuralBot.has(r.bot))RULES.bot=r.bot;if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
+  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2&&(r.bot==='clint'||NeuralBot.has(r.bot)))RULES.bot=r.bot; /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){
@@ -88,7 +88,7 @@ $('#levelPick').addEventListener('click',e=>{
 ruleBtns.forEach(b=>b.addEventListener('click',()=>{
   if(lobbyMode==='join')return;
   if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else if(b.dataset.rule==='bot'){RULES.bot=b.dataset.val;botPreload()}else if(b.dataset.rule==='coach')RULES.coach=b.dataset.val==='1';else RULES.aFail=b.dataset.val;
-  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,coach:RULES.coach}))}catch(_){}
+  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,botV:2,coach:RULES.coach}))}catch(_){}
   Sound.unlock();Sound.play('select');
   renderRules();
   if(lobbyMode==='host')broadcastLobby();

@@ -116,6 +116,14 @@ html.phone.rows body:not(.test) .mebar{padding-right:56px;gap:6px}
 html.phone.rows body:not(.test) .mebar .stat{display:none}
 html.phone.rows body:not(.test) .mebar .link{font-size:13px;padding:3px 8px}
 html.phone.rows body:not(.test) .mebar .left{gap:6px}
+/* upright: your name plate stands under your partner's, in the middle of the table, and keeps that place whatever else is on the row
+   (the 同花顺 and 成组 buttons stand to its left; the row's right end is the play buttons' column, hence the 28px: half of the row's padding) */
+html.phone.rows body:not(.test) #mebar .left{position:relative;width:100%;min-height:33px;justify-content:flex-start;flex-wrap:nowrap}
+html.phone.rows body:not(.test) #mebar .left .whorow{position:absolute;left:calc(50% + 28px);top:50%;transform:translate(-50%,-50%);z-index:1}
+/* (the clock hangs off the plate's right edge, so the plate alone is what is centred) */
+html.phone.rows body:not(.test) #myClock{position:absolute;left:calc(100% + 8px);top:50%;translate:0 -50%;margin:0}
+html.phone.rows body:not(.test) #myCnt{position:absolute;left:calc(100% + 46px);top:50%;translate:0 -50%}
+html.phone.rows body:not(.test) #myName{max-width:5.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* the finishing places at half size; your partner's beside the plate rather than under it, where their cards lie */
 html.phone body:not(.test) .place{font-size:14px;padding:3px 7px 3px 9px;border-radius:7px}
 html.phone body:not(.test) #seat2 .place{top:50%;left:100%;transform:translateY(-50%);margin:0 0 0 8px}

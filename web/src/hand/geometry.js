@@ -136,6 +136,8 @@ function placeCard(c,slot,i){
   c.style.setProperty('--rot',slot.rot.toFixed(2)+'deg');
   if(fresh){c.getBoundingClientRect();c.style.transition=''}
 }
+// a phone: the tallest the hand area has been this round (reset with a new round or a new window size)
+let handPeak={k:'',h:0};
 function layoutHand(){
   phoneRefit();
   const el=$('#hand'),cards=[...el.children],n=cards.length;
@@ -144,7 +146,9 @@ function layoutHand(){
   // so cards already dealt never shift and the hand's height (and the table above it) stays put
   const dealing=G&&(G.phase==='deal'||G.phase==='shuffle'||G.phase==='cut');
   // (the test version keeps the hand area's height once your last card has gone, and to the end of the round, so the plates below it do not move)
-  if(!n&&!dealing){if(!(TEST&&['play','roundEnd','over'].includes(G.phase)))el.style.height='';drawFixZone(null);placeActionBtns();return}
+  // (a phone keeps the hand area's height, and so the name row above it, where the round's full hand put them: see handPeak)
+  const keepH=!TEST&&isPhone()&&handPeak.h>0&&['play','roundEnd','over'].includes(G.phase);
+  if(!n&&!dealing){if(keepH)el.style.height=handPeak.h+'px';else if(!(TEST&&['play','roundEnd','over'].includes(G.phase)))el.style.height='';drawFixZone(null);placeActionBtns();return}
   let probe=null;
   if(!n){probe=document.createElement('div');probe.className='card';probe.style.visibility='hidden';el.appendChild(probe)}
   const fixed=new Set((G.fixed||[]).flat()),act=cards.filter(c=>!fixed.has(+c.dataset.id));
@@ -154,6 +158,11 @@ function layoutHand(){
   cards.filter(c=>fixed.has(+c.dataset.id)).forEach((c,i)=>{const s=g.fix.get(+c.dataset.id);placeCard(c,s,s.z??i)});
   // a phone marks the cards of its groups with a gold edge along the top
   cards.forEach(c=>c.classList.toggle('grp',isPhone()&&fixed.has(+c.dataset.id)));
+  if(!TEST&&isPhone()){
+    const pk=G.round+'|'+innerWidth+'x'+innerHeight+'|'+handView;
+    if(handPeak.k!==pk)handPeak={k:pk,h:0};
+    handPeak.h=Math.max(handPeak.h,g.height);g.height=handPeak.h;
+  }
   el.style.height=g.height+'px';
   drawFixZone(g);
   placeLastPlay();
