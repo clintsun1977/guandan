@@ -74,7 +74,9 @@ function handGeo(n,keys){
     g.fixAt=px=>rows.findIndex((r,i)=>px>=i*vdx&&px<i*vdx+(i<rows.length-1?vdx:cw));
   }else{
     if(rows.length>1)gap=Math.max(ch*.3,Math.min(gap,(Math.max(base,ch*2.4)-lift-ch-pad)/(rows.length-1)));
-    rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:r.w+5,y:y+ch-26,gr:r.gr})}); // (the tag stands at the lower right of its group's cards)
+    // (the tags stand at the lower right of their groups' cards, all in one column: where the longest group's cards end)
+    const tagX=Math.max(0,...rows.map(r=>r.w))+5;
+    rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:tagX,y:y+ch-26,gr:r.gr})});
     need=lift+ch+(rows.length-1)*gap+6;
   }
   // an empty frame stands as tall as the hand (never less than one card and its margin)

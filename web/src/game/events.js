@@ -62,8 +62,8 @@ function applyEvt(e){
       return true;
     }
     case'pause':
-      // only the player who paused can resume, and a game already paused is not paused again by someone else
-      if(G.paused&&G.pausedBy!==p)return true;
+      // only the player who paused can resume (or the host, who marks its event force), and a game already paused is not paused again by someone else
+      if(G.paused&&G.pausedBy!==p&&!(e.force&&!e.on))return true;
       setPaused(!!e.on,p);return true;
     case'humans':
       setHumans(e.list.map(toLocal),e.names);

@@ -132,6 +132,7 @@ const VC=(()=>{
   function paint(){
     const b=$('#micBtn');
     b.hidden=!active;b.classList.toggle('on',on);b.textContent=locked?'语音已关':on?'开麦':'闭麦';b.setAttribute('aria-pressed',on);b.classList.toggle('off',locked);
+    if(typeof syncPauseMic==='function')syncPauseMic();
     for(let q=0;q<4;q++){
       const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
       const a=toAbs(q),mine=q===0&&!SPEC?on:!!NET.mics[a];

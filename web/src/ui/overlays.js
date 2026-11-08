@@ -60,16 +60,32 @@ function setPaused(on,by){
   G.paused=on;G.pausedBy=on?by:null;
   syncPauseBtn();
   if(on){
-    const mine=by===0;
-    showPanel(`<h2>暂停中</h2><p class="muted">${mine?'你暂停了游戏，大家休息一下。':`${NAMES[by]}暂停了游戏，只有暂停的人能继续。你可以等一等，也可以退出游戏。`}</p>
-      <div class="btns">${mine?'<button class="btn primary" id="resumeBtn">继续游戏</button>':'<button class="btn" id="pauseQuit">退出游戏</button>'}</div>`);
+    const mine=by===0,host=NET.mode==='host';
+    // the microphone stays in reach while the game is paused (the header's buttons are under this panel); the room's host can also
+    // end somebody else's pause
+    const mic=VC.info().active?'<button class="btn" id="pauseMic"></button>':'';
+    showPanel(`<h2>暂停中</h2><p class="muted">${mine?'你暂停了游戏，大家休息一下。':host?`${NAMES[by]}暂停了游戏。你是房主，可以取消暂停；也可以等一等，或者退出游戏。`:`${NAMES[by]}暂停了游戏，只有暂停的人（或房主）能继续。你可以等一等，也可以退出游戏。`}</p>
+      <div class="btns">${mic}${mine?'<button class="btn primary" id="resumeBtn">继续游戏</button>':`${host?'<button class="btn primary" id="pauseCancel">取消暂停</button>':''}<button class="btn" id="pauseQuit">退出游戏</button>`}</div>`);
     $('#panel').dataset.kind='pause';
+    syncPauseMic();
+    if(mic)$('#pauseMic').onclick=()=>VC.toggle();
     if(mine){$('#resumeBtn').onclick=()=>act({k:'pause',on:false,p:toAbs(0)});$('#resumeBtn').focus()}
-    else $('#pauseQuit').onclick=askQuit;
+    else{
+      $('#pauseQuit').onclick=askQuit;
+      if(host)$('#pauseCancel').onclick=()=>act({k:'pause',on:false,p:toAbs(0),force:1});
+    }
   }else if(!$('#overlay').hidden&&$('#panel').dataset.kind==='pause'){
     hideOverlay();
     if(G.phase==='roundEnd'||G.phase==='over')showResult();
   }
+}
+// the microphone button on the pause panel says what the microphone is doing
+function syncPauseMic(){
+  const b=$('#pauseMic');if(!b)return;
+  const i=VC.info();
+  b.textContent=i.locked?'语音已关':i.on?'麦克风：开':'麦克风：关';
+  b.disabled=!!i.locked;
+  b.classList.toggle('primary',!!i.on&&!i.locked);
 }
 // 暂停 / 继续: while someone else has paused, the button only says so and cannot be pressed
 function syncPauseBtn(){
