@@ -1902,7 +1902,6 @@ html.phone .handtools .emote-fab {
       <div class="rule-row"><span class="rule-k">电脑模型</span><button class="rule-btn" data-rule="bot" data-val="clint">默认</button><button class="rule-btn" data-rule="bot" data-val="danmcai"><span class="fl">danMCai</span><span class="sh">dMC</span></button><button class="rule-btn" data-rule="bot" data-val="guanzero"><span class="fl">GuanZero</span><span class="sh">GZe</span></button></div>
       <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
       <div class="rule-note" id="rulesNote"></div>
-      <div class="rule-note" id="collectNote"></div>
     </div>
     <div class="lobby-join" id="joinRow" hidden>
       <input class="lobby-nick" id="roomCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="请输入房间号">
@@ -7661,8 +7660,6 @@ function renderRules(){
     b.disabled=!mine;
   }
   $('#rulesNote').textContent=mine?'':'规则由房主选定';
-  // 牌谱采集: said to everyone in a room before they sit down
-  $('#collectNote').textContent=lobbyMode==='solo'?'':'两名以上真人时，每局牌谱匿名上传到 guandanai，用于 AI 训练（不含昵称、房间号、语音）';
   renderLevel();
 }
 // 选级: the state to start the first match from (see applyStart): so a table that cannot get back to a game it dropped out of can go
@@ -9019,9 +9016,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1928';
+const VERSION='1107-2024';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977a3949';
+const APP_HASH='c19779af71';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

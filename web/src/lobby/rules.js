@@ -11,8 +11,6 @@ function renderRules(){
     b.disabled=!mine;
   }
   $('#rulesNote').textContent=mine?'':'规则由房主选定';
-  // 牌谱采集: said to everyone in a room before they sit down
-  $('#collectNote').textContent=lobbyMode==='solo'?'':'两名以上真人时，每局牌谱匿名上传到 guandanai，用于 AI 训练（不含昵称、房间号、语音）';
   renderLevel();
 }
 // 选级: the state to start the first match from (see applyStart): so a table that cannot get back to a game it dropped out of can go
