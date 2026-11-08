@@ -5647,7 +5647,10 @@ const reduceMotion=()=>TEST||matchMedia('(prefers-reduced-motion: reduce)').matc
 function fly(p){
   if(reduceMotion())return;
   const a=$('.emblem').getBoundingClientRect();
-  const t=(p===0?$('#hand'):$('#seat'+p+' .who .back')).getBoundingClientRect();
+  // (the little card back on a plate is not shown any more: a card dealt to that player lands on the plate itself, not at the page's
+  // corner, where it would lie over the title and the levels)
+  let t=(p===0?$('#hand'):$('#seat'+p+' .who .back')).getBoundingClientRect();
+  if(p&&!t.width)t=$('#seat'+p+' .who').getBoundingClientRect();
   const sx=a.left+a.width/2,sy=a.top+a.height/2;
   const tx=t.left+t.width/2+(p===0?(Math.random()-.5)*t.width*.5:0),ty=p===0?t.top+t.height*.55:t.top+t.height/2;
   const f=document.createElement('div');
@@ -9016,9 +9019,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1107-1912';
+const VERSION='1107-1928';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977f49a4';
+const APP_HASH='c1977a3949';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

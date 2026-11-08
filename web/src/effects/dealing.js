@@ -4,7 +4,10 @@ const reduceMotion=()=>TEST||matchMedia('(prefers-reduced-motion: reduce)').matc
 function fly(p){
   if(reduceMotion())return;
   const a=$('.emblem').getBoundingClientRect();
-  const t=(p===0?$('#hand'):$('#seat'+p+' .who .back')).getBoundingClientRect();
+  // (the little card back on a plate is not shown any more: a card dealt to that player lands on the plate itself, not at the page's
+  // corner, where it would lie over the title and the levels)
+  let t=(p===0?$('#hand'):$('#seat'+p+' .who .back')).getBoundingClientRect();
+  if(p&&!t.width)t=$('#seat'+p+' .who').getBoundingClientRect();
   const sx=a.left+a.width/2,sy=a.top+a.height/2;
   const tx=t.left+t.width/2+(p===0?(Math.random()-.5)*t.width*.5:0),ty=p===0?t.top+t.height*.55:t.top+t.height/2;
   const f=document.createElement('div');
