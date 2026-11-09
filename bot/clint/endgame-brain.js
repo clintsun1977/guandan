@@ -8,7 +8,8 @@
 // rules (the rules' play first, the brain only where it can change it, the other side all rules), per endgame, in levels gained over a round played by
 // the rules alone: 600 endgames of up to 6 cards a hand: +0.15 (a player who saw every hand: +0.30); 400 endgames of up to 10 cards a hand: +0.16 (±0.06),
 // the search finishing in time for 70% of the plays it was asked about, 1.2 seconds a play on average (16 deals, 2.5 s a play; with 10 s a play and 40 deals,
-// 120 endgames: +0.27 (±0.16), 79% finished, 3.3 s a play on average: more deals make each play's average steadier). A search that runs out of time (BRAIN.ms) or finds
+// 120 endgames: +0.27 (±0.16), 79% finished, 3.3 s a play on average: more deals make each play's average steadier). Up to 12 cards a hand and 30 s a play
+// (the setting now): 105 endgames: +0.13 (±0.14), 72% finished, 8.1 s a play on average: no gain over the smaller setting that the measurements can show. A search that runs out of time (BRAIN.ms) or finds
 // the deals too hard is dropped, and the rules' play stands. Only stezer0's computer partner searches the true deal; other seats use public information.
 // A position: h the four hands, tr the play to beat {p, play} or null, ps how many passed on it, t whose turn, out who is out so
 // far (in order), L the level.
@@ -190,8 +191,10 @@ class EsSolver{
 
 // the settings (an object so that the lab can try others): max = every hand at most this many cards; k = deals tried; edge = how much better
 // another play must be (levels); ms = time for one decision; minWorlds = fewer deals than this are no evidence; worldMs = most time one deal
-// may take (the exact search of a ten-card endgame is quick in most deals and very slow in a few: such a deal is dropped)
-const BRAIN={max:10,k:40,edge:.2,ms:10000,minWorlds:3,worldMs:4000,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
+// may take (the exact search of a ten-card endgame is quick in most deals and very slow in a few: such a deal is dropped); the search stops
+// early (after minStop deals) once it is settled, that is when, by the deals so far, some play beats the rules' play by edge with stopZ standard
+// errors to spare, or no play can plausibly do so
+const BRAIN={max:12,k:40,edge:.2,ms:30000,minWorlds:3,worldMs:10000,minStop:8,stopZ:2.5,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
 // a position's exact result for seats 0 and 2 (-3..3), from a solver that already holds part of the search (the table is shared)
 function esValue(sv,T){
   if(mcOver(T))return mcReward(T);
@@ -253,8 +256,9 @@ function* brainCore(p,rulesPl){
     const pool=makeDeck().filter(c=>!gone.has(c.id));
     const others=[1,2,3].map(k=>(p+k)%4),sizes=others.map(q=>S.h[q].length);
     if(pool.length<sizes.reduce((a,b)=>a+b,0))return rulesPl;
-    const sign=p%2===0?1:-1,score=legal.map(()=>0);
-    let wsum=0,worlds=0;
+    // what each play gains over the rules' play, deal by deal: weighted sum and sum of squares (for the standard error)
+    const sign=p%2===0?1:-1,S1=legal.map(()=>0),S2=legal.map(()=>0);
+    let wsum=0,w2sum=0,worlds=0;
     try{
       for(let w=0;w<BRAIN.k&&mcNow()-t0<BRAIN.ms;w++){
         const cards=pool.slice();
@@ -266,14 +270,25 @@ function* brainCore(p,rulesPl){
         const W={h,tr:S.tr,ps:S.ps,t:S.t,out:S.out,L:S.L};
         const vals=yield* esWorld(W,legal,Math.min(t0+BRAIN.ms,mcNow()+BRAIN.worldMs));
         if(!vals){if(!worlds)break;continue} // the first deal too hard to finish: give up at once (the rules' play); a later one: left out
-        vals.forEach((v,i)=>{score[i]+=wt*sign*v});wsum+=wt;worlds++;
+        vals.forEach((v,i)=>{const d=sign*(v-vals[ri]);S1[i]+=wt*d;S2[i]+=wt*d*d});wsum+=wt;w2sum+=wt*wt;worlds++;
+        if(worlds>=BRAIN.minStop&&wsum>0){
+          const neff=wsum*wsum/w2sum;let win=false,none=true;
+          for(let i=0;i<legal.length;i++){
+            if(i===ri)continue;
+            const mean=S1[i]/wsum,se=Math.sqrt(Math.max(0,S2[i]/wsum-mean*mean)/neff);
+            if(mean-BRAIN.edge>BRAIN.stopZ*se)win=true;
+            if(mean+BRAIN.stopZ*se>=BRAIN.edge)none=false;
+          }
+          if(win||none)break;
+        }
         yield;
       }
     }finally{st.ms+=mcNow()-t0}
     if(worlds<BRAIN.minWorlds||!wsum){st.fallback++;return rulesPl}
     st.used++;
-    const avg=score.map(x=>x/wsum);
-    avg[ri]+=BRAIN.edge;
+    // (each play's average gain over the rules' play: the rules' play has 0 and stands unless another averages more than edge)
+    const avg=S1.map(x=>x/wsum);
+    avg[ri]=BRAIN.edge;
     let bi=ri;for(let i=0;i<legal.length;i++)if(avg[i]>avg[bi]+1e-9)bi=i;
     if(bi!==ri)st.changed++;
     return bi===ri?rulesPl:legal[bi];
