@@ -43,7 +43,7 @@ const AIP={
   // rDry: lead a kind the opponents pass on (an opponent who passed on it at least dryPasses times, on plays no bigger than this
   // one, and never played that kind himself is taken to lack it); rWildPlain: when arranging, a wild card put into a play that is
   // not a bomb costs wildPlain
-  rLeadMate:1,mateGap:4,mateTricks:2,leadMateMin:.5,leadNextMax:.3,rDry:1,dryPasses:2,rWildPlain:1,wildPlain:.2,
+  rLeadMate:1,mateGap:4,mateTricks:2,leadMateMin:.5,leadNextMax:.3,rDry:1,dryPasses:2,rWildPlain:1,wildPlain:.2,rWildTrip:1,wildTripBonus:.3,rTopLast:1,rTopOver:1,topOverMax:6,topOverBeat:.2,
   // rGoAlong: on your partner's play, a group of yours that fits exactly and is not a big one (isCtrl) is always played
   rGoAlong:1,
   // from the 27th test round (07-guandan-ai/第27局评语分析.txt), each on (1) or off (0): rPureFit: an exactly fitting group that is
@@ -203,13 +203,19 @@ function armRest(by,jk,wild,L){
   return units;
 }
 // a kept wild card joins whatever it improves most: a single becomes a pair, a pair a three, a three or bomb a bigger bomb
-function armWilds(units){
+function armWilds(units,L){
   for(;;){
     const wi=units.findIndex(u=>u.wu&&u.n===1);
     if(wi<0)return units;
     const w=units[wi],rest=units.filter((_,i)=>i!==wi);
     let best=null,bs=armScore(units,1);
     rest.forEach((u,i)=>{
+      // a three that took a pair along (a full house) may take the wild card instead: a four-bomb, and the pair is free to lead
+      if(AIP.rWildTrip&&u.type==='full'&&u.value<16&&!u.wu){
+        const tr=u.cards.slice(0,3),pr=u.cards.slice(3),cand=rest.slice();
+        cand[i]=armUnit('bomb',u.value,tr.concat(w.cards),1);cand.push(armUnit('pair',val(pr[0],L),pr));
+        const s=armScore(cand,1)+AIP.wildTripBonus;if(s>bs){bs=s;best=cand}
+      }
       if(u.value>=16||!['single','pair','triple','bomb'].includes(u.type))return;
       const n=u.n+1,cand=rest.slice();
       cand[i]=armUnit(n===2?'pair':n===3?'triple':'bomb',u.value,u.cards.concat(w.cards),u.wu+1);
@@ -251,7 +257,7 @@ function arrange(hand,L){
       for(const c of cards)by[c.r].push(c);
     }
   })(0,wild.length);
-  return armWilds(best);
+  return armWilds(best,L);
 }
 // arranging runs a small search, so each hand is arranged once per round (per set of numbers, while training
 // compares two); a new round deals new card objects, so the cache only holds for the round it was made in
@@ -338,6 +344,21 @@ function oppBeatChance(p,cur){
     for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(pool.length-i));[pool[i],pool[j]]=[pool[j],pool[i]]}
     const a=pool.slice(0,ns[0]),b=pool.slice(ns[0]+ns[1],need);
     if(genPlays(a,G.L).some(x=>beats(x,cur))||genPlays(b,G.L).some(x=>beats(x,cur)))k++;
+  }
+  return k/N;
+}
+// the chance that an opponent beats a play without a bomb: dealing the cards still out (what the partner holds included)
+// at random, as often as one of the two opponents' hands holds a play above it
+function oppBeatPlain(p,cur){
+  const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
+  const pool=makeDeck().filter(c=>!gone.has(c.id));
+  const ns=[(p+1)%4,(p+2)%4,(p+3)%4].map(i=>G.hands[i].length),need=ns[0]+ns[1]+ns[2];
+  if(pool.length<need)return 1;
+  const N=AIP.mateSamples*2;let k=0;
+  for(let t=0;t<N;t++){
+    for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(pool.length-i));[pool[i],pool[j]]=[pool[j],pool[i]]}
+    const a=pool.slice(0,ns[0]),b=pool.slice(ns[0]+ns[1],need);
+    if(genPlays(a,G.L).some(x=>!isBomb(x)&&beats(x,cur))||genPlays(b,G.L).some(x=>!isBomb(x)&&beats(x,cur)))k++;
   }
   return k/N;
 }
@@ -612,8 +633,15 @@ function aiLead(p,units,plays,ph){
   if(!pool.length)return units.slice().sort((a,b)=>power(a)-power(b))[0];
   const mateLeft=G.hands[(p+2)%4].length;
   const oppMin=Math.min(...[(p+1)%4,(p+3)%4].map(i=>G.hands[i].length||99));
+  // a single nobody can beat stays in hand while other plays are left: it wins the lead back if those get beaten
+  // (so that is judged before the five-card rule below, which could leave nothing but that single)
+  let keepTop=false;
+  if(AIP.rTopLast&&pool.length>1){
+    const o=outside(p),tops=pool.filter(u=>u.type==='single'&&isTop(u,o)),q=pool.filter(u=>!tops.includes(u));
+    if(tops.length&&q.length){pool=q;keepTop=true}
+  }
   // an opponent down to five cards: no three-with-a-pair or straight led (they could go out on one)
-  if(AIP.rNoFive&&[(p+1)%4,(p+3)%4].some(i=>G.hands[i].length===5)){const q=pool.filter(u=>u.type!=='full'&&u.type!=='straight');if(q.length)pool=q}
+  if(!keepTop&&AIP.rNoFive&&[(p+1)%4,(p+3)%4].some(i=>G.hands[i].length===5)){const q=pool.filter(u=>u.type!=='full'&&u.type!=='straight');if(q.length)pool=q}
   const of=t=>pool.filter(u=>u.type===t);
   if(AIP.rFiveLead){
     const oc=[(p+1)%4,(p+3)%4].map(i=>G.hands[i].length).filter(n=>n>0);
@@ -789,6 +817,13 @@ function aiChoose(p){
     // your partner's single or pair of 10 or below, and the opponent next to play is down to a few cards: top it with
     // an ace or the level card (breaking a pair if need be), so they cannot slip a small card through
     const nx=(p+1)%4;
+    // two plays from going out and one of them, of the partner's kind, that nobody can beat but with a bomb: it takes the
+    // trick even from the partner, and the last play follows (the partner still has plenty of cards left)
+    if(AIP.rTopOver&&hand.length<=AIP.topOverMax&&G.hands[(p+2)%4].length>=3){
+      const f=plays.filter(x=>!isBomb(x)&&x.type===cur.type&&x.n===cur.n&&analyze(hand.filter(c=>!x.cards.includes(c)),L).length&&oppBeatPlain(p,x)<=AIP.topOverBeat)
+        .sort((a,b)=>a.value-b.value)[0];
+      if(f)return f;
+    }
     if(AIP.rTopMate&&(cur.type==='single'||cur.type==='pair')&&cur.value<=AIP.smallMax&&G.hands[nx].length&&G.hands[nx].length<=AIP.topMateNextMax){
       const top=plays.filter(x=>x.type===cur.type&&x.n===cur.n&&!isBomb(x)&&!x.wu&&x.value>=14&&x.value<=15).sort((a,b)=>a.value-b.value)[0];
       if(top)return top;
@@ -881,7 +916,7 @@ function aiChoose(p){
       const leave=t===1?0:t>=3?AIP.leaveWeak:AIP.midLeaveProb;
       // early game, an opponent's single below an ace that only a joker of yours beats (no single of yours that could
       // follow it out), and your partner yet to play to this trick: the joker stays in hand
-      if(AIP.rKeepBig&&ph==='early'&&fit.type==='single'&&fit.value>=16&&cur.value<14&&mateYet()&&
+      if(AIP.rKeepBig&&ph==='early'&&fit.type==='single'&&fit.value>=16&&cur.value<14&&
         !units.some(u=>u.type==='single'&&u.value<16&&beats(u,cur)))ok=false;
       else if(!AIP.rPureFit&&ph==='mid'&&mateAfter&&Math.random()<leave)ok=false;
       else if(isCtrl(fit)&&Math.random()<AIP.saveCtrlProb)ok=false;

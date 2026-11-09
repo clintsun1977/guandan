@@ -191,10 +191,11 @@ class EsSolver{
 
 // the settings (an object so that the lab can try others): max = every hand at most this many cards; k = deals tried; edge = how much better
 // another play must be (levels); ms = time for one decision; minWorlds = fewer deals than this are no evidence; worldMs = most time one deal
-// may take (the exact search of a ten-card endgame is quick in most deals and very slow in a few: such a deal is dropped); the search stops
+// may take, firstMs = the first deal only (one that takes longer than that means the position is too big for this: the rules' play stands at
+// once, without the long wait) (the exact search of a ten-card endgame is quick in most deals and very slow in a few: such a deal is dropped); the search stops
 // early (after minStop deals) once it is settled, that is when, by the deals so far, some play beats the rules' play by edge with stopZ standard
 // errors to spare, or no play can plausibly do so
-const BRAIN={max:12,k:40,edge:.2,ms:30000,minWorlds:3,worldMs:10000,minStop:8,stopZ:2.5,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
+const BRAIN={max:12,k:40,edge:.2,ms:30000,minWorlds:3,worldMs:10000,firstMs:3000,minStop:8,stopZ:2.5,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
 // a position's exact result for seats 0 and 2 (-3..3), from a solver that already holds part of the search (the table is shared)
 function esValue(sv,T){
   if(mcOver(T))return mcReward(T);
@@ -256,7 +257,7 @@ function* brainCore(p,rulesPl){
         let wt=1;
         others.forEach((q,i)=>{const ks=handCounts(h[q],S.L);for(const x of ev[q])wt*=eventFactor(x,ks)});
         const W={h,tr:S.tr,ps:S.ps,t:S.t,out:S.out,L:S.L};
-        const vals=yield* esWorld(W,legal,Math.min(t0+BRAIN.ms,mcNow()+BRAIN.worldMs));
+        const vals=yield* esWorld(W,legal,Math.min(t0+BRAIN.ms,mcNow()+(worlds?BRAIN.worldMs:BRAIN.firstMs)));
         if(!vals){if(!worlds)break;continue} // the first deal too hard to finish: give up at once (the rules' play); a later one: left out
         vals.forEach((v,i)=>{const d=sign*(v-vals[ri]);S1[i]+=wt*d;S2[i]+=wt*d*d});wsum+=wt;w2sum+=wt*wt;worlds++;
         if(worlds>=BRAIN.minStop&&wsum>0){
