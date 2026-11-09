@@ -1,13 +1,14 @@
 /* ---------- 残局大脑: the last few cards of a round, worked out exactly ---------- */
-// When every hand is down to a few cards (BRAIN_MAX), the round can be searched to the end. A player never sees the other hands, so the
+// When every hand is down to a few cards (BRAIN.max), the round can be searched to the end. A player never sees the other hands, so the
 // computer cannot just solve the real position: it deals the cards it has not seen (not played, not in its hand) at random to the other
-// three, BRAIN_K times, each deal weighted by how well it fits what those players have shown (inferEvents / eventFactor, the same
+// three, BRAIN.k times, each deal weighted by how well it fits what those players have shown (inferEvents / eventFactor, the same
 // reading of passes and plays the playing rules use); in each deal the exact solver gives the result of every play it could make
 // (the side of seats 0 and 2 wins or loses levels, as in a real round); and the play with the best weighted result is the one.
-// The playing rules' own play is the starting point: it is kept unless another play is better by BRAIN_EDGE levels or more (tried
-// out against the rules on 600 endgames of up to 6 cards a hand: the plain best play gained 0.10 levels a round over the rules,
-// this one 0.15, and what a player who saw every hand could gain was 0.30). A search that runs out of time (BRAIN_MS) is dropped,
-// and the rules' play stands. Only the table's public state and the computer's own hand go in: no other hand is read.
+// The playing rules' own play is the starting point: it is kept unless another play is better by BRAIN.edge levels or more. Tried out against the
+// rules (the rules' play first, the brain only where it can change it, the other side all rules), per endgame, in levels gained over a round played by
+// the rules alone: 600 endgames of up to 6 cards a hand: +0.15 (a player who saw every hand: +0.30); 400 endgames of up to 10 cards a hand: +0.16 (±0.06),
+// the search finishing in time for 70% of the plays it was asked about, 1.2 seconds a play on average. A search that runs out of time (BRAIN.ms) or finds
+// the deals too hard is dropped, and the rules' play stands. Only the table's public state and the computer's own hand go in: no other hand is read.
 // A position: h the four hands, tr the play to beat {p, play} or null, ps how many passed on it, t whose turn, out who is out so
 // far (in order), L the level.
 const mcOver=S=>(!S.h[0].length&&!S.h[2].length)||(!S.h[1].length&&!S.h[3].length);
@@ -186,7 +187,10 @@ class EsSolver{
   }
 }
 
-const BRAIN_MAX=6,BRAIN_K=16,BRAIN_EDGE=.2,BRAIN_MS=900,BRAIN_MIN_WORLDS=4;
+// the settings (an object so that the lab can try others): max = every hand at most this many cards; k = deals tried; edge = how much better
+// another play must be (levels); ms = time for one decision; minWorlds = fewer deals than this are no evidence; worldMs = most time one deal
+// may take (the exact search of a ten-card endgame is quick in most deals and very slow in a few: such a deal is dropped)
+const BRAIN={max:10,k:16,edge:.2,ms:2500,minWorlds:3,worldMs:1200,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
 // a position's exact result for seats 0 and 2 (-3..3), from a solver that already holds part of the search (the table is shared)
 function esValue(sv,T){
   if(mcOver(T))return mcReward(T);
@@ -196,12 +200,32 @@ function esValue(sv,T){
 }
 const brainOn=p=>{
   if(typeof G==='undefined'||!G||G.phase!=='play'||G.turn!==p)return false;
-  for(let i=0;i<4;i++)if(G.hands[i].length>BRAIN_MAX)return false;
+  for(let i=0;i<4;i++)if(G.hands[i].length>BRAIN.max)return false;
   return G.hands[p].length>0;
 };
+// one deal: the exact result of every play in it, or null if the search does not finish within `until`. Several orders of searching are tried in
+// turn, each for longer than the one before (some deals are quick in one order and slow in another); the work goes on in slices of about
+// 80 ms, between which the generator yields
+function* esWorld(W,legal,until){
+  const svs=[];let slice=250;
+  while(mcNow()<until){
+    for(let ci=0;ci<3;ci++){
+      const t1=Math.min(until,mcNow()+slice);
+      const sv=svs[ci]||(svs[ci]=new EsSolver(W,ES_PORT[ci],2e6));
+      while(mcNow()<t1){
+        sv.deadline=Math.min(t1,mcNow()+80);
+        try{return legal.map(m=>esValue(sv,mcStep(W,m)))}catch(e){if(e!=='stop')throw e}
+        yield;
+      }
+    }
+    slice*=2;
+  }
+  return null;
+}
 // the play the rules chose (or null for a pass) and the better one, if there is one; the rules' play when the search has no better answer.
-// Worked out world by world as a generator (it yields after each deal), so the page can go on between deals while the computer "thinks"
+// Worked out deal by deal as a generator (it yields often), so the page can go on while the computer "thinks"
 function* brainCore(p,rulesPl){
+  const st=BRAIN.stat;
   try{
     if(!brainOn(p))return rulesPl;
     const S={h:G.hands.map(h=>h.slice()),tr:G.trick?{p:G.trick.player,play:G.trick.play}:null,ps:G.passes||0,t:p,out:(G.out||[]).slice(),L:G.L};
@@ -210,32 +234,35 @@ function* brainCore(p,rulesPl){
     const same=(m,q)=>(m===null&&q===null)||(m&&q&&m.cards.length===q.cards.length&&m.cards.every(c=>q.cards.includes(c)));
     const ri=legal.findIndex(m=>same(m,rulesPl));
     if(ri<0)return rulesPl;
+    st.calls++;
     const t0=mcNow(),ev=inferEvents(p);
     const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
     const pool=makeDeck().filter(c=>!gone.has(c.id));
     const others=[1,2,3].map(k=>(p+k)%4),sizes=others.map(q=>S.h[q].length);
     if(pool.length<sizes.reduce((a,b)=>a+b,0))return rulesPl;
     const sign=p%2===0?1:-1,score=legal.map(()=>0);
-    let wsum=0,worlds=0;
-    for(let w=0;w<BRAIN_K&&mcNow()-t0<BRAIN_MS;w++){
-      const cards=pool.slice();
-      for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]]}
-      const h=S.h.slice();let at=0;
-      others.forEach((q,i)=>{h[q]=sortHand(cards.slice(at,at+sizes[i]),S.L);at+=sizes[i]});
-      let wt=1;
-      others.forEach((q,i)=>{const ks=handCounts(h[q],S.L);for(const x of ev[q])wt*=eventFactor(x,ks)});
-      const W={h,tr:S.tr,ps:S.ps,t:S.t,out:S.out,L:S.L};
-      const sv=new EsSolver(W,ES_PORT[0],2e6);
-      sv.deadline=t0+BRAIN_MS;
-      let vals;
-      try{vals=legal.map(m=>esValue(sv,mcStep(W,m)))}catch(e){if(e==='stop')break;throw e}
-      vals.forEach((v,i)=>{score[i]+=wt*sign*v});wsum+=wt;worlds++;
-      yield;
-    }
-    if(worlds<BRAIN_MIN_WORLDS||!wsum)return rulesPl;
+    let wsum=0,worlds=0,dropped=0;
+    try{
+      for(let w=0;w<BRAIN.k&&mcNow()-t0<BRAIN.ms;w++){
+        const cards=pool.slice();
+        for(let i=cards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cards[i],cards[j]]=[cards[j],cards[i]]}
+        const h=S.h.slice();let at=0;
+        others.forEach((q,i)=>{h[q]=sortHand(cards.slice(at,at+sizes[i]),S.L);at+=sizes[i]});
+        let wt=1;
+        others.forEach((q,i)=>{const ks=handCounts(h[q],S.L);for(const x of ev[q])wt*=eventFactor(x,ks)});
+        const W={h,tr:S.tr,ps:S.ps,t:S.t,out:S.out,L:S.L};
+        const vals=yield* esWorld(W,legal,Math.min(t0+BRAIN.ms,mcNow()+BRAIN.worldMs));
+        if(!vals){if(++dropped>=2&&!worlds)break;continue} // two deals in a row too hard to finish: give up
+        vals.forEach((v,i)=>{score[i]+=wt*sign*v});wsum+=wt;worlds++;
+        yield;
+      }
+    }finally{st.ms+=mcNow()-t0}
+    if(worlds<BRAIN.minWorlds||!wsum){st.fallback++;return rulesPl}
+    st.used++;
     const avg=score.map(x=>x/wsum);
-    avg[ri]+=BRAIN_EDGE;
+    avg[ri]+=BRAIN.edge;
     let bi=ri;for(let i=0;i<legal.length;i++)if(avg[i]>avg[bi]+1e-9)bi=i;
+    if(bi!==ri)st.changed++;
     return bi===ri?rulesPl:legal[bi];
   }catch(e){console.warn('残局大脑出错，用规则的出法',e);return rulesPl}
 }
