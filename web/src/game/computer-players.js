@@ -23,7 +23,7 @@ function botStart(p){
 // the playing rules' move; when every hand is down to a few cards the 残局大脑 may put a better play in its place (bot/clint/endgame-brain.js)
 const rulesMove=p=>endgameBrain(p,aiDecide(p));
 // a computer on the rules, down to the last few cards: the 残局大脑 works while it "thinks" (a little at a time), and its play waits in G.brain
-const BRAIN_WAIT_MS=4000;
+const BRAIN_WAIT_MS=12000; // (a little over the brain's own limit, BRAIN.ms)
 function brainStart(p){
   G.brain=null;
   if(!brainOn(p))return;

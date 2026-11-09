@@ -7,7 +7,8 @@
 // The playing rules' own play is the starting point: it is kept unless another play is better by BRAIN.edge levels or more. Tried out against the
 // rules (the rules' play first, the brain only where it can change it, the other side all rules), per endgame, in levels gained over a round played by
 // the rules alone: 600 endgames of up to 6 cards a hand: +0.15 (a player who saw every hand: +0.30); 400 endgames of up to 10 cards a hand: +0.16 (±0.06),
-// the search finishing in time for 70% of the plays it was asked about, 1.2 seconds a play on average. A search that runs out of time (BRAIN.ms) or finds
+// the search finishing in time for 70% of the plays it was asked about, 1.2 seconds a play on average (16 deals, 2.5 s a play; with 10 s a play and 40 deals,
+// 120 endgames: +0.27 (±0.16), 79% finished, 3.3 s a play on average: more deals make each play's average steadier). A search that runs out of time (BRAIN.ms) or finds
 // the deals too hard is dropped, and the rules' play stands. Only stezer0's computer partner searches the true deal; other seats use public information.
 // A position: h the four hands, tr the play to beat {p, play} or null, ps how many passed on it, t whose turn, out who is out so
 // far (in order), L the level.
@@ -190,7 +191,7 @@ class EsSolver{
 // the settings (an object so that the lab can try others): max = every hand at most this many cards; k = deals tried; edge = how much better
 // another play must be (levels); ms = time for one decision; minWorlds = fewer deals than this are no evidence; worldMs = most time one deal
 // may take (the exact search of a ten-card endgame is quick in most deals and very slow in a few: such a deal is dropped)
-const BRAIN={max:10,k:16,edge:.2,ms:2500,minWorlds:3,worldMs:1200,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
+const BRAIN={max:10,k:40,edge:.2,ms:10000,minWorlds:3,worldMs:4000,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
 // a position's exact result for seats 0 and 2 (-3..3), from a solver that already holds part of the search (the table is shared)
 function esValue(sv,T){
   if(mcOver(T))return mcReward(T);
@@ -253,7 +254,7 @@ function* brainCore(p,rulesPl){
     const others=[1,2,3].map(k=>(p+k)%4),sizes=others.map(q=>S.h[q].length);
     if(pool.length<sizes.reduce((a,b)=>a+b,0))return rulesPl;
     const sign=p%2===0?1:-1,score=legal.map(()=>0);
-    let wsum=0,worlds=0,dropped=0;
+    let wsum=0,worlds=0;
     try{
       for(let w=0;w<BRAIN.k&&mcNow()-t0<BRAIN.ms;w++){
         const cards=pool.slice();
@@ -264,7 +265,7 @@ function* brainCore(p,rulesPl){
         others.forEach((q,i)=>{const ks=handCounts(h[q],S.L);for(const x of ev[q])wt*=eventFactor(x,ks)});
         const W={h,tr:S.tr,ps:S.ps,t:S.t,out:S.out,L:S.L};
         const vals=yield* esWorld(W,legal,Math.min(t0+BRAIN.ms,mcNow()+BRAIN.worldMs));
-        if(!vals){if(++dropped>=2&&!worlds)break;continue} // two deals in a row too hard to finish: give up
+        if(!vals){if(!worlds)break;continue} // the first deal too hard to finish: give up at once (the rules' play); a later one: left out
         vals.forEach((v,i)=>{score[i]+=wt*sign*v});wsum+=wt;worlds++;
         yield;
       }
