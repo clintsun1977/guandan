@@ -284,6 +284,10 @@ const restCost=(hand,pl,L)=>handCost(hand.filter(c=>!pl.cards.includes(c)),L);
 // card memory: the cards the other three still hold between them (the deck less your hand and everything played),
 // and every play they could make from them; pooling the three hands errs on the safe side
 function outside(p){
+  if(aiSeesAll(p)){
+    const plays=[1,2,3].flatMap(k=>genPlays(G.hands[(p+k)%4],G.L));
+    return{plays,topBomb:plays.filter(isBomb).reduce((m,x)=>Math.max(m,power(x)),0)};
+  }
   const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
   const plays=genPlays(makeDeck().filter(c=>!gone.has(c.id)),G.L);
   return{plays,topBomb:plays.filter(isBomb).reduce((m,x)=>Math.max(m,power(x)),0)};
@@ -380,14 +384,19 @@ function mateLead(p,pool,st){
   if(!ns[1])return null;
   const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
   const cards=makeDeck().filter(c=>!gone.has(c.id));
-  if(cards.length<need)return null;
+  const open=aiSeesAll(p);
+  if(cards.length<need&&!open)return null;
   const by=(a,b)=>a.value-b.value||b.n-a.n,kinds={};
   for(const u of pool)(kinds[u.type+u.n]||(kinds[u.type+u.n]=[])).push(u);
   const firsts=Object.values(kinds).map(g=>g.slice().sort(by)[0]),mc=firsts.map(()=>0),nc=firsts.map(()=>0);
-  const N=AIP.mateSamples;
+  const N=open?1:AIP.mateSamples;
   for(let t=0;t<N;t++){
-    for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(cards.length-i));[cards[i],cards[j]]=[cards[j],cards[i]]}
-    const nh=genPlays(cards.slice(0,ns[0]),G.L),mh=genPlays(cards.slice(ns[0],ns[0]+ns[1]),G.L).filter(x=>!isBomb(x));
+    let nh,mh;
+    if(open){nh=genPlays(G.hands[nx],G.L);mh=genPlays(G.hands[m],G.L).filter(x=>!isBomb(x))}
+    else{
+      for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(cards.length-i));[cards[i],cards[j]]=[cards[j],cards[i]]}
+      nh=genPlays(cards.slice(0,ns[0]),G.L);mh=genPlays(cards.slice(ns[0],ns[0]+ns[1]),G.L).filter(x=>!isBomb(x));
+    }
     firsts.forEach((u,i)=>{if(mh.some(x=>beats(x,u)))mc[i]++;if(ns[0]&&nh.some(x=>beats(x,u)))nc[i]++});
   }
   const c=firsts.map((u,i)=>({u,m:mc[i]/N,x:nc[i]/N})).filter(o=>o.m>=AIP.leadMateMin&&o.x<=AIP.leadNextMax);
@@ -473,6 +482,8 @@ function eventFactor(x,k){
 }
 // weighted deals of the unseen cards to the other three (worked out once per move)
 function inferDeals(p){
+  // Full hand knowledge bypasses sampled deals and their cache.
+  if(aiSeesAll(p))return[{ks:[1,2,3].map(k=>handCounts(G.hands[(p+k)%4],G.L)),w:1}];
   const log=G.log||[],key=p+':'+log.length;
   if(G.inf&&G.inf.key===key&&G.inf.hands===G.hands&&G.inf.aip===AIP)return G.inf.deals;
   const L=G.L,others=[1,2,3].map(k=>(p+k)%4);
@@ -513,8 +524,8 @@ function inferBeat(p,pl,who){
   return t?s/t:0;
 }
 // the late game: the player who played last, or you, hold 10 cards or fewer
-// (in a 残局 the hands are open: always the true hands)
-const inferNow=p=>AIP.rInfer&&(G.hands[p].length<=10||!!G.trick&&G.hands[G.trick.player].length<=10);
+// Full hand knowledge applies at every stage of the round.
+const inferNow=p=>aiSeesAll(p)||AIP.rInfer&&(G.hands[p].length<=10||!!G.trick&&G.hands[G.trick.player].length<=10);
 // how likely the partner holds a play (not a bomb) over this one, by the inferred hands
 function inferMateBeat(p,cur){
   const m=(p+2)%4;
@@ -750,6 +761,12 @@ function feedMate(p,cur){
   const L=G.L,pool=unseenOf(p),hand=G.hands[p];
   const inBomb=new Set(armPlays(hand,L).filter(isBomb).flatMap(u=>u.cards.map(c=>c.id)));
   const all=genPlays(hand,L).filter(x=>!isBomb(x)&&!x.cards.some(c=>inBomb.has(c.id))&&beats(x,cur));
+  if(aiSeesAll(p)){
+    const mate=genPlays(G.hands[m],L).filter(x=>x.n===mn&&!isBomb(x));
+    const next=genPlays(G.hands[nx],L).filter(x=>x.n===xn);
+    const fits=all.filter(x=>mate.some(y=>beats(y,x))&&!next.some(y=>beats(y,x)));
+    return fits.sort((a,b)=>a.value-b.value||b.n-a.n)[0]||null;
+  }
   const pick=(types,largest)=>{
     const c=all.filter(x=>types.includes(x.type)&&couldMake(pool,x.type,x.value)).sort((a,b)=>a.value-b.value||b.n-a.n);
     return c.length?c[largest?c.length-1:0]:null;
