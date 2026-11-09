@@ -2387,10 +2387,6 @@ const restCost=(hand,pl,L)=>handCost(hand.filter(c=>!pl.cards.includes(c)),L);
 // card memory: the cards the other three still hold between them (the deck less your hand and everything played),
 // and every play they could make from them; pooling the three hands errs on the safe side
 function outside(p){
-  if(aiSeesAll(p)){
-    const plays=[1,2,3].flatMap(k=>genPlays(G.hands[(p+k)%4],G.L));
-    return{plays,topBomb:plays.filter(isBomb).reduce((m,x)=>Math.max(m,power(x)),0)};
-  }
   const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
   const plays=genPlays(makeDeck().filter(c=>!gone.has(c.id)),G.L);
   return{plays,topBomb:plays.filter(isBomb).reduce((m,x)=>Math.max(m,power(x)),0)};
@@ -2487,19 +2483,14 @@ function mateLead(p,pool,st){
   if(!ns[1])return null;
   const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
   const cards=makeDeck().filter(c=>!gone.has(c.id));
-  const open=aiSeesAll(p);
-  if(cards.length<need&&!open)return null;
+  if(cards.length<need)return null;
   const by=(a,b)=>a.value-b.value||b.n-a.n,kinds={};
   for(const u of pool)(kinds[u.type+u.n]||(kinds[u.type+u.n]=[])).push(u);
   const firsts=Object.values(kinds).map(g=>g.slice().sort(by)[0]),mc=firsts.map(()=>0),nc=firsts.map(()=>0);
-  const N=open?1:AIP.mateSamples;
+  const N=AIP.mateSamples;
   for(let t=0;t<N;t++){
-    let nh,mh;
-    if(open){nh=genPlays(G.hands[nx],G.L);mh=genPlays(G.hands[m],G.L).filter(x=>!isBomb(x))}
-    else{
-      for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(cards.length-i));[cards[i],cards[j]]=[cards[j],cards[i]]}
-      nh=genPlays(cards.slice(0,ns[0]),G.L);mh=genPlays(cards.slice(ns[0],ns[0]+ns[1]),G.L).filter(x=>!isBomb(x));
-    }
+    for(let i=0;i<need;i++){const j=i+Math.floor(Math.random()*(cards.length-i));[cards[i],cards[j]]=[cards[j],cards[i]]}
+    const nh=genPlays(cards.slice(0,ns[0]),G.L),mh=genPlays(cards.slice(ns[0],ns[0]+ns[1]),G.L).filter(x=>!isBomb(x));
     firsts.forEach((u,i)=>{if(mh.some(x=>beats(x,u)))mc[i]++;if(ns[0]&&nh.some(x=>beats(x,u)))nc[i]++});
   }
   const c=firsts.map((u,i)=>({u,m:mc[i]/N,x:nc[i]/N})).filter(o=>o.m>=AIP.leadMateMin&&o.x<=AIP.leadNextMax);
@@ -2585,8 +2576,6 @@ function eventFactor(x,k){
 }
 // weighted deals of the unseen cards to the other three (worked out once per move)
 function inferDeals(p){
-  // Full hand knowledge bypasses sampled deals and their cache.
-  if(aiSeesAll(p))return[{ks:[1,2,3].map(k=>handCounts(G.hands[(p+k)%4],G.L)),w:1}];
   const log=G.log||[],key=p+':'+log.length;
   if(G.inf&&G.inf.key===key&&G.inf.hands===G.hands&&G.inf.aip===AIP)return G.inf.deals;
   const L=G.L,others=[1,2,3].map(k=>(p+k)%4);
@@ -2627,8 +2616,8 @@ function inferBeat(p,pl,who){
   return t?s/t:0;
 }
 // the late game: the player who played last, or you, hold 10 cards or fewer
-// Full hand knowledge applies at every stage of the round.
-const inferNow=p=>aiSeesAll(p)||AIP.rInfer&&(G.hands[p].length<=10||!!G.trick&&G.hands[G.trick.player].length<=10);
+// (in a 残局 the hands are open: always the true hands)
+const inferNow=p=>AIP.rInfer&&(G.hands[p].length<=10||!!G.trick&&G.hands[G.trick.player].length<=10);
 // how likely the partner holds a play (not a bomb) over this one, by the inferred hands
 function inferMateBeat(p,cur){
   const m=(p+2)%4;
@@ -2864,12 +2853,6 @@ function feedMate(p,cur){
   const L=G.L,pool=unseenOf(p),hand=G.hands[p];
   const inBomb=new Set(armPlays(hand,L).filter(isBomb).flatMap(u=>u.cards.map(c=>c.id)));
   const all=genPlays(hand,L).filter(x=>!isBomb(x)&&!x.cards.some(c=>inBomb.has(c.id))&&beats(x,cur));
-  if(aiSeesAll(p)){
-    const mate=genPlays(G.hands[m],L).filter(x=>x.n===mn&&!isBomb(x));
-    const next=genPlays(G.hands[nx],L).filter(x=>x.n===xn);
-    const fits=all.filter(x=>mate.some(y=>beats(y,x))&&!next.some(y=>beats(y,x)));
-    return fits.sort((a,b)=>a.value-b.value||b.n-a.n)[0]||null;
-  }
   const pick=(types,largest)=>{
     const c=all.filter(x=>types.includes(x.type)&&couldMake(pool,x.type,x.value)).sort((a,b)=>a.value-b.value||b.n-a.n);
     return c.length?c[largest?c.length-1:0]:null;
@@ -3082,7 +3065,7 @@ const tributeCard=(hand,L)=>hand.filter(c=>!isWild(c,L)).reduce((m,c)=>!m||val(c
 // the search finishing in time for 70% of the plays it was asked about, 1.2 seconds a play on average (16 deals, 2.5 s a play; with 10 s a play and 40 deals,
 // 120 endgames: +0.27 (±0.16), 79% finished, 3.3 s a play on average: more deals make each play's average steadier). Up to 12 cards a hand and 30 s a play
 // (the setting now): 105 endgames: +0.13 (±0.14), 72% finished, 8.1 s a play on average: no gain over the smaller setting that the measurements can show. A search that runs out of time (BRAIN.ms) or finds
-// the deals too hard is dropped, and the rules' play stands. Only stezer0's computer partner searches the true deal; other seats use public information.
+// the deals too hard is dropped, and the rules' play stands. Only the table's public state and the computer's own hand go in: no other hand is read.
 // A position: h the four hands, tr the play to beat {p, play} or null, ps how many passed on it, t whose turn, out who is out so
 // far (in order), L the level.
 const mcOver=S=>(!S.h[0].length&&!S.h[2].length)||(!S.h[1].length&&!S.h[3].length);
@@ -3311,18 +3294,6 @@ function* brainCore(p,rulesPl){
     const ri=legal.findIndex(m=>same(m,rulesPl));
     if(ri<0)return rulesPl;
     st.calls++;
-    if(aiSeesAll(p)){
-      const t0=mcNow();
-      try{
-        const vals=yield* esWorld(S,legal,t0+BRAIN.ms);
-        if(!vals){st.fallback++;return rulesPl}
-        const sign=p%2===0?1:-1;
-        let bi=ri;
-        for(let i=0;i<legal.length;i++)if(sign*vals[i]>sign*vals[bi])bi=i;
-        st.used++;if(bi!==ri)st.changed++;
-        return bi===ri?rulesPl:legal[bi];
-      }finally{st.ms+=mcNow()-t0}
-    }
     const t0=mcNow(),ev=inferEvents(p);
     const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
     const pool=makeDeck().filter(c=>!gone.has(c.id));
@@ -3808,13 +3779,6 @@ const isHost=()=>NET.mode!=='guest';
 const RULES={trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
 const isHumanSeat=p=>NET.humans.has(p);
 const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
-// Only stezer0's computer partner gets full hand knowledge, without changing the table display.
-function aiSeesAll(p){
-  const mate=(p+2)%4;
-  if(isHumanSeat(p)||!isHumanSeat(mate))return false;
-  const name=mate===0?myNick:NET.mode==='solo'?'':NAMES[mate];
-  return name.toLowerCase()==='stezer0';
-}
 let hints=[],hintIdx=0;
 let msgTimer=0;
 
@@ -4199,7 +4163,6 @@ let botFailed='';
 const BOT_USED=[]; // which computer actually made each seat's last move (for the round records)
 function botPreload(){const id=botId();if(id&&isHost()&&botFailed!==id)NeuralBot.preload(id).catch(e=>console.warn('电脑模型没能加载',e))}
 function botStart(p){
-  if(aiSeesAll(p)){G.nn=null;brainStart(p);return}
   const id=botId();
   if(!id||botFailed===id){G.nn=null;brainStart(p);return}
   const nn={key:G.tok+':'+G.log.length+':'+p,id,at:performance.now(),done:false,pl:null,err:null};
@@ -4216,15 +4179,12 @@ const BRAIN_WAIT_MS=32000; // (a little over the brain's own limit, BRAIN.ms)
 function brainStart(p){
   G.brain=null;
   if(!brainOn(p))return;
-  const key=G.tok+':'+G.log.length+':'+p,rules=aiDecide(p),b={key,at:performance.now(),done:false,pl:rules,rules,open:aiSeesAll(p)};
+  const key=G.tok+':'+G.log.length+':'+p,rules=aiDecide(p),b={key,at:performance.now(),done:false,pl:rules,rules};
   G.brain=b;
   endgameBrainAsync(p,rules,()=>G.brain===b,pl=>{b.pl=pl;b.done=true});
 }
 // the computer's move now; undefined while its network is still working on it
 function aiMove(p){
-  if(G.brain&&G.brain.open!==aiSeesAll(p))G.brain=null;
-  // Networks encode public information only; this seat uses the rules and brain with the true hands.
-  if(aiSeesAll(p)&&G.nn){G.nn=null;brainStart(p)}
   const nn=G.nn;
   BOT_USED[p]='clint';
   const br=G.brain;
@@ -9403,9 +9363,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1109-1623';
+const VERSION='1109-1644';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977f2391';
+const APP_HASH='c1977f430f';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

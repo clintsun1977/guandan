@@ -10,7 +10,6 @@ let botFailed='';
 const BOT_USED=[]; // which computer actually made each seat's last move (for the round records)
 function botPreload(){const id=botId();if(id&&isHost()&&botFailed!==id)NeuralBot.preload(id).catch(e=>console.warn('电脑模型没能加载',e))}
 function botStart(p){
-  if(aiSeesAll(p)){G.nn=null;brainStart(p);return}
   const id=botId();
   if(!id||botFailed===id){G.nn=null;brainStart(p);return}
   const nn={key:G.tok+':'+G.log.length+':'+p,id,at:performance.now(),done:false,pl:null,err:null};
@@ -27,15 +26,12 @@ const BRAIN_WAIT_MS=32000; // (a little over the brain's own limit, BRAIN.ms)
 function brainStart(p){
   G.brain=null;
   if(!brainOn(p))return;
-  const key=G.tok+':'+G.log.length+':'+p,rules=aiDecide(p),b={key,at:performance.now(),done:false,pl:rules,rules,open:aiSeesAll(p)};
+  const key=G.tok+':'+G.log.length+':'+p,rules=aiDecide(p),b={key,at:performance.now(),done:false,pl:rules,rules};
   G.brain=b;
   endgameBrainAsync(p,rules,()=>G.brain===b,pl=>{b.pl=pl;b.done=true});
 }
 // the computer's move now; undefined while its network is still working on it
 function aiMove(p){
-  if(G.brain&&G.brain.open!==aiSeesAll(p))G.brain=null;
-  // Networks encode public information only; this seat uses the rules and brain with the true hands.
-  if(aiSeesAll(p)&&G.nn){G.nn=null;brainStart(p)}
   const nn=G.nn;
   BOT_USED[p]='clint';
   const br=G.brain;

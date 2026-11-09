@@ -10,7 +10,7 @@
 // the search finishing in time for 70% of the plays it was asked about, 1.2 seconds a play on average (16 deals, 2.5 s a play; with 10 s a play and 40 deals,
 // 120 endgames: +0.27 (±0.16), 79% finished, 3.3 s a play on average: more deals make each play's average steadier). Up to 12 cards a hand and 30 s a play
 // (the setting now): 105 endgames: +0.13 (±0.14), 72% finished, 8.1 s a play on average: no gain over the smaller setting that the measurements can show. A search that runs out of time (BRAIN.ms) or finds
-// the deals too hard is dropped, and the rules' play stands. Only stezer0's computer partner searches the true deal; other seats use public information.
+// the deals too hard is dropped, and the rules' play stands. Only the table's public state and the computer's own hand go in: no other hand is read.
 // A position: h the four hands, tr the play to beat {p, play} or null, ps how many passed on it, t whose turn, out who is out so
 // far (in order), L the level.
 const mcOver=S=>(!S.h[0].length&&!S.h[2].length)||(!S.h[1].length&&!S.h[3].length);
@@ -239,18 +239,6 @@ function* brainCore(p,rulesPl){
     const ri=legal.findIndex(m=>same(m,rulesPl));
     if(ri<0)return rulesPl;
     st.calls++;
-    if(aiSeesAll(p)){
-      const t0=mcNow();
-      try{
-        const vals=yield* esWorld(S,legal,t0+BRAIN.ms);
-        if(!vals){st.fallback++;return rulesPl}
-        const sign=p%2===0?1:-1;
-        let bi=ri;
-        for(let i=0;i<legal.length;i++)if(sign*vals[i]>sign*vals[bi])bi=i;
-        st.used++;if(bi!==ri)st.changed++;
-        return bi===ri?rulesPl:legal[bi];
-      }finally{st.ms+=mcNow()-t0}
-    }
     const t0=mcNow(),ev=inferEvents(p);
     const gone=new Set((G.seen||[]).concat(G.hands[p]).map(c=>c.id));
     const pool=makeDeck().filter(c=>!gone.has(c.id));
