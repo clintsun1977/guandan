@@ -3032,7 +3032,10 @@ function aiChoose(p){
   }
   const bombs=order.filter(isBomb);
   if(bombs.length){
-    const pb=plainBomb(bombs.slice().sort((a,b)=>power(a)-power(b)),L)||bombs[0];
+    let pb=plainBomb(bombs.slice().sort((a,b)=>power(a)-power(b)),L)||bombs[0];
+    // a bomb that beats it by four of a bigger group of the same rank (four aces out of five): the whole group goes, not four and a single left
+    const whole=pb.type==='bomb'&&!pb.wu?bombs.filter(u=>u.type==='bomb'&&!u.wu&&u.value===pb.value&&u.n>pb.n).sort((a,b)=>b.n-a.n)[0]:null;
+    if(whole)pb=whole;
     const b={pl:pb,rc:restCost(hand,pb,L)};
     // left after the bomb: a small single hard to get rid of, while an opponent still holds many cards (and may bomb
     // back): then "nearly out" is no reason to bomb yet
@@ -9400,9 +9403,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1109-1607';
+const VERSION='1109-1623';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977919d9';
+const APP_HASH='c1977f2391';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
