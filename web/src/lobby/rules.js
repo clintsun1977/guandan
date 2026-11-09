@@ -1,7 +1,7 @@
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
   Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
-  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2&&(r.bot==='clint'||NeuralBot.has(r.bot)))RULES.bot=r.bot; /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
+  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2){const b=r.bot==='danmcai'?REASON_ID:r.bot;if(b==='clint'||b===REASON_ID||NeuralBot.has(b))RULES.bot=b} /* (danMCai is offered as danMCai-reason now) */ /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){

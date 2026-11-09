@@ -1,14 +1,20 @@
 // 电脑: the computers at a table play by the Clint rules (bot/clint) or by one of the networks in bot/models.json, chosen in the lobby
 // by whoever plays alone or opens the room (only the host's computers move, so only the host's page runs a network). A network's
 // move is worked out while the computer "thinks"; if it is not ready by then the computer waits a little longer, and if the
-// network cannot be loaded the Clint rules play instead, which the table is told once. Tribute and the return card always follow
-// the Clint rules
+// network cannot be loaded the Clint rules play instead, which the table is told once. danMCai-reason (reason-bot.js) searches
+// first and falls back to the danMCai network, so it needs only that network to be there. Tribute and the return card always
+// follow the Clint rules
 const BOT_WAIT_MS=30000;
-const botId=()=>RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
+const botId=()=>RULES.bot===REASON_ID?(NeuralBot.has(REASON_BASE)?REASON_ID:''):RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
 const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'clint'));return m?m.label:'Clint 规则机器人'};
 let botFailed='';
 const BOT_USED=[]; // which computer actually made each seat's last move (for the round records)
-function botPreload(){const id=botId();if(id&&isHost()&&botFailed!==id)NeuralBot.preload(id).catch(e=>console.warn('电脑模型没能加载',e))}
+function botPreload(){
+  const id=botId();
+  if(!id||!isHost()||botFailed===id)return;
+  NeuralBot.preload(id===REASON_ID?REASON_BASE:id).catch(e=>console.warn('电脑模型没能加载',e));
+  if(id===REASON_ID)reasonWarm();
+}
 function botStart(p){
   const id=botId();
   if(!id||botFailed===id){G.nn=null;brainStart(p);return}
@@ -17,7 +23,7 @@ function botStart(p){
   // the network gets a copy of the table as it stands; it reads only seat p's own hand from it, the rest is public
   const g={hands:G.hands.map(h=>h.slice()),trick:G.trick?{player:G.trick.player,play:G.trick.play}:null,passes:G.passes||0,
     log:G.log.slice(),levels:G.levels.slice(),L:G.L};
-  NeuralBot.decide(id,g,p,NET.off).then(pl=>{nn.pl=pl;nn.done=true},e=>{nn.err=e;nn.done=true;console.warn('电脑模型出错',e)});
+  (id===REASON_ID?reasonDecide(p,g):NeuralBot.decide(id,g,p,NET.off)).then(pl=>{nn.pl=pl;nn.done=true},e=>{nn.err=e;nn.done=true;console.warn('电脑模型出错',e)});
 }
 // the playing rules' move; when every hand is down to a few cards the 残局大脑 may put a better play in its place (bot/clint/endgame-brain.js)
 const rulesMove=p=>endgameBrain(p,aiDecide(p));

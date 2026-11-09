@@ -13,7 +13,7 @@
 | --- | --- |
 | `styles/` | 样式：基础布局、顶栏、牌堆、牌桌、手牌、牌面、弹层、大厅、庆祝动画、电脑宽屏、训练版 |
 | `core/` | 规则：牌与花色（`cards.js`）、牌型判断与大小（`combinations.js`）、所有出法（`moves.js`） |
-| `game/` | 牌局流程：状态（`state.js`）、整场（`match.js`）、每局（`round.js`）、洗切发牌（`dealing.js`）、进还贡（`tribute.js`）、轮转（`turns.js`）、计时（`clock.js`、`ticker.js`）、电脑选择与神经网络接入（`computer-players.js`）、出牌与结算（`play.js`）、事件（`events.js`）、下一局（`next-round.js`）、提示排序（`hint-order.js`） |
+| `game/` | 牌局流程：状态（`state.js`）、整场（`match.js`）、每局（`round.js`）、洗切发牌（`dealing.js`）、进还贡（`tribute.js`）、轮转（`turns.js`）、计时（`clock.js`、`ticker.js`）、电脑选择与神经网络接入（`computer-players.js`）、danMCai 的搜索接入（`reason-bot.js`）、出牌与结算（`play.js`）、事件（`events.js`）、下一局（`next-round.js`）、提示排序（`hint-order.js`） |
 | `ui/` | 界面：牌面 HTML（`cards.js`）、桌面出牌区（`pile.js`）、整体刷新（`render.js`）、进贡信息、提示文字、手机布局、操作按钮位置、弹层（结算、暂停）、规则页（`rules.js`：左侧分类、顶部分页、每条规则配牌面示例）、牌背、观战、选项菜单、窗口尺寸与转屏 |
 | `hand/` | 手牌：显示（`view.js`）、布局与成组区（`layout.js`）、各种排法的几何（`geometry.js`）、横式／竖式／手持（`views.js`）、同花顺（`straight-flush.js`）、提示（`hints.js`） |
 | `input/` | 操作：出牌、过、提示、还贡、出牌需确认（`actions.js`）；点选、扫选、拖动、成组（`hand-input.js`） |

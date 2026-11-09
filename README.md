@@ -24,10 +24,10 @@
 | 选项 | 说明 |
 | --- | --- |
 | **默认** | Clint 的规则机器人（本项目自己的），开局默认选中。四家都只剩 12 张以内时换上**残局大脑**：把没见过的牌随机发给另外三家（按他们出牌、过牌的表现加权，最多 40 种），每种用精确求解器算每个出法的结果，只有别的出法明显比规则的出法好（≥0.2 级）才改；一次出牌最多算 30 秒，来不及就用规则的出法；只用公开信息和自己的手牌，不偷看别人的牌 |
-| **danMCai** | 神经网络 `danMCai-v000855042`，**引用自 [guandanai](https://github.com/stevensun1005/guandanai)** 的 danMCai 现任冠军 |
+| **danMCai** | **引用自 [guandanai](https://github.com/stevensun1005/guandanai)**：danMCai 冠军 `017` 的网络，加上 guandanai 的搜索（编号 `9001`）。桌上四家合计剩 40 张以内时，先从公开出牌推断别家可能的暗牌、抽 8 种牌分布；21–40 张把 017 估值前 6 的出法和"过"在每种分布里都打到本局结束比较，20 张以内对每种出法精确求解。超过 40 张、只有一种出法或一手能出完时直接按 017 出；搜索没算完也按 017 出 |
 | GuanZero | 神经网络 `guanzero-adp-io48-303975`，**引用自 guandanai** 最新发布的 GuanZero |
 
-神经网络在房主的浏览器里运行（onnxruntime-web），只看自己的手牌和公开信息；进贡、还贡仍按 Clint 规则。
+神经网络和搜索在房主的浏览器里运行（onnxruntime-web；danMCai 的搜索在单独的 Worker 线程里，不卡页面），只看自己的手牌和公开信息；进贡、还贡仍按 Clint 规则。
 模型加载失败时，牌桌会提示一次，电脑改用 Clint 规则继续打。
 
 ## 出牌评价
@@ -35,6 +35,8 @@
 大厅「出牌评价」默认是关；单人玩家或房主选「开」后，轮到你出牌，左下角会显示 danMCai 对你选的牌的**合理性**：这一手所有能出的牌（含"过"）里，
 模型值最高的算 100%，最低的算 0%。出牌后保留**上一手**的评分，到这一局结束。只用你自己的手牌和公开信息；
 这是相对分，不是胜率。手机上显示在顶栏右侧。点 × 本场不再显示。
+桌上剩 40 张以内时，评价用和电脑同样的搜索（在你自己的浏览器里算，电脑出牌优先），算完才显示数字（之前显示「评价中…」）；
+21–40 张时只有最有希望的几种出法有分，其他显示「不评分」；搜索没算完就显示 017 网络自己的分。
 评价固定用 danMCai 打分，和大厅「电脑模型」选的是「默认」、danMCai 还是 GuanZero 无关。
 
 ## 表情（引用自 guandanai）
@@ -66,14 +68,14 @@
   整把打完（打过 A 或平局）后就不再提示。需要同一台电脑、同一个浏览器开房。
 - 断网或上传失败时先存在房主浏览器里（IndexedDB），之后自动重试，收到云端确认才删除。
 - 本项目上传的牌谱 `appVersion` 以 `c1977` 开头，可与 guandanai 自己网站的牌谱区分；电脑 ID 用 guandanai 的发布编号
-  （danMCai `017`、GuanZero `023`），Clint 规则为 `clint-rule`、版本 `clintsun1977-…`。
+  （danMCai 记 guandanai 搜索机器人 `9001`，没搜索、按 017 出的牌也记 `9001`；GuanZero `023`），Clint 规则为 `clint-rule`、版本 `clintsun1977-…`。
 - 网址加 `?test=1` 时上传为测试局（`kind=test`），guandanai 默认导出时不包含。
 
 代码在 `web/src/collection/`（移植自 guandanai 的 `web/src/collection/`）。
 
 ## 引用 guandanai 的机器人
 
-danMCai、GuanZero 两个神经网络机器人和出牌评价**不是本项目训练或原创的**，引用自
+danMCai（含它的搜索）、GuanZero 两个神经网络机器人和出牌评价**不是本项目训练或原创的**，引用自
 [stevensun1005/guandanai](https://github.com/stevensun1005/guandanai)（Steven Sun 的掼蛋 AI 项目）：
 
 | 引用的内容 | 来自 guandanai | 在本项目 |
@@ -81,7 +83,8 @@ danMCai、GuanZero 两个神经网络机器人和出牌评价**不是本项目�
 | danMCai 权重 | Release [`web-model-017`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-017)（训练任务 `mac-20261105`，版本 `v000855042`） | `bot/danmcai/danmcai-v000855042.onnx` |
 | GuanZero 权重 | Release [`web-model-023`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-023)（训练任务 `guanzero-adp-io48`，步数 303975） | `bot/guanzero/guanzero-adp-io48-303975.onnx` |
 | 浏览器推理代码 | `web/src/ai/` 的 `encoding.mjs`、`history.mjs`、`candidates.js`、`observation.js`、`endgame.js`、`policy-inference.mjs`、`table-policy.mjs` | 移植为 `bot/neural/neural-bot.js` |
-| 出牌评价 | `web/src/coach/evaluation.mjs`、`controller.js` | `bot/neural/neural-bot.js`（打分）、`web/src/coach/coach.js`（显示） |
+| danMCai 的搜索（`9001`） | 按 [`web/docs/REASON_BOT_INTEGRATION.md`](https://github.com/stevensun1005/guandanai/blob/main/web/docs/REASON_BOT_INTEGRATION.md) 第 4.1 节打包（提交 `181c12f`），推断网络来自 Release [`web-belief-v1-16d76783`](https://github.com/stevensun1005/guandanai/releases/tag/web-belief-v1-16d76783) | `bot/reason/`（原样，SHA-256 见 [bot/reason/README](bot/reason/README.md)），接入代码 `web/src/game/reason-bot.js` |
+| 出牌评价 | `web/src/coach/evaluation.mjs`、`controller.js` | `bot/neural/neural-bot.js`（017 打分）、`bot/reason/`（搜索值）、`web/src/coach/coach.js`（显示） |
 
 权重文件和 guandanai 发布的完全相同（SHA-256 记录在 `bot/models.json`，构建时核对）；代码移植自 guandanai `main`
 （提交 `fe066bc`，2026-11-07），只改成本项目单文件页面的写法，输入编码与候选出牌经逐局比对与原代码一致。
@@ -101,6 +104,7 @@ bot/                电脑玩家
   clint/            Clint 规则机器人与残局大脑（精确求解器）
   neural/           神经网络电脑：特征编码、候选出牌、残局求解、ONNX 推理（移植自 guandanai）
   danmcai/          danMCai 权重（引用自 guandanai）
+  reason/           danMCai 的搜索：guandanai 打包的 Worker、客户端、onnxruntime-web 和两个网络（原样引用）
   guanzero/         GuanZero 权重（引用自 guandanai）
 ```
 

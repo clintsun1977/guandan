@@ -11,10 +11,13 @@ const REC={byGame:new WeakMap(),auto:-1};
 const recHumans=()=>[...NET.humans].sort((a,b)=>a-b);
 const recMask=h=>h.reduce((m,p)=>m|(1<<p),0);
 const recEligible=()=>NET.mode==='host'&&!TEST&&!SPEC&&NET.humans.size>=2;
-// a computer as guandanai's records name it: its release number and weights for a network, clint-rule for the Clint rules
+// a computer as guandanai's records name it: its release number and weights for a network, guandanai's search bot identity (9001) for
+// danMCai-reason, clint-rule for the Clint rules
 function recModel(id){
-  const m=NeuralBot.models.find(x=>x.id===id&&x.file);
-  return m?{id:m.guandanaiId,sha256:m.sha256,version:m.source.version}:{id:'clint-rule',sha256:null,version:'clintsun1977-'+VERSION};
+  const m=NeuralBot.models.find(x=>x.id===id);
+  if(m&&m.identity)return{...m.identity}; // danMCai-reason: guandanai's search bot 9001, its 017 fallback plays included
+  if(m&&m.file)return{id:m.guandanaiId,sha256:m.sha256,version:m.source.version};
+  return{id:'clint-rule',sha256:null,version:'clintsun1977-'+VERSION};
 }
 // as the collector takes them: no spaces at either end, no control characters, at most 24 characters (16 for the room), else none
 function recLabel(v,max){

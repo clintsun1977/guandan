@@ -1898,7 +1898,7 @@ html.phone .handtools .emote-fab {
     <div class="lobby-rules" id="rulesBox">
       <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
       <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="once">一次机会</button></div>
-      <div class="rule-row"><span class="rule-k">电脑模型</span><button class="rule-btn" data-rule="bot" data-val="clint">默认</button><button class="rule-btn" data-rule="bot" data-val="danmcai"><span class="fl">danMCai</span><span class="sh">dMC</span></button><button class="rule-btn" data-rule="bot" data-val="guanzero"><span class="fl">GuanZero</span><span class="sh">GZe</span></button></div>
+      <div class="rule-row"><span class="rule-k">电脑模型</span><button class="rule-btn" data-rule="bot" data-val="clint">默认</button><button class="rule-btn" data-rule="bot" data-val="danmcai-reason"><span class="fl">danMCai</span><span class="sh">dMC</span></button><button class="rule-btn" data-rule="bot" data-val="guanzero"><span class="fl">GuanZero</span><span class="sh">GZe</span></button></div>
       <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
       <div class="rule-note" id="rulesNote"></div>
     </div>
@@ -3418,7 +3418,7 @@ function hintOrder(hand,L,cur,plays){
   return fin.concat(list).filter(pl=>{const k=pl.cards.map(c=>c.id).sort((a,b)=>a-b).join();return!seen.has(k)&&seen.add(k)});
 }
 
-const BOT_MODELS={"schema":1,"defaultId":"clint","models":[{"id":"clint","name":"Clint","label":"Clint 规则机器人","kind":"rules","path":"clint/clint-bot.js"},{"id":"danmcai","name":"danMCai","label":"danMCai-v000855042","kind":"onnx","path":"danmcai/danmcai-v000855042.onnx","file":"danmcai-v000855042.onnx","sha256":"462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7","bytes":5368650,"config":{"stateFeatures":513,"actionFeatures":54},"source":{"repo":"stevensun1005/guandanai","release":"web-model-017","run":"mac-20261105","version":"v000855042","step":855042,"note":"guandanai 网页默认的 danMCai 现任门控冠军（归档 017）"},"guandanaiId":"017"},{"id":"guanzero","name":"GuanZero","label":"guanzero-adp-io48-303975","kind":"onnx","path":"guanzero/guanzero-adp-io48-303975.onnx","file":"guanzero-adp-io48-303975.onnx","sha256":"e02bd26f3d90cb9ef90f7075ad1acd845c709bebac734611c44eb66d48fdbd4b","bytes":6346014,"config":{"stateFeatures":513,"actionFeatures":54,"history":"guanzero-v1"},"source":{"repo":"stevensun1005/guandanai","release":"web-model-023","run":"guanzero-adp-io48","version":"model-000000303975","step":303975,"note":"guandanai 最新发布的 GuanZero（归档 023）"},"guandanaiId":"023"}]};
+const BOT_MODELS={"schema":1,"defaultId":"clint","models":[{"id":"clint","name":"Clint","label":"Clint 规则机器人","kind":"rules","path":"clint/clint-bot.js"},{"id":"danmcai","name":"danMCai","label":"danMCai-v000855042","kind":"onnx","path":"danmcai/danmcai-v000855042.onnx","file":"danmcai-v000855042.onnx","sha256":"462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7","bytes":5368650,"config":{"stateFeatures":513,"actionFeatures":54},"source":{"repo":"stevensun1005/guandanai","release":"web-model-017","run":"mac-20261105","version":"v000855042","step":855042,"note":"guandanai 网页默认的 danMCai 现任门控冠军（归档 017）"},"guandanaiId":"017"},{"id":"danmcai-reason","name":"danMCai","label":"danMCai-v000855042","kind":"search","base":"danmcai","dir":"reason/","identity":{"id":"9001","sha256":"442d888ada3b59c56cb1e809bb24a97268f00c3daaa6345c6b53f2f84aca6a24","version":"v000855042-bsearch1-16d76783"},"source":{"repo":"stevensun1005/guandanai","commit":"181c12f033b48738f8b96b203e0115e361c82569","searchBot":"9001","status":"research-bot-not-champion-deployment-not-acceptance","note":"带推理搜索的 danMCai（底座：冠军 017），打包方法见 guandanai web/docs/REASON_BOT_INTEGRATION.md"}},{"id":"guanzero","name":"GuanZero","label":"guanzero-adp-io48-303975","kind":"onnx","path":"guanzero/guanzero-adp-io48-303975.onnx","file":"guanzero-adp-io48-303975.onnx","sha256":"e02bd26f3d90cb9ef90f7075ad1acd845c709bebac734611c44eb66d48fdbd4b","bytes":6346014,"config":{"stateFeatures":513,"actionFeatures":54,"history":"guanzero-v1"},"source":{"repo":"stevensun1005/guandanai","release":"web-model-023","run":"guanzero-adp-io48","version":"model-000000303975","step":303975,"note":"guandanai 最新发布的 GuanZero（归档 023）"},"guandanaiId":"023"}]};
 /* ---------- neural computer players: danMCai and GuanZero (bot/models.json), run in the browser with onnxruntime-web ---------- */
 // Taken from stevensun1005/guandanai (https://github.com/stevensun1005/guandanai), not written for this project: ported from its web/src/ai (encoding.mjs, history.mjs, candidates.js, observation.js, endgame.js,
 // policy-inference.mjs, table-policy.mjs), keeping the exact inputs the networks were trained on. A network sees only its
@@ -4151,17 +4151,89 @@ function startTurn(){
 const PLAY_MS=60000,TRIB_MS=30000,RET_MS=60000,PREP_MS=90000,HURRY_MS=10000;
 // computer "thinking" time per move; shortened for testing (the full-feel setting was 2000-5000)
 const AI_THINK_MIN=500,AI_THINK_MAX=1000;
+/* ---------- danMCai-reason: guandanai's danMCai with reasoning search (search bot 9001), for the table and the move coach ---------- */
+// Taken from stevensun1005/guandanai, not written for this project, and wired in by its guide web/docs/REASON_BOT_INTEGRATION.md.
+// The base is the danMCai network (bot/danmcai, guandanai's 017). Around it: a second network reads the public table (plays,
+// passes, card counts, tribute) and says how likely each unseen card is to sit with each other player; from that 8 possible deals
+// of the hidden cards are drawn and searched. With 21-40 cards left on the table, 017's top 6 plays (and a pass) are each played
+// out to the end of the round in every deal, all four seats by 017; with 20 or fewer, every play is solved exactly in every deal.
+// Over 40 cards left, one play possible or a hand that goes out in one play: 017 plays as it is. Only this seat's own hand and
+// public information go in (searchPayload); the other three hands are never read.
+// It runs in a module Worker of its own (bot/reason/assets: guandanai's bundle, unchanged; its two networks in bot/reason/models)
+// so the page does not stall; one Worker for the whole page, the table first and the coach after. When a search does not finish
+// in its time, fails, or does not fit the table, 017 (NeuralBot) plays instead, and if that fails too, the Clint rules (botFail).
+const REASON_ID='danmcai-reason',REASON_BASE='danmcai',REASON_BOT='9001';
+let RS=null,RSM=null; // the client (a promise), and the bundle's module once it has loaded
+function reasonClient(){
+  if(!/^https?:$/.test(location.protocol))return Promise.reject(Error('the search Worker needs the page served over http(s)'));
+  return RS||(RS=import(new URL('bot/reason/assets/reason-client.mjs?v='+VERSION,location.href).href).then(m=>{
+    RSM=m;
+    return{m,client:m.createSearchClient({spawn:()=>new Worker(new URL('bot/reason/assets/search-worker.mjs?v='+VERSION,location.href),{type:'module'})})};
+  },e=>{RS=null;throw e}));
+}
+function reasonWarm(){if(/^https?:$/.test(location.protocol))reasonClient().then(({client})=>client.warm(REASON_BOT)).catch(e=>console.warn('推理搜索没能加载',e))}
+// one random number per round and page (not from the cards), the same for every search of that round: G is the whole match, so
+// a round is G.tok and G.round
+function reasonSeed(seeds){
+  const key=G.tok+':'+G.round;
+  if(!seeds.has(key)){seeds.clear();seeds.set(key,crypto.getRandomValues(new Uint32Array(1))[0])}
+  return seeds.get(key);
+}
+const REASON_SEEDS=new Map();
+// the table: the search's play for seat p, null for a pass, or undefined when there is no search (017 plays instead)
+async function reasonSearch(p){
+  const now=()=>G.tok+':'+G.log.length+':'+G.turn,at=now();
+  if(G.turn!==p||G.phase!=='play'||isHumanSeat(p))return undefined;
+  // no search over 40 cards: do not even wait for the module there
+  if(G.hands.reduce((s,h)=>s+h.length,0)>40)return undefined;
+  // the module gets a time limit too: a load that hangs must fall back to 017, never run into BOT_WAIT_MS (and botFail)
+  let lt;
+  const rc=await Promise.race([reasonClient(),new Promise(res=>{lt=setTimeout(res,5000)})]).finally(()=>clearTimeout(lt));
+  if(!rc)return undefined;
+  const{m,client}=rc;
+  if(now()!==at)return undefined;
+  if(!m.searchBand(G.hands.reduce((s,h)=>s+h.length,0)))return undefined;
+  const plays=m.candidates(G.hands[p],G.L,G.trick&&G.trick.play);
+  if(plays.length<=1||plays.some(x=>x&&x.cards.length===G.hands[p].length))return undefined;
+  const payload=m.searchPayload(G,p,NET.off,reasonSeed(REASON_SEEDS));
+  // a limit of our own, so that the search and then 017 together stay inside BOT_WAIT_MS
+  const b=client.stats.budget;
+  let timer;
+  const r=await Promise.race([client.decide(REASON_BOT,payload),
+    new Promise(res=>{timer=setTimeout(()=>res({fallback:true,reason:'caller-timeout'}),b.midgameMs+m.hardTimeoutMs(b)+1000)})])
+    .finally(()=>clearTimeout(timer));
+  if(!r||!r.ok||now()!==at)return undefined;
+  const trick=G.trick&&G.trick.play;
+  if(!r.ids.length)return!r.shape&&trick?null:undefined;
+  // the play rebuilt from its card numbers and its reading, in this table's own cards (never by the search's candidate index)
+  const cards=r.ids.map(id=>G.hands[p].find(c=>c.id===id));
+  if(cards.some(c=>!c)||!r.shape)return undefined;
+  const s=analyze(cards,G.L).find(x=>x.type===r.shape.type&&x.value===r.shape.value&&x.n===r.shape.n&&beats(x,trick));
+  return s?{...s,cards,wu:cards.filter(c=>isWild(c,G.L)).length}:undefined;
+}
+// search, else 017; only 017 failing reaches botFail (and the Clint rules)
+async function reasonDecide(p,g){
+  let pl;
+  try{pl=await reasonSearch(p)}catch(e){pl=undefined;console.warn('推理搜索出错，改用 danMCai',e)}
+  return pl!==undefined?pl:NeuralBot.decide(REASON_BASE,g,p,NET.off);
+}
 // 电脑: the computers at a table play by the Clint rules (bot/clint) or by one of the networks in bot/models.json, chosen in the lobby
 // by whoever plays alone or opens the room (only the host's computers move, so only the host's page runs a network). A network's
 // move is worked out while the computer "thinks"; if it is not ready by then the computer waits a little longer, and if the
-// network cannot be loaded the Clint rules play instead, which the table is told once. Tribute and the return card always follow
-// the Clint rules
+// network cannot be loaded the Clint rules play instead, which the table is told once. danMCai-reason (reason-bot.js) searches
+// first and falls back to the danMCai network, so it needs only that network to be there. Tribute and the return card always
+// follow the Clint rules
 const BOT_WAIT_MS=30000;
-const botId=()=>RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
+const botId=()=>RULES.bot===REASON_ID?(NeuralBot.has(REASON_BASE)?REASON_ID:''):RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
 const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'clint'));return m?m.label:'Clint 规则机器人'};
 let botFailed='';
 const BOT_USED=[]; // which computer actually made each seat's last move (for the round records)
-function botPreload(){const id=botId();if(id&&isHost()&&botFailed!==id)NeuralBot.preload(id).catch(e=>console.warn('电脑模型没能加载',e))}
+function botPreload(){
+  const id=botId();
+  if(!id||!isHost()||botFailed===id)return;
+  NeuralBot.preload(id===REASON_ID?REASON_BASE:id).catch(e=>console.warn('电脑模型没能加载',e));
+  if(id===REASON_ID)reasonWarm();
+}
 function botStart(p){
   const id=botId();
   if(!id||botFailed===id){G.nn=null;brainStart(p);return}
@@ -4170,7 +4242,7 @@ function botStart(p){
   // the network gets a copy of the table as it stands; it reads only seat p's own hand from it, the rest is public
   const g={hands:G.hands.map(h=>h.slice()),trick:G.trick?{player:G.trick.player,play:G.trick.play}:null,passes:G.passes||0,
     log:G.log.slice(),levels:G.levels.slice(),L:G.L};
-  NeuralBot.decide(id,g,p,NET.off).then(pl=>{nn.pl=pl;nn.done=true},e=>{nn.err=e;nn.done=true;console.warn('电脑模型出错',e)});
+  (id===REASON_ID?reasonDecide(p,g):NeuralBot.decide(id,g,p,NET.off)).then(pl=>{nn.pl=pl;nn.done=true},e=>{nn.err=e;nn.done=true;console.warn('电脑模型出错',e)});
 }
 // the playing rules' move; when every hand is down to a few cards the 残局大脑 may put a better play in its place (bot/clint/endgame-brain.js)
 const rulesMove=p=>endgameBrain(p,aiDecide(p));
@@ -7235,19 +7307,24 @@ if(location.hash==='#debug'){
 let handW=0;
 if(window.ResizeObserver)new ResizeObserver(()=>{const w=handEl.clientWidth;if(w&&w!==handW){handW=w;layoutHand()}}).observe(handEl);
 
-/* ---------- 出牌评价: danMCai's score for the cards you pick, and for your last move ---------- */
-// Taken from stevensun1005/guandanai (web/src/coach/evaluation.mjs and controller.js, https://github.com/stevensun1005/guandanai);
-// the danMCai network is guandanai's too (bot/danmcai/README.md).
-// On your own turn the danMCai network (bot/models.json) scores, once, every move you could make, from what you can see:
-// your own hand, the plays so far, how many cards each player holds and the levels (guandanai's 出牌评价, without its
-// Top 5 list). The cards you pick show as 合理性 N%: 100 for the move the network values most, 0 for the one it values
-// least. It is a relative score, not a chance of winning. After you play, that move's score stays as 上一手 until the
+/* ---------- 出牌评价: danMCai-reason's score for the cards you pick, and for your last move ---------- */
+// Taken from stevensun1005/guandanai (web/src/coach/evaluation.mjs and controller.js, https://github.com/stevensun1005/guandanai,
+// wired in by its web/docs/REASON_BOT_INTEGRATION.md); the networks are guandanai's too (bot/danmcai, bot/reason).
+// On your own turn the danMCai network (017) first scores, once, every move you could make, from what you can see: your own
+// hand, the plays so far, how many cards each player holds and the levels. With 40 cards or fewer left on the table the
+// reasoning search (reason-bot.js, the same Worker the computers use, after them) then works on it and its values take the
+// place of 017's: with 21-40 cards only 017's top 6 and a pass get one (the rest show 不评分), with 20 or fewer every
+// move does; no number shows until it has finished (评价中…), and if it does not finish, 017's values show. On screen it is
+// simply danMCai. The cards you
+// pick show as 合理性 N%: 100 for the move valued most, 0 for the one valued least. It is a relative score, not a chance of
+// winning. After you play, that move's score stays as 上一手 until the
 // round is over. Whoever plays alone or opens the room turns it on or off in the lobby (出牌评价); × hides it on your own
 // page for the rest of the game.
 // Top 5 (guandanai's list of the network's five best plans, with their scores; a tap picks those cards, it does not play
 // them) is only for the nicknames in TOP5_NAMES, whoever opened the room, and for them the box shows even with 出牌评价 off
 const COACH_ID='danmcai'; // TOP5_NAMES: lobby.js
 const CO={turn:null,last:null,hidden:false,topOpen:null};
+const COACH_NAME='danMCai',COACH_SEEDS=new Map();
 const coachKey=()=>G.tok+':'+G.log.length;
 const coachTop5=()=>TOP5_NAMES.includes((myNick||'').trim().toLowerCase());
 const coachDeck=makeDeck();
@@ -7256,14 +7333,54 @@ const coachShown=()=>(RULES.coach===true||coachTop5())&&!CO.hidden&&!TEST&&!SPEC
 // the table as you see it at the start of your turn; the other hands go in only as counts
 function coachSnap(){
   if(CO.turn&&CO.turn.key===coachKey())return CO.turn;
-  const s={key:coachKey(),G,round:G.round,scores:new Map(),values:null,error:false,extra:false,
+  const s={key:coachKey(),G,round:G.round,scores:new Map(),values:null,error:false,extra:false,source:'champion',
+    trick:G.trick?G.trick.play:null,L:G.L,
     g:{hands:G.hands.map((h,i)=>i===0?h.slice():new Array(h.length)),trick:G.trick?{player:G.trick.player,play:G.trick.play}:null,
       passes:G.passes||0,log:G.log.slice(),levels:G.levels.slice(),L:G.L}};
   CO.turn=s;
-  setTimeout(()=>NeuralBot.rate(COACH_ID,s.g)
-    .then(r=>{s.values=r.values;s.actions=r.actions;r.actions.forEach((ids,i)=>s.scores.set(NeuralBot.actionKey(ids),r.values[i]))},e=>{s.error=true;console.warn('出牌评价出错',e)})
-    .finally(renderCoach),150);
+  const left=G.hands.reduce((n,h)=>n+h.length,0);
+  if(left<=60)reasonWarm(); // load the networks a little before the first searched turn
+  setTimeout(async()=>{
+    try{
+      const r=await NeuralBot.rate(COACH_ID,s.g);
+      s.actions=r.actions;s.base=r.values.slice();
+      // 017's values come first (quick); a search only while this turn is still open and there is a real choice
+      let result=null;
+      if(left>=1&&left<=40&&s.actions.length>1&&coachLive(s)){
+        try{
+          const{m,client}=await reasonClient();
+          if(m.searchBand(left)&&coachLive(s)){
+            s.payload=m.searchPayload(G,0,0,reasonSeed(COACH_SEEDS));
+            s.searching=true;renderCoach();
+            result=await client.evaluate(REASON_BOT,s.payload);
+          }
+        }catch(e){console.warn('出牌评价的推理搜索出错，用 danMCai 的值',e)}
+      }
+      coachValues(s,result);
+    }catch(e){s.error=true;console.warn('出牌评价出错',e)}
+    finally{s.searching=false;renderCoach()}
+  },150);
   return s;
+}
+// this snapshot is still the position you are about to move from
+const coachLive=s=>CO.turn===s&&s.key===coachKey()&&G.phase==='play'&&G.turn===0&&coachShown();
+// the values on show: the search's where it finished, otherwise 017's
+function coachValues(s,result){
+  const shown=s.payload&&result&&RSM?RSM.mergeSearchValues(s.actions,result):null;
+  if(shown){
+    s.source=result.kind;s.shown=shown;
+    s.reasoning={worlds:result.used,evaluated:shown.filter(v=>v!==null).length};
+  }else{
+    s.source='champion';s.shown=s.base.slice();
+    if(s.payload&&s.actions.length>1)s.fallback=(result&&result.reason)||'error';
+  }
+  coachRerank(s);
+}
+function coachRerank(s){
+  s.values=s.shown.filter(v=>v!==null);
+  s.scores=new Map(s.actions.map((ids,i)=>[NeuralBot.actionKey(ids),s.shown[i]]));
+  s.ranked=RSM?RSM.rankedCoachActions(s.actions,s.shown,s.L,5,s.trick,s.source==='champion'?undefined:s.base)
+    :NeuralBot.ranked(s.actions,s.shown,s.L,s.trick,5);
 }
 // the picked cards read the strongest legal way, as 出牌 plays them; nothing picked when you may pass is a pass
 function coachPick(){
@@ -7277,15 +7394,18 @@ function coachGrade(s,a){
   if(!s.values)return'评价中…';
   const k=NeuralBot.actionKey(a.ids);
   if(!s.scores.has(k)){
-    // a legal move the list of moves leaves out is scored by itself and joins the comparison
+    // a legal move the list of moves leaves out is scored by 017 by itself; next to search values it stays unscored
     if(!s.extra){
       s.extra=true;
-      NeuralBot.rate(COACH_ID,s.g,a.ids).then(r=>{s.scores.set(k,r.values[0]);s.values.push(r.values[0]);s.actions.push(r.actions[0])},()=>{s.error=true})
-        .finally(()=>{s.extra=false;renderCoach()});
+      NeuralBot.rate(COACH_ID,s.g,a.ids).then(r=>{
+        s.actions.push(r.actions[0]);s.base.push(r.values[0]);s.shown.push(s.source==='champion'?r.values[0]:null);coachRerank(s);
+      },()=>{s.error=true}).finally(()=>{s.extra=false;renderCoach()});
     }
     return'评价中…';
   }
-  const r=NeuralBot.relativeRating(s.values,s.scores.get(k));
+  const v=s.scores.get(k);
+  if(v===null)return'这种出法不评分';
+  const r=NeuralBot.relativeRating(s.values,v);
   if(s===CO.turn&&G.phase==='play'&&G.turn===0)CO.shown=s.key; // a score was on show before this move (marked in the round record)
   return`合理性 ${r.percent}%${r.flat?' · 候选无明显分差':''}`;
 }
@@ -7299,7 +7419,7 @@ function coachRemember(pl){
 function renderCoach(){
   const box=$('#coach'),on=coachShown();
   box.hidden=!on;
-  if(!on){$('#coachSide').hidden=true;top5Room(false);return}
+  if(!on){$('#coachSide').hidden=true;top5Room(false);if(RS)RS.then(({client})=>client.cancelCoach(),()=>{});return}
   if(CO.last&&(CO.last.s.G!==G||CO.last.s.round!==G.round))CO.last=null;
   let now='轮到你时评价';
   if(G.phase==='play'&&G.turn===0){
@@ -7344,14 +7464,16 @@ function renderTop5(phone){
     top5Pop();
     return;
   }
-  const cur=G.trick?G.trick.play:null,top=NeuralBot.ranked(s.actions,s.values,G.L,cur,5),picked=NeuralBot.actionKey([...sel]);
+  const top=s.ranked,picked=NeuralBot.actionKey([...sel]);
   $('#coachTopStatus').textContent=`已比较 ${s.actions.length} 种出法 · 点一下选中，不会自动打出`;
   list.innerHTML=top.map((row,i)=>{
-    const pct=NeuralBot.relativeRating(s.values,row.value).percent;
-    const gap=i?` <small class="coach-gap" title="与第一名的模型值差（约等于本局升级分），越接近 0 差别越小">差 ${(row.value-top[0].value).toFixed(2)}</small>`:'';
+    // a move the search did not reach is ranked by 017 below every searched one, with no number of its own
+    const score=row.value===null?'<small class="coach-gap" title="这一手只细算了最有希望的几种出法，这种排在它们后面">不评分</small>'
+      :`${NeuralBot.relativeRating(s.values,row.value).percent}%`;
+    const gap=i&&row.value!==null?` <small class="coach-gap" title="与第一名的值差（约等于本局升级分），越接近 0 差别越小">差 ${(row.value-top[0].value).toFixed(2)}</small>`:'';
     const cards=row.ids.length?row.ids.map(id=>{const c=coachDeck[id];return`<span class="coach-card${c.s==='H'||c.s==='D'||c.r===17?' red':''}">${cardText(c)}</span>`}).join(''):'<span class="coach-pass">本轮不跟牌</span>';
     const on1=row.ids.length&&NeuralBot.actionKey(row.ids)===picked?' on':'';
-    return`<li><button type="button" class="coach-choice${on1}" data-i="${i}"><span class="coach-choice-head"><strong>${i+1}. ${row.ids.length?TYPE_NAME[row.shape.type]:'过牌'}</strong><b>${pct}%${gap}</b></span><span class="coach-cards">${cards}</span></button></li>`;
+    return`<li><button type="button" class="coach-choice${on1}" data-i="${i}"><span class="coach-choice-head"><strong>${i+1}. ${row.ids.length?TYPE_NAME[row.shape.type]:'过牌'}</strong><b>${score}${gap}</b></span><span class="coach-cards">${cards}</span></button></li>`;
   }).join('');
   list.querySelectorAll('.coach-choice').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
@@ -7401,9 +7523,8 @@ function coachPlace(){
   box.style.width=width+'px';
   box.style.setProperty('--coach-bottom',(found?Math.max(8,innerHeight-floor):Math.round(innerHeight*.42))+'px');
 }
-const coachModel=NeuralBot.models.find(m=>m.id===COACH_ID)||{};
-$('#coachName').textContent=coachModel.name||'';
-$('#coachName').parentElement.title=`${coachModel.label||''}：`+$('#coachName').parentElement.title;
+$('#coachName').textContent=COACH_NAME;
+$('#coachName').parentElement.title='danMCai：'+$('#coachName').parentElement.title;
 $('#coachClose').onclick=()=>{CO.hidden=true;renderCoach()};
 $('#coachTopBtn').onclick=e=>{e.stopPropagation();CO.topOpen=!CO.topOpen;renderCoach()};
 $('#coachSideClose').onclick=e=>{e.stopPropagation();CO.topOpen=false;renderCoach()};
@@ -7885,10 +8006,13 @@ const REC={byGame:new WeakMap(),auto:-1};
 const recHumans=()=>[...NET.humans].sort((a,b)=>a-b);
 const recMask=h=>h.reduce((m,p)=>m|(1<<p),0);
 const recEligible=()=>NET.mode==='host'&&!TEST&&!SPEC&&NET.humans.size>=2;
-// a computer as guandanai's records name it: its release number and weights for a network, clint-rule for the Clint rules
+// a computer as guandanai's records name it: its release number and weights for a network, guandanai's search bot identity (9001) for
+// danMCai-reason, clint-rule for the Clint rules
 function recModel(id){
-  const m=NeuralBot.models.find(x=>x.id===id&&x.file);
-  return m?{id:m.guandanaiId,sha256:m.sha256,version:m.source.version}:{id:'clint-rule',sha256:null,version:'clintsun1977-'+VERSION};
+  const m=NeuralBot.models.find(x=>x.id===id);
+  if(m&&m.identity)return{...m.identity}; // danMCai-reason: guandanai's search bot 9001, its 017 fallback plays included
+  if(m&&m.file)return{id:m.guandanaiId,sha256:m.sha256,version:m.source.version};
+  return{id:'clint-rule',sha256:null,version:'clintsun1977-'+VERSION};
 }
 // as the collector takes them: no spaces at either end, no control characters, at most 24 characters (16 for the room), else none
 function recLabel(v,max){
@@ -7997,7 +8121,7 @@ function showStart(){
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
   Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
-  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2&&(r.bot==='clint'||NeuralBot.has(r.bot)))RULES.bot=r.bot; /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
+  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2){const b=r.bot==='danmcai'?REASON_ID:r.bot;if(b==='clint'||b===REASON_ID||NeuralBot.has(b))RULES.bot=b} /* (danMCai is offered as danMCai-reason now) */ /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){
@@ -9363,9 +9487,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1109-1644';
+const VERSION='1109-1659';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977f430f';
+const APP_HASH='c19776521e';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

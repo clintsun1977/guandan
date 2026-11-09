@@ -51,6 +51,27 @@ def check_models():
         print(f"  bot/{m['path']}  {len(data):,} bytes  sha256 ok")
 
 
+# danMCai-reason (guandanai's search bot 9001): the bundle built by guandanai's web/docs/REASON_BOT_INTEGRATION.md (section 4.1),
+# copied unchanged; every file must be byte for byte what was checked against that guide's table
+REASON = {
+    "reason/assets/search-worker.mjs": ("f5d632bf9214d62839b952b479476f58eea8942caec5f74fc8f18b85ebafba14", 87977),
+    "reason/assets/reason-client.mjs": ("45c395363cdb7eb427c5b23aa344888746f653ed46b0cb62757a8d0a63a83d36", 49455),
+    "reason/assets/vendor/ort.wasm.min.mjs": ("c21d9c326d453a4a61398270c804d5979e118540597cb0c07f7b3d64e6098234", 53725),
+    "reason/assets/vendor/ort-wasm-simd-threaded.mjs": ("30ed0b5cd1182ede931fea448afb567d4dc705ec957af09f108a2be5f770dac3", 24738),
+    "reason/assets/vendor/ort-wasm-simd-threaded.wasm": ("4b884c203b0fa48d057be3332c65513ff85aa3c5bddd6946acc0fab7ecda001d", 14848852),
+    "reason/models/bot-017.onnx": ("462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7", 5368650),
+    "reason/models/belief-v1-16d76783.onnx": ("16d767830e4536180fac56d744e95934b7525ab67b18d27df4f33066033d65e9", 3931285),
+}
+
+
+def check_reason():
+    for rel, (sha, size) in REASON.items():
+        data = (root / "bot" / rel).read_bytes()
+        if hashlib.sha256(data).hexdigest() != sha or len(data) != size:
+            sys.exit(f"bot/{rel}: SHA-256 or size does not match the danMCai-reason bundle")
+        print(f"  bot/{rel}  {len(data):,} bytes  sha256 ok")
+
+
 def build(version=None):
     src = inline((web / "src" / "index.html").read_text(encoding="utf-8"))
     # stamp the build time as the page version, shown in the lobby and compared between players in a room
@@ -79,5 +100,6 @@ def build(version=None):
 if __name__ == "__main__":
     page, version = build(sys.argv[1] if len(sys.argv) > 1 else None)
     check_models()
+    check_reason()
     (root / "index.html").write_text(page, encoding="utf-8")
     print("wrote index.html", len(page), "chars, version", version)

@@ -113,7 +113,7 @@
     <div class="lobby-rules" id="rulesBox">
       <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
       <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="once">一次机会</button></div>
-      <div class="rule-row"><span class="rule-k">电脑模型</span><button class="rule-btn" data-rule="bot" data-val="clint">默认</button><button class="rule-btn" data-rule="bot" data-val="danmcai"><span class="fl">danMCai</span><span class="sh">dMC</span></button><button class="rule-btn" data-rule="bot" data-val="guanzero"><span class="fl">GuanZero</span><span class="sh">GZe</span></button></div>
+      <div class="rule-row"><span class="rule-k">电脑模型</span><button class="rule-btn" data-rule="bot" data-val="clint">默认</button><button class="rule-btn" data-rule="bot" data-val="danmcai-reason"><span class="fl">danMCai</span><span class="sh">dMC</span></button><button class="rule-btn" data-rule="bot" data-val="guanzero"><span class="fl">GuanZero</span><span class="sh">GZe</span></button></div>
       <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
       <div class="rule-note" id="rulesNote"></div>
     </div>
@@ -166,6 +166,7 @@
 //@include web/src/game/tribute.js
 //@include web/src/game/turns.js
 //@include web/src/game/clock.js
+//@include web/src/game/reason-bot.js
 //@include web/src/game/computer-players.js
 //@include web/src/game/ticker.js
 //@include web/src/game/hint-order.js

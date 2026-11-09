@@ -33,6 +33,26 @@
       "guandanaiId": "017"
     },
     {
+      "id": "danmcai-reason",
+      "name": "danMCai",
+      "label": "danMCai-v000855042",
+      "kind": "search",
+      "base": "danmcai",
+      "dir": "reason/",
+      "identity": {
+        "id": "9001",
+        "sha256": "442d888ada3b59c56cb1e809bb24a97268f00c3daaa6345c6b53f2f84aca6a24",
+        "version": "v000855042-bsearch1-16d76783"
+      },
+      "source": {
+        "repo": "stevensun1005/guandanai",
+        "commit": "181c12f033b48738f8b96b203e0115e361c82569",
+        "searchBot": "9001",
+        "status": "research-bot-not-champion-deployment-not-acceptance",
+        "note": "带推理搜索的 danMCai（底座：冠军 017），打包方法见 guandanai web/docs/REASON_BOT_INTEGRATION.md"
+      }
+    },
+    {
       "id": "guanzero",
       "name": "GuanZero",
       "label": "guanzero-adp-io48-303975",

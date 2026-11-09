@@ -1,16 +1,21 @@
-/* ---------- 出牌评价: danMCai's score for the cards you pick, and for your last move ---------- */
-// Taken from stevensun1005/guandanai (web/src/coach/evaluation.mjs and controller.js, https://github.com/stevensun1005/guandanai);
-// the danMCai network is guandanai's too (bot/danmcai/README.md).
-// On your own turn the danMCai network (bot/models.json) scores, once, every move you could make, from what you can see:
-// your own hand, the plays so far, how many cards each player holds and the levels (guandanai's 出牌评价, without its
-// Top 5 list). The cards you pick show as 合理性 N%: 100 for the move the network values most, 0 for the one it values
-// least. It is a relative score, not a chance of winning. After you play, that move's score stays as 上一手 until the
+/* ---------- 出牌评价: danMCai-reason's score for the cards you pick, and for your last move ---------- */
+// Taken from stevensun1005/guandanai (web/src/coach/evaluation.mjs and controller.js, https://github.com/stevensun1005/guandanai,
+// wired in by its web/docs/REASON_BOT_INTEGRATION.md); the networks are guandanai's too (bot/danmcai, bot/reason).
+// On your own turn the danMCai network (017) first scores, once, every move you could make, from what you can see: your own
+// hand, the plays so far, how many cards each player holds and the levels. With 40 cards or fewer left on the table the
+// reasoning search (reason-bot.js, the same Worker the computers use, after them) then works on it and its values take the
+// place of 017's: with 21-40 cards only 017's top 6 and a pass get one (the rest show 不评分), with 20 or fewer every
+// move does; no number shows until it has finished (评价中…), and if it does not finish, 017's values show. On screen it is
+// simply danMCai. The cards you
+// pick show as 合理性 N%: 100 for the move valued most, 0 for the one valued least. It is a relative score, not a chance of
+// winning. After you play, that move's score stays as 上一手 until the
 // round is over. Whoever plays alone or opens the room turns it on or off in the lobby (出牌评价); × hides it on your own
 // page for the rest of the game.
 // Top 5 (guandanai's list of the network's five best plans, with their scores; a tap picks those cards, it does not play
 // them) is only for the nicknames in TOP5_NAMES, whoever opened the room, and for them the box shows even with 出牌评价 off
 const COACH_ID='danmcai'; // TOP5_NAMES: lobby.js
 const CO={turn:null,last:null,hidden:false,topOpen:null};
+const COACH_NAME='danMCai',COACH_SEEDS=new Map();
 const coachKey=()=>G.tok+':'+G.log.length;
 const coachTop5=()=>TOP5_NAMES.includes((myNick||'').trim().toLowerCase());
 const coachDeck=makeDeck();
@@ -19,14 +24,54 @@ const coachShown=()=>(RULES.coach===true||coachTop5())&&!CO.hidden&&!TEST&&!SPEC
 // the table as you see it at the start of your turn; the other hands go in only as counts
 function coachSnap(){
   if(CO.turn&&CO.turn.key===coachKey())return CO.turn;
-  const s={key:coachKey(),G,round:G.round,scores:new Map(),values:null,error:false,extra:false,
+  const s={key:coachKey(),G,round:G.round,scores:new Map(),values:null,error:false,extra:false,source:'champion',
+    trick:G.trick?G.trick.play:null,L:G.L,
     g:{hands:G.hands.map((h,i)=>i===0?h.slice():new Array(h.length)),trick:G.trick?{player:G.trick.player,play:G.trick.play}:null,
       passes:G.passes||0,log:G.log.slice(),levels:G.levels.slice(),L:G.L}};
   CO.turn=s;
-  setTimeout(()=>NeuralBot.rate(COACH_ID,s.g)
-    .then(r=>{s.values=r.values;s.actions=r.actions;r.actions.forEach((ids,i)=>s.scores.set(NeuralBot.actionKey(ids),r.values[i]))},e=>{s.error=true;console.warn('出牌评价出错',e)})
-    .finally(renderCoach),150);
+  const left=G.hands.reduce((n,h)=>n+h.length,0);
+  if(left<=60)reasonWarm(); // load the networks a little before the first searched turn
+  setTimeout(async()=>{
+    try{
+      const r=await NeuralBot.rate(COACH_ID,s.g);
+      s.actions=r.actions;s.base=r.values.slice();
+      // 017's values come first (quick); a search only while this turn is still open and there is a real choice
+      let result=null;
+      if(left>=1&&left<=40&&s.actions.length>1&&coachLive(s)){
+        try{
+          const{m,client}=await reasonClient();
+          if(m.searchBand(left)&&coachLive(s)){
+            s.payload=m.searchPayload(G,0,0,reasonSeed(COACH_SEEDS));
+            s.searching=true;renderCoach();
+            result=await client.evaluate(REASON_BOT,s.payload);
+          }
+        }catch(e){console.warn('出牌评价的推理搜索出错，用 danMCai 的值',e)}
+      }
+      coachValues(s,result);
+    }catch(e){s.error=true;console.warn('出牌评价出错',e)}
+    finally{s.searching=false;renderCoach()}
+  },150);
   return s;
+}
+// this snapshot is still the position you are about to move from
+const coachLive=s=>CO.turn===s&&s.key===coachKey()&&G.phase==='play'&&G.turn===0&&coachShown();
+// the values on show: the search's where it finished, otherwise 017's
+function coachValues(s,result){
+  const shown=s.payload&&result&&RSM?RSM.mergeSearchValues(s.actions,result):null;
+  if(shown){
+    s.source=result.kind;s.shown=shown;
+    s.reasoning={worlds:result.used,evaluated:shown.filter(v=>v!==null).length};
+  }else{
+    s.source='champion';s.shown=s.base.slice();
+    if(s.payload&&s.actions.length>1)s.fallback=(result&&result.reason)||'error';
+  }
+  coachRerank(s);
+}
+function coachRerank(s){
+  s.values=s.shown.filter(v=>v!==null);
+  s.scores=new Map(s.actions.map((ids,i)=>[NeuralBot.actionKey(ids),s.shown[i]]));
+  s.ranked=RSM?RSM.rankedCoachActions(s.actions,s.shown,s.L,5,s.trick,s.source==='champion'?undefined:s.base)
+    :NeuralBot.ranked(s.actions,s.shown,s.L,s.trick,5);
 }
 // the picked cards read the strongest legal way, as 出牌 plays them; nothing picked when you may pass is a pass
 function coachPick(){
@@ -40,15 +85,18 @@ function coachGrade(s,a){
   if(!s.values)return'评价中…';
   const k=NeuralBot.actionKey(a.ids);
   if(!s.scores.has(k)){
-    // a legal move the list of moves leaves out is scored by itself and joins the comparison
+    // a legal move the list of moves leaves out is scored by 017 by itself; next to search values it stays unscored
     if(!s.extra){
       s.extra=true;
-      NeuralBot.rate(COACH_ID,s.g,a.ids).then(r=>{s.scores.set(k,r.values[0]);s.values.push(r.values[0]);s.actions.push(r.actions[0])},()=>{s.error=true})
-        .finally(()=>{s.extra=false;renderCoach()});
+      NeuralBot.rate(COACH_ID,s.g,a.ids).then(r=>{
+        s.actions.push(r.actions[0]);s.base.push(r.values[0]);s.shown.push(s.source==='champion'?r.values[0]:null);coachRerank(s);
+      },()=>{s.error=true}).finally(()=>{s.extra=false;renderCoach()});
     }
     return'评价中…';
   }
-  const r=NeuralBot.relativeRating(s.values,s.scores.get(k));
+  const v=s.scores.get(k);
+  if(v===null)return'这种出法不评分';
+  const r=NeuralBot.relativeRating(s.values,v);
   if(s===CO.turn&&G.phase==='play'&&G.turn===0)CO.shown=s.key; // a score was on show before this move (marked in the round record)
   return`合理性 ${r.percent}%${r.flat?' · 候选无明显分差':''}`;
 }
@@ -62,7 +110,7 @@ function coachRemember(pl){
 function renderCoach(){
   const box=$('#coach'),on=coachShown();
   box.hidden=!on;
-  if(!on){$('#coachSide').hidden=true;top5Room(false);return}
+  if(!on){$('#coachSide').hidden=true;top5Room(false);if(RS)RS.then(({client})=>client.cancelCoach(),()=>{});return}
   if(CO.last&&(CO.last.s.G!==G||CO.last.s.round!==G.round))CO.last=null;
   let now='轮到你时评价';
   if(G.phase==='play'&&G.turn===0){
@@ -107,14 +155,16 @@ function renderTop5(phone){
     top5Pop();
     return;
   }
-  const cur=G.trick?G.trick.play:null,top=NeuralBot.ranked(s.actions,s.values,G.L,cur,5),picked=NeuralBot.actionKey([...sel]);
+  const top=s.ranked,picked=NeuralBot.actionKey([...sel]);
   $('#coachTopStatus').textContent=`已比较 ${s.actions.length} 种出法 · 点一下选中，不会自动打出`;
   list.innerHTML=top.map((row,i)=>{
-    const pct=NeuralBot.relativeRating(s.values,row.value).percent;
-    const gap=i?` <small class="coach-gap" title="与第一名的模型值差（约等于本局升级分），越接近 0 差别越小">差 ${(row.value-top[0].value).toFixed(2)}</small>`:'';
+    // a move the search did not reach is ranked by 017 below every searched one, with no number of its own
+    const score=row.value===null?'<small class="coach-gap" title="这一手只细算了最有希望的几种出法，这种排在它们后面">不评分</small>'
+      :`${NeuralBot.relativeRating(s.values,row.value).percent}%`;
+    const gap=i&&row.value!==null?` <small class="coach-gap" title="与第一名的值差（约等于本局升级分），越接近 0 差别越小">差 ${(row.value-top[0].value).toFixed(2)}</small>`:'';
     const cards=row.ids.length?row.ids.map(id=>{const c=coachDeck[id];return`<span class="coach-card${c.s==='H'||c.s==='D'||c.r===17?' red':''}">${cardText(c)}</span>`}).join(''):'<span class="coach-pass">本轮不跟牌</span>';
     const on1=row.ids.length&&NeuralBot.actionKey(row.ids)===picked?' on':'';
-    return`<li><button type="button" class="coach-choice${on1}" data-i="${i}"><span class="coach-choice-head"><strong>${i+1}. ${row.ids.length?TYPE_NAME[row.shape.type]:'过牌'}</strong><b>${pct}%${gap}</b></span><span class="coach-cards">${cards}</span></button></li>`;
+    return`<li><button type="button" class="coach-choice${on1}" data-i="${i}"><span class="coach-choice-head"><strong>${i+1}. ${row.ids.length?TYPE_NAME[row.shape.type]:'过牌'}</strong><b>${score}${gap}</b></span><span class="coach-cards">${cards}</span></button></li>`;
   }).join('');
   list.querySelectorAll('.coach-choice').forEach(b=>b.onclick=e=>{
     e.stopPropagation();
@@ -164,9 +214,8 @@ function coachPlace(){
   box.style.width=width+'px';
   box.style.setProperty('--coach-bottom',(found?Math.max(8,innerHeight-floor):Math.round(innerHeight*.42))+'px');
 }
-const coachModel=NeuralBot.models.find(m=>m.id===COACH_ID)||{};
-$('#coachName').textContent=coachModel.name||'';
-$('#coachName').parentElement.title=`${coachModel.label||''}：`+$('#coachName').parentElement.title;
+$('#coachName').textContent=COACH_NAME;
+$('#coachName').parentElement.title='danMCai：'+$('#coachName').parentElement.title;
 $('#coachClose').onclick=()=>{CO.hidden=true;renderCoach()};
 $('#coachTopBtn').onclick=e=>{e.stopPropagation();CO.topOpen=!CO.topOpen;renderCoach()};
 $('#coachSideClose').onclick=e=>{e.stopPropagation();CO.topOpen=false;renderCoach()};
