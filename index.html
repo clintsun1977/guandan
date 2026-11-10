@@ -5659,9 +5659,9 @@ function handGeo(n,keys){
     g.fixAt=px=>rows.findIndex((r,i)=>px>=i*vdx&&px<i*vdx+(i<rows.length-1?vdx:cw));
   }else{
     if(rows.length>1)gap=Math.max(ch*.3,Math.min(gap,(Math.max(base,ch*2.4)-lift-ch-pad)/(rows.length-1)));
-    // (the tags stand at the lower right of their groups' cards, all in one column: where the longest group's cards end)
+    // (the tags stand at the upper right of their groups' cards, all in one column: where the longest group's cards end)
     const tagX=Math.max(0,...rows.map(r=>r.w))+5;
-    rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:tagX,y:y+ch-26,gr:r.gr})});
+    rows.forEach((r,i)=>{const y=lift+i*gap;r.gr.forEach((id,j)=>g.fix.set(id,{x:j*r.off,y,rot:0}));g.fixTags.push({x:tagX,y,gr:r.gr})});
     need=lift+ch+(rows.length-1)*gap+6;
   }
   // an empty frame stands as tall as the hand (never less than one card and its margin)
@@ -9561,9 +9561,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1109-2111';
+const VERSION='1110-1016';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977ba183';
+const APP_HASH='c197785c9e';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
