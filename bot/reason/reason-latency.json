@@ -1,6 +1,6 @@
 {
   "purpose": "latency and agreement of the built search worker in headless Chrome vs the Node research bot; development seeds; not a strength result",
-  "generatedAt": "2026-11-09T21:50:50.986Z",
+  "generatedAt": "2026-11-10T00:27:38.192Z",
   "chrome": "Chrome/157.0.8103.38",
   "url": "http://127.0.0.1:8765/bot/reason/",
   "seeds": [
@@ -13,17 +13,17 @@
     {
       "name": "desktop",
       "budget": {
-        "midgameMs": 3000,
-        "endgameMs": 4000,
+        "midgameMs": 50000,
+        "endgameMs": 50000,
         "solverMs": 3000,
         "solverTable": 300000
       },
       "throttle": 1,
-      "initMs": 338,
+      "initMs": 355,
       "workerThrottle": [
         "not supported: {\"code\":-32000,\"message\":\"Operation is only supported for pages, not workers\"}"
       ],
-      "peakHeapMB": 344,
+      "peakHeapMB": 326,
       "midgame": {
         "decisions": 56,
         "fallbacks": 0,
@@ -31,9 +31,9 @@
         "sameAsNode": 56,
         "completedDifferentFromNode": 0,
         "wallMs": {
-          "p50": 477,
-          "p95": 932,
-          "max": 1131
+          "p50": 405,
+          "p95": 809,
+          "max": 1060
         }
       },
       "endgame": {
@@ -43,9 +43,9 @@
         "sameAsNode": 37,
         "completedDifferentFromNode": 0,
         "wallMs": {
-          "p50": 83,
-          "p95": 3287,
-          "max": 3621
+          "p50": 80,
+          "p95": 3149,
+          "max": 3191
         }
       },
       "all": {
@@ -55,60 +55,60 @@
         "sameAsNode": 93,
         "completedDifferentFromNode": 0,
         "wallMs": {
-          "p50": 296,
-          "p95": 1753,
-          "max": 3621
+          "p50": 258,
+          "p95": 1512,
+          "max": 3191
         }
       }
     },
     {
       "name": "mobile-proxy-quarter-budget",
       "budget": {
-        "midgameMs": 875,
-        "endgameMs": 875,
-        "solverMs": 250,
+        "midgameMs": 12500,
+        "endgameMs": 12500,
+        "solverMs": 750,
         "solverTable": 100000
       },
       "throttle": 1,
-      "initMs": 250,
+      "initMs": 273,
       "workerThrottle": [
         "not supported: {\"code\":-32000,\"message\":\"Operation is only supported for pages, not workers\"}"
       ],
-      "peakHeapMB": 226,
+      "peakHeapMB": 260,
       "midgame": {
         "decisions": 56,
-        "fallbacks": 4,
-        "fallbackRate": 0.07142857142857142,
-        "sameAsNode": 52,
+        "fallbacks": 0,
+        "fallbackRate": 0,
+        "sameAsNode": 56,
         "completedDifferentFromNode": 0,
         "wallMs": {
-          "p50": 460,
-          "p95": 876,
-          "max": 876
+          "p50": 416,
+          "p95": 834,
+          "max": 1060
         }
       },
       "endgame": {
         "decisions": 37,
-        "fallbacks": 7,
-        "fallbackRate": 0.1891891891891892,
-        "sameAsNode": 30,
+        "fallbacks": 1,
+        "fallbackRate": 0.02702702702702703,
+        "sameAsNode": 36,
         "completedDifferentFromNode": 0,
         "wallMs": {
-          "p50": 83,
-          "p95": 906,
-          "max": 933
+          "p50": 79,
+          "p95": 3880,
+          "max": 4134
         }
       },
       "all": {
         "decisions": 93,
-        "fallbacks": 11,
-        "fallbackRate": 0.11827956989247312,
-        "sameAsNode": 82,
+        "fallbacks": 1,
+        "fallbackRate": 0.010752688172043012,
+        "sameAsNode": 92,
         "completedDifferentFromNode": 0,
         "wallMs": {
-          "p50": 297,
-          "p95": 876,
-          "max": 933
+          "p50": 271,
+          "p95": 1599,
+          "max": 4134
         }
       }
     }
@@ -119,144 +119,144 @@
         "seed": 731960000,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 107,
+        "nodeMs": 128,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 186,
-        "wallMs": 187
+        "ms": 163,
+        "wallMs": 163
       },
       {
         "seed": 731960001,
         "band": "midgame",
         "expected": 45,
-        "nodeMs": 499,
+        "nodeMs": 436,
         "ok": true,
         "reason": null,
         "index": 45,
-        "ms": 666,
-        "wallMs": 666
+        "ms": 593,
+        "wallMs": 593
       },
       {
         "seed": 731960002,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 307,
+        "nodeMs": 233,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 322,
-        "wallMs": 322
+        "ms": 260,
+        "wallMs": 260
       },
       {
         "seed": 731960002,
         "band": "endgame",
         "expected": 8,
-        "nodeMs": 3696,
+        "nodeMs": 3232,
         "ok": true,
         "reason": null,
         "index": 8,
-        "ms": 3135,
-        "wallMs": 3135
+        "ms": 3149,
+        "wallMs": 3149
       },
       {
         "seed": 731960003,
         "band": "midgame",
         "expected": 33,
-        "nodeMs": 538,
+        "nodeMs": 415,
         "ok": true,
         "reason": null,
         "index": 33,
-        "ms": 589,
-        "wallMs": 589
+        "ms": 545,
+        "wallMs": 545
       },
       {
         "seed": 731960004,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 357,
+        "nodeMs": 305,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 451,
-        "wallMs": 452
+        "ms": 397,
+        "wallMs": 397
       },
       {
         "seed": 731960004,
         "band": "endgame",
         "expected": 8,
-        "nodeMs": 209,
+        "nodeMs": 192,
         "ok": true,
         "reason": null,
         "index": 8,
-        "ms": 192,
-        "wallMs": 192
+        "ms": 165,
+        "wallMs": 165
       },
       {
         "seed": 731960005,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 351,
+        "nodeMs": 324,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 523,
-        "wallMs": 523
+        "ms": 423,
+        "wallMs": 423
       },
       {
         "seed": 731960006,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 479,
+        "nodeMs": 443,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 629,
-        "wallMs": 629
+        "ms": 505,
+        "wallMs": 505
       },
       {
         "seed": 731960006,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 8,
+        "nodeMs": 10,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 10,
-        "wallMs": 10
+        "ms": 7,
+        "wallMs": 7
       },
       {
         "seed": 731960007,
         "band": "midgame",
         "expected": 102,
-        "nodeMs": 620,
+        "nodeMs": 543,
         "ok": true,
         "reason": null,
         "index": 102,
-        "ms": 783,
-        "wallMs": 784
+        "ms": 662,
+        "wallMs": 662
       },
       {
         "seed": 731960007,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 64,
+        "nodeMs": 59,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 60,
-        "wallMs": 60
+        "ms": 54,
+        "wallMs": 54
       },
       {
         "seed": 731960008,
         "band": "midgame",
         "expected": 5,
-        "nodeMs": 480,
+        "nodeMs": 420,
         "ok": true,
         "reason": null,
         "index": 5,
-        "ms": 512,
-        "wallMs": 512
+        "ms": 405,
+        "wallMs": 405
       },
       {
         "seed": 731960008,
@@ -266,206 +266,206 @@
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 58,
-        "wallMs": 59
+        "ms": 57,
+        "wallMs": 57
       },
       {
         "seed": 731960009,
         "band": "midgame",
         "expected": 6,
-        "nodeMs": 632,
+        "nodeMs": 805,
         "ok": true,
         "reason": null,
         "index": 6,
-        "ms": 920,
-        "wallMs": 920
+        "ms": 809,
+        "wallMs": 809
       },
       {
         "seed": 731960009,
         "band": "endgame",
         "expected": 2,
-        "nodeMs": 1552,
+        "nodeMs": 1588,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 1753,
-        "wallMs": 1753
+        "ms": 1541,
+        "wallMs": 1541
       },
       {
         "seed": 731960010,
         "band": "midgame",
         "expected": 64,
-        "nodeMs": 493,
+        "nodeMs": 460,
         "ok": true,
         "reason": null,
         "index": 64,
-        "ms": 548,
-        "wallMs": 548
+        "ms": 463,
+        "wallMs": 463
       },
       {
         "seed": 731960010,
         "band": "endgame",
         "expected": 2,
-        "nodeMs": 101,
+        "nodeMs": 108,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 117,
-        "wallMs": 117
+        "ms": 99,
+        "wallMs": 99
       },
       {
         "seed": 731960011,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 159,
+        "nodeMs": 125,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 173,
-        "wallMs": 173
+        "ms": 167,
+        "wallMs": 175
       },
       {
         "seed": 731960011,
         "band": "endgame",
         "expected": 8,
-        "nodeMs": 85,
+        "nodeMs": 79,
         "ok": true,
         "reason": null,
         "index": 8,
-        "ms": 77,
-        "wallMs": 77
+        "ms": 75,
+        "wallMs": 75
       },
       {
         "seed": 731960012,
         "band": "midgame",
         "expected": 55,
-        "nodeMs": 739,
+        "nodeMs": 669,
         "ok": true,
         "reason": null,
         "index": 55,
-        "ms": 1131,
-        "wallMs": 1131
+        "ms": 1060,
+        "wallMs": 1060
       },
       {
         "seed": 731960012,
         "band": "endgame",
         "expected": 4,
-        "nodeMs": 325,
+        "nodeMs": 305,
         "ok": true,
         "reason": null,
         "index": 4,
-        "ms": 278,
-        "wallMs": 278
+        "ms": 249,
+        "wallMs": 249
       },
       {
         "seed": 731960013,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 707,
+        "nodeMs": 615,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 783,
-        "wallMs": 784
+        "ms": 685,
+        "wallMs": 685
       },
       {
         "seed": 731960013,
         "band": "endgame",
         "expected": 2,
-        "nodeMs": 216,
+        "nodeMs": 213,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 296,
-        "wallMs": 296
+        "ms": 258,
+        "wallMs": 258
       },
       {
         "seed": 731960015,
         "band": "midgame",
         "expected": 4,
-        "nodeMs": 402,
+        "nodeMs": 370,
         "ok": true,
         "reason": null,
         "index": 4,
-        "ms": 526,
-        "wallMs": 526
+        "ms": 421,
+        "wallMs": 421
       },
       {
         "seed": 731960015,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 21,
+        "nodeMs": 20,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 21,
-        "wallMs": 21
+        "ms": 17,
+        "wallMs": 17
       },
       {
         "seed": 731960016,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 190,
+        "nodeMs": 185,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 261,
-        "wallMs": 261
+        "ms": 219,
+        "wallMs": 219
       },
       {
         "seed": 731960016,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 603,
+        "nodeMs": 598,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 524,
-        "wallMs": 524
+        "ms": 499,
+        "wallMs": 499
       },
       {
         "seed": 731960017,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 118,
+        "nodeMs": 104,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 156,
-        "wallMs": 156
+        "ms": 140,
+        "wallMs": 140
       },
       {
         "seed": 731960018,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 367,
+        "nodeMs": 376,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 605,
-        "wallMs": 605
+        "ms": 573,
+        "wallMs": 573
       },
       {
         "seed": 731960018,
         "band": "endgame",
         "expected": 4,
-        "nodeMs": 71,
+        "nodeMs": 72,
         "ok": true,
         "reason": null,
         "index": 4,
-        "ms": 68,
-        "wallMs": 68
+        "ms": 60,
+        "wallMs": 61
       },
       {
         "seed": 731960019,
         "band": "midgame",
         "expected": 10,
-        "nodeMs": 534,
+        "nodeMs": 527,
         "ok": true,
         "reason": null,
         "index": 10,
-        "ms": 704,
-        "wallMs": 704
+        "ms": 616,
+        "wallMs": 616
       },
       {
         "seed": 731960019,
@@ -475,63 +475,63 @@
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 3,
+        "ms": 4,
         "wallMs": 4
       },
       {
         "seed": 731960020,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 137,
+        "nodeMs": 126,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 180,
-        "wallMs": 180
+        "ms": 145,
+        "wallMs": 145
       },
       {
         "seed": 731960020,
         "band": "endgame",
         "expected": 1,
-        "nodeMs": 6,
+        "nodeMs": 5,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 7,
-        "wallMs": 7
+        "ms": 6,
+        "wallMs": 6
       },
       {
         "seed": 731960021,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 230,
+        "nodeMs": 163,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 192,
-        "wallMs": 192
+        "ms": 171,
+        "wallMs": 171
       },
       {
         "seed": 731960021,
         "band": "endgame",
         "expected": 7,
-        "nodeMs": 279,
+        "nodeMs": 265,
         "ok": true,
         "reason": null,
         "index": 7,
-        "ms": 272,
-        "wallMs": 272
+        "ms": 250,
+        "wallMs": 250
       },
       {
         "seed": 731960022,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 227,
+        "nodeMs": 232,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 287,
-        "wallMs": 293
+        "ms": 257,
+        "wallMs": 257
       },
       {
         "seed": 731960022,
@@ -542,134 +542,134 @@
         "reason": null,
         "index": 0,
         "ms": 8,
-        "wallMs": 8
+        "wallMs": 9
       },
       {
         "seed": 731960023,
         "band": "midgame",
         "expected": 9,
-        "nodeMs": 485,
+        "nodeMs": 444,
         "ok": true,
         "reason": null,
         "index": 9,
-        "ms": 651,
-        "wallMs": 651
+        "ms": 528,
+        "wallMs": 528
       },
       {
         "seed": 731960023,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 1,
+        "nodeMs": 2,
         "ok": true,
         "reason": null,
         "index": 0,
         "ms": 2,
-        "wallMs": 3
+        "wallMs": 2
       },
       {
         "seed": 731960024,
         "band": "midgame",
         "expected": 9,
-        "nodeMs": 241,
+        "nodeMs": 238,
         "ok": true,
         "reason": null,
         "index": 9,
-        "ms": 324,
-        "wallMs": 324
+        "ms": 267,
+        "wallMs": 267
       },
       {
         "seed": 731960024,
         "band": "endgame",
         "expected": 1,
-        "nodeMs": 118,
+        "nodeMs": 130,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 129,
-        "wallMs": 129
+        "ms": 112,
+        "wallMs": 112
       },
       {
         "seed": 731960027,
         "band": "midgame",
         "expected": 6,
-        "nodeMs": 422,
+        "nodeMs": 449,
         "ok": true,
         "reason": null,
         "index": 6,
-        "ms": 586,
-        "wallMs": 586
+        "ms": 475,
+        "wallMs": 475
       },
       {
         "seed": 731960027,
         "band": "endgame",
         "expected": 3,
-        "nodeMs": 99,
+        "nodeMs": 148,
         "ok": true,
         "reason": null,
         "index": 3,
-        "ms": 108,
-        "wallMs": 108
+        "ms": 86,
+        "wallMs": 86
       },
       {
         "seed": 731960028,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 273,
+        "nodeMs": 243,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 332,
-        "wallMs": 332
+        "ms": 284,
+        "wallMs": 285
       },
       {
         "seed": 731960028,
         "band": "endgame",
         "expected": 2,
-        "nodeMs": 61,
+        "nodeMs": 53,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 58,
-        "wallMs": 58
+        "ms": 47,
+        "wallMs": 47
       },
       {
         "seed": 731960029,
         "band": "midgame",
         "expected": 42,
-        "nodeMs": 373,
+        "nodeMs": 315,
         "ok": true,
         "reason": null,
         "index": 42,
-        "ms": 393,
-        "wallMs": 393
+        "ms": 336,
+        "wallMs": 336
       },
       {
         "seed": 731960030,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 545,
+        "nodeMs": 413,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 505,
-        "wallMs": 506
+        "ms": 449,
+        "wallMs": 449
       },
       {
         "seed": 731960031,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 445,
+        "nodeMs": 361,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 469,
-        "wallMs": 469
+        "ms": 405,
+        "wallMs": 405
       },
       {
         "seed": 731960031,
         "band": "endgame",
         "expected": 1,
-        "nodeMs": 14,
+        "nodeMs": 12,
         "ok": true,
         "reason": null,
         "index": 1,
@@ -680,18 +680,18 @@
         "seed": 731960032,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 116,
+        "nodeMs": 106,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 159,
-        "wallMs": 159
+        "ms": 149,
+        "wallMs": 149
       },
       {
         "seed": 731960032,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 27,
+        "nodeMs": 29,
         "ok": true,
         "reason": null,
         "index": 0,
@@ -702,265 +702,265 @@
         "seed": 731960033,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 152,
+        "nodeMs": 156,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 212,
-        "wallMs": 212
+        "ms": 198,
+        "wallMs": 198
       },
       {
         "seed": 731960033,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 230,
+        "nodeMs": 237,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 235,
-        "wallMs": 235
+        "ms": 212,
+        "wallMs": 212
       },
       {
         "seed": 731960034,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 410,
+        "nodeMs": 382,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 571,
-        "wallMs": 572
+        "ms": 548,
+        "wallMs": 548
       },
       {
         "seed": 731960035,
         "band": "midgame",
         "expected": 7,
-        "nodeMs": 310,
+        "nodeMs": 256,
         "ok": true,
         "reason": null,
         "index": 7,
-        "ms": 305,
-        "wallMs": 305
+        "ms": 278,
+        "wallMs": 278
       },
       {
         "seed": 731960035,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 2928,
+        "nodeMs": 2887,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 3286,
-        "wallMs": 3287
+        "ms": 3191,
+        "wallMs": 3191
       },
       {
         "seed": 731960036,
         "band": "midgame",
         "expected": 5,
-        "nodeMs": 362,
+        "nodeMs": 441,
         "ok": true,
         "reason": null,
         "index": 5,
-        "ms": 459,
-        "wallMs": 459
+        "ms": 402,
+        "wallMs": 402
       },
       {
         "seed": 731960037,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 132,
+        "nodeMs": 172,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 170,
-        "wallMs": 170
+        "ms": 160,
+        "wallMs": 161
       },
       {
         "seed": 731960037,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 770,
+        "nodeMs": 782,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 1055,
-        "wallMs": 1056
+        "ms": 846,
+        "wallMs": 846
       },
       {
         "seed": 731960038,
         "band": "midgame",
         "expected": 78,
-        "nodeMs": 356,
+        "nodeMs": 351,
         "ok": true,
         "reason": null,
         "index": 78,
-        "ms": 560,
-        "wallMs": 560
+        "ms": 532,
+        "wallMs": 532
       },
       {
         "seed": 731960040,
         "band": "midgame",
         "expected": 13,
-        "nodeMs": 254,
+        "nodeMs": 244,
         "ok": true,
         "reason": null,
         "index": 13,
-        "ms": 264,
-        "wallMs": 264
+        "ms": 236,
+        "wallMs": 237
       },
       {
         "seed": 731960040,
         "band": "endgame",
         "expected": 1,
-        "nodeMs": 7,
+        "nodeMs": 8,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 8,
-        "wallMs": 8
+        "ms": 7,
+        "wallMs": 7
       },
       {
         "seed": 731960041,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 238,
+        "nodeMs": 134,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 149,
-        "wallMs": 149
+        "ms": 129,
+        "wallMs": 130
       },
       {
         "seed": 731960042,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 161,
+        "nodeMs": 163,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 172,
-        "wallMs": 173
+        "ms": 144,
+        "wallMs": 144
       },
       {
         "seed": 731960042,
         "band": "endgame",
         "expected": 6,
-        "nodeMs": 2861,
+        "nodeMs": 2945,
         "ok": true,
         "reason": null,
         "index": 6,
-        "ms": 3621,
-        "wallMs": 3621
+        "ms": 3074,
+        "wallMs": 3075
       },
       {
         "seed": 731960043,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 281,
+        "nodeMs": 315,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 477,
-        "wallMs": 477
+        "ms": 418,
+        "wallMs": 461
       },
       {
         "seed": 731960044,
         "band": "midgame",
         "expected": 3,
-        "nodeMs": 378,
+        "nodeMs": 422,
         "ok": true,
         "reason": null,
         "index": 3,
-        "ms": 548,
-        "wallMs": 548
+        "ms": 481,
+        "wallMs": 481
       },
       {
         "seed": 731960044,
         "band": "endgame",
         "expected": 53,
-        "nodeMs": 1156,
+        "nodeMs": 1158,
         "ok": true,
         "reason": null,
         "index": 53,
-        "ms": 1877,
-        "wallMs": 1877
+        "ms": 1512,
+        "wallMs": 1512
       },
       {
         "seed": 731960045,
         "band": "midgame",
         "expected": 6,
-        "nodeMs": 441,
+        "nodeMs": 431,
         "ok": true,
         "reason": null,
         "index": 6,
-        "ms": 564,
-        "wallMs": 583
+        "ms": 455,
+        "wallMs": 455
       },
       {
         "seed": 731960046,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 149,
+        "nodeMs": 184,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 155,
-        "wallMs": 155
+        "ms": 133,
+        "wallMs": 133
       },
       {
         "seed": 731960046,
         "band": "endgame",
         "expected": 3,
-        "nodeMs": 8,
+        "nodeMs": 12,
         "ok": true,
         "reason": null,
         "index": 3,
-        "ms": 10,
-        "wallMs": 10
+        "ms": 8,
+        "wallMs": 8
       },
       {
         "seed": 731960047,
         "band": "midgame",
         "expected": 5,
-        "nodeMs": 319,
+        "nodeMs": 426,
         "ok": true,
         "reason": null,
         "index": 5,
-        "ms": 465,
-        "wallMs": 465
+        "ms": 395,
+        "wallMs": 396
       },
       {
         "seed": 731960047,
         "band": "endgame",
         "expected": 1,
-        "nodeMs": 349,
+        "nodeMs": 547,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 505,
-        "wallMs": 505
+        "ms": 497,
+        "wallMs": 497
       },
       {
         "seed": 731960048,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 114,
+        "nodeMs": 173,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 165,
-        "wallMs": 165
+        "ms": 118,
+        "wallMs": 118
       },
       {
         "seed": 731960049,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 195,
+        "nodeMs": 210,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 224,
-        "wallMs": 225
+        "ms": 198,
+        "wallMs": 198
       },
       {
         "seed": 731960049,
@@ -977,78 +977,78 @@
         "seed": 731960050,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 175,
+        "nodeMs": 199,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 233,
-        "wallMs": 233
+        "ms": 187,
+        "wallMs": 187
       },
       {
         "seed": 731960051,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 760,
+        "nodeMs": 860,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 992,
-        "wallMs": 993
+        "ms": 885,
+        "wallMs": 886
       },
       {
         "seed": 731960052,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 203,
+        "nodeMs": 246,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 299,
-        "wallMs": 299
+        "ms": 261,
+        "wallMs": 261
       },
       {
         "seed": 731960053,
         "band": "midgame",
         "expected": 9,
-        "nodeMs": 443,
+        "nodeMs": 474,
         "ok": true,
         "reason": null,
         "index": 9,
-        "ms": 581,
-        "wallMs": 582
+        "ms": 510,
+        "wallMs": 510
       },
       {
         "seed": 731960054,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 169,
+        "nodeMs": 182,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 189,
-        "wallMs": 189
+        "ms": 167,
+        "wallMs": 167
       },
       {
         "seed": 731960054,
         "band": "endgame",
         "expected": 16,
-        "nodeMs": 74,
+        "nodeMs": 90,
         "ok": true,
         "reason": null,
         "index": 16,
-        "ms": 83,
-        "wallMs": 83
+        "ms": 84,
+        "wallMs": 84
       },
       {
         "seed": 731960055,
         "band": "midgame",
         "expected": 3,
-        "nodeMs": 439,
+        "nodeMs": 619,
         "ok": true,
         "reason": null,
         "index": 3,
-        "ms": 704,
-        "wallMs": 705
+        "ms": 588,
+        "wallMs": 588
       },
       {
         "seed": 731960055,
@@ -1058,74 +1058,74 @@
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 84,
-        "wallMs": 84
+        "ms": 80,
+        "wallMs": 80
       },
       {
         "seed": 731960056,
         "band": "midgame",
         "expected": 34,
-        "nodeMs": 612,
+        "nodeMs": 611,
         "ok": true,
         "reason": null,
         "index": 34,
-        "ms": 754,
-        "wallMs": 754
+        "ms": 647,
+        "wallMs": 647
       },
       {
         "seed": 731960056,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 78,
+        "nodeMs": 70,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 73,
-        "wallMs": 73
+        "ms": 69,
+        "wallMs": 70
       },
       {
         "seed": 731960057,
         "band": "midgame",
         "expected": 6,
-        "nodeMs": 750,
+        "nodeMs": 647,
         "ok": true,
         "reason": null,
         "index": 6,
-        "ms": 932,
-        "wallMs": 932
+        "ms": 787,
+        "wallMs": 787
       },
       {
         "seed": 731960057,
         "band": "endgame",
         "expected": 7,
-        "nodeMs": 151,
+        "nodeMs": 147,
         "ok": true,
         "reason": null,
         "index": 7,
-        "ms": 141,
-        "wallMs": 141
+        "ms": 143,
+        "wallMs": 145
       },
       {
         "seed": 731960058,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 352,
+        "nodeMs": 349,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 484,
-        "wallMs": 485
+        "ms": 468,
+        "wallMs": 468
       },
       {
         "seed": 731960059,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 481,
+        "nodeMs": 325,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 530,
-        "wallMs": 530
+        "ms": 455,
+        "wallMs": 455
       },
       {
         "seed": 731960059,
@@ -1135,8 +1135,8 @@
         "ok": true,
         "reason": null,
         "index": 7,
-        "ms": 4,
-        "wallMs": 4
+        "ms": 6,
+        "wallMs": 6
       }
     ],
     [
@@ -1144,144 +1144,144 @@
         "seed": 731960000,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 107,
+        "nodeMs": 128,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 175,
-        "wallMs": 175
+        "ms": 156,
+        "wallMs": 156
       },
       {
         "seed": 731960001,
         "band": "midgame",
         "expected": 45,
-        "nodeMs": 499,
+        "nodeMs": 436,
         "ok": true,
         "reason": null,
         "index": 45,
-        "ms": 657,
-        "wallMs": 658
+        "ms": 589,
+        "wallMs": 589
       },
       {
         "seed": 731960002,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 307,
+        "nodeMs": 233,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 322,
-        "wallMs": 323
+        "ms": 255,
+        "wallMs": 255
       },
       {
         "seed": 731960002,
         "band": "endgame",
         "expected": 8,
-        "nodeMs": 3696,
+        "nodeMs": 3232,
         "ok": false,
         "reason": "budget",
         "index": null,
-        "ms": 309,
-        "wallMs": 309
+        "ms": 797,
+        "wallMs": 798
       },
       {
         "seed": 731960003,
         "band": "midgame",
         "expected": 33,
-        "nodeMs": 538,
+        "nodeMs": 415,
         "ok": true,
         "reason": null,
         "index": 33,
-        "ms": 572,
-        "wallMs": 572
+        "ms": 512,
+        "wallMs": 512
       },
       {
         "seed": 731960004,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 357,
+        "nodeMs": 305,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 434,
-        "wallMs": 435
+        "ms": 390,
+        "wallMs": 391
       },
       {
         "seed": 731960004,
         "band": "endgame",
         "expected": 8,
-        "nodeMs": 209,
+        "nodeMs": 192,
         "ok": true,
         "reason": null,
         "index": 8,
-        "ms": 216,
-        "wallMs": 216
+        "ms": 188,
+        "wallMs": 188
       },
       {
         "seed": 731960005,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 351,
+        "nodeMs": 324,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 460,
-        "wallMs": 460
+        "ms": 416,
+        "wallMs": 416
       },
       {
         "seed": 731960006,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 479,
+        "nodeMs": 443,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 587,
-        "wallMs": 587
+        "ms": 507,
+        "wallMs": 507
       },
       {
         "seed": 731960006,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 8,
+        "nodeMs": 10,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 7,
-        "wallMs": 7
+        "ms": 8,
+        "wallMs": 8
       },
       {
         "seed": 731960007,
         "band": "midgame",
         "expected": 102,
-        "nodeMs": 620,
+        "nodeMs": 543,
         "ok": true,
         "reason": null,
         "index": 102,
-        "ms": 748,
-        "wallMs": 749
+        "ms": 661,
+        "wallMs": 662
       },
       {
         "seed": 731960007,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 64,
+        "nodeMs": 59,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 55,
-        "wallMs": 55
+        "ms": 61,
+        "wallMs": 61
       },
       {
         "seed": 731960008,
         "band": "midgame",
         "expected": 5,
-        "nodeMs": 480,
+        "nodeMs": 420,
         "ok": true,
         "reason": null,
         "index": 5,
-        "ms": 497,
-        "wallMs": 497
+        "ms": 423,
+        "wallMs": 423
       },
       {
         "seed": 731960008,
@@ -1291,206 +1291,206 @@
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 72,
-        "wallMs": 72
+        "ms": 65,
+        "wallMs": 66
       },
       {
         "seed": 731960009,
         "band": "midgame",
         "expected": 6,
-        "nodeMs": 632,
-        "ok": false,
-        "reason": "budget",
-        "index": null,
-        "ms": 876,
-        "wallMs": 876
+        "nodeMs": 805,
+        "ok": true,
+        "reason": null,
+        "index": 6,
+        "ms": 833,
+        "wallMs": 833
       },
       {
         "seed": 731960009,
         "band": "endgame",
         "expected": 2,
-        "nodeMs": 1552,
-        "ok": false,
-        "reason": "budget",
-        "index": null,
-        "ms": 882,
-        "wallMs": 882
+        "nodeMs": 1588,
+        "ok": true,
+        "reason": null,
+        "index": 2,
+        "ms": 1598,
+        "wallMs": 1599
       },
       {
         "seed": 731960010,
         "band": "midgame",
         "expected": 64,
-        "nodeMs": 493,
+        "nodeMs": 460,
         "ok": true,
         "reason": null,
         "index": 64,
-        "ms": 558,
-        "wallMs": 558
+        "ms": 474,
+        "wallMs": 474
       },
       {
         "seed": 731960010,
         "band": "endgame",
         "expected": 2,
-        "nodeMs": 101,
+        "nodeMs": 108,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 148,
-        "wallMs": 148
+        "ms": 95,
+        "wallMs": 95
       },
       {
         "seed": 731960011,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 159,
+        "nodeMs": 125,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 193,
-        "wallMs": 193
+        "ms": 150,
+        "wallMs": 150
       },
       {
         "seed": 731960011,
         "band": "endgame",
         "expected": 8,
-        "nodeMs": 85,
+        "nodeMs": 79,
         "ok": true,
         "reason": null,
         "index": 8,
-        "ms": 70,
-        "wallMs": 70
+        "ms": 66,
+        "wallMs": 66
       },
       {
         "seed": 731960012,
         "band": "midgame",
         "expected": 55,
-        "nodeMs": 739,
-        "ok": false,
-        "reason": "budget",
-        "index": null,
-        "ms": 875,
-        "wallMs": 876
+        "nodeMs": 669,
+        "ok": true,
+        "reason": null,
+        "index": 55,
+        "ms": 1060,
+        "wallMs": 1060
       },
       {
         "seed": 731960012,
         "band": "endgame",
         "expected": 4,
-        "nodeMs": 325,
+        "nodeMs": 305,
         "ok": true,
         "reason": null,
         "index": 4,
-        "ms": 340,
-        "wallMs": 340
+        "ms": 312,
+        "wallMs": 312
       },
       {
         "seed": 731960013,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 707,
+        "nodeMs": 615,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 844,
-        "wallMs": 844
+        "ms": 728,
+        "wallMs": 729
       },
       {
         "seed": 731960013,
         "band": "endgame",
         "expected": 2,
-        "nodeMs": 216,
+        "nodeMs": 213,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 270,
-        "wallMs": 271
+        "ms": 237,
+        "wallMs": 238
       },
       {
         "seed": 731960015,
         "band": "midgame",
         "expected": 4,
-        "nodeMs": 402,
+        "nodeMs": 370,
         "ok": true,
         "reason": null,
         "index": 4,
-        "ms": 516,
-        "wallMs": 516
+        "ms": 413,
+        "wallMs": 414
       },
       {
         "seed": 731960015,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 21,
+        "nodeMs": 20,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 21,
-        "wallMs": 21
+        "ms": 20,
+        "wallMs": 20
       },
       {
         "seed": 731960016,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 190,
+        "nodeMs": 185,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 279,
-        "wallMs": 279
+        "ms": 209,
+        "wallMs": 210
       },
       {
         "seed": 731960016,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 603,
-        "ok": false,
-        "reason": "budget",
-        "index": null,
-        "ms": 906,
-        "wallMs": 906
+        "nodeMs": 598,
+        "ok": true,
+        "reason": null,
+        "index": 0,
+        "ms": 3222,
+        "wallMs": 3222
       },
       {
         "seed": 731960017,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 118,
+        "nodeMs": 104,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 167,
-        "wallMs": 167
+        "ms": 147,
+        "wallMs": 147
       },
       {
         "seed": 731960018,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 367,
+        "nodeMs": 376,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 610,
-        "wallMs": 610
+        "ms": 591,
+        "wallMs": 591
       },
       {
         "seed": 731960018,
         "band": "endgame",
         "expected": 4,
-        "nodeMs": 71,
+        "nodeMs": 72,
         "ok": true,
         "reason": null,
         "index": 4,
-        "ms": 71,
-        "wallMs": 71
+        "ms": 61,
+        "wallMs": 61
       },
       {
         "seed": 731960019,
         "band": "midgame",
         "expected": 10,
-        "nodeMs": 534,
+        "nodeMs": 527,
         "ok": true,
         "reason": null,
         "index": 10,
-        "ms": 703,
-        "wallMs": 703
+        "ms": 635,
+        "wallMs": 635
       },
       {
         "seed": 731960019,
@@ -1500,63 +1500,63 @@
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 3,
+        "ms": 4,
         "wallMs": 4
       },
       {
         "seed": 731960020,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 137,
+        "nodeMs": 126,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 173,
-        "wallMs": 174
+        "ms": 155,
+        "wallMs": 155
       },
       {
         "seed": 731960020,
         "band": "endgame",
         "expected": 1,
-        "nodeMs": 6,
+        "nodeMs": 5,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 5,
-        "wallMs": 5
+        "ms": 6,
+        "wallMs": 6
       },
       {
         "seed": 731960021,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 230,
+        "nodeMs": 163,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 195,
-        "wallMs": 195
+        "ms": 172,
+        "wallMs": 172
       },
       {
         "seed": 731960021,
         "band": "endgame",
         "expected": 7,
-        "nodeMs": 279,
+        "nodeMs": 265,
         "ok": true,
         "reason": null,
         "index": 7,
-        "ms": 334,
-        "wallMs": 334
+        "ms": 385,
+        "wallMs": 385
       },
       {
         "seed": 731960022,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 227,
+        "nodeMs": 232,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 281,
-        "wallMs": 281
+        "ms": 262,
+        "wallMs": 262
       },
       {
         "seed": 731960022,
@@ -1566,377 +1566,377 @@
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 9,
-        "wallMs": 9
+        "ms": 8,
+        "wallMs": 8
       },
       {
         "seed": 731960023,
         "band": "midgame",
         "expected": 9,
-        "nodeMs": 485,
+        "nodeMs": 444,
         "ok": true,
         "reason": null,
         "index": 9,
-        "ms": 614,
+        "ms": 605,
         "wallMs": 614
       },
       {
         "seed": 731960023,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 1,
+        "nodeMs": 2,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 2,
-        "wallMs": 2
+        "ms": 4,
+        "wallMs": 6
       },
       {
         "seed": 731960024,
         "band": "midgame",
         "expected": 9,
-        "nodeMs": 241,
+        "nodeMs": 238,
         "ok": true,
         "reason": null,
         "index": 9,
-        "ms": 297,
-        "wallMs": 297
+        "ms": 284,
+        "wallMs": 284
       },
       {
         "seed": 731960024,
         "band": "endgame",
         "expected": 1,
-        "nodeMs": 118,
+        "nodeMs": 130,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 192,
-        "wallMs": 192
+        "ms": 162,
+        "wallMs": 162
       },
       {
         "seed": 731960027,
         "band": "midgame",
         "expected": 6,
-        "nodeMs": 422,
+        "nodeMs": 449,
         "ok": true,
         "reason": null,
         "index": 6,
-        "ms": 570,
-        "wallMs": 571
+        "ms": 498,
+        "wallMs": 499
       },
       {
         "seed": 731960027,
         "band": "endgame",
         "expected": 3,
-        "nodeMs": 99,
+        "nodeMs": 148,
         "ok": true,
         "reason": null,
         "index": 3,
-        "ms": 92,
-        "wallMs": 93
+        "ms": 80,
+        "wallMs": 80
       },
       {
         "seed": 731960028,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 273,
+        "nodeMs": 243,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 336,
-        "wallMs": 336
+        "ms": 290,
+        "wallMs": 291
       },
       {
         "seed": 731960028,
         "band": "endgame",
         "expected": 2,
-        "nodeMs": 61,
+        "nodeMs": 53,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 59,
-        "wallMs": 59
+        "ms": 50,
+        "wallMs": 50
       },
       {
         "seed": 731960029,
         "band": "midgame",
         "expected": 42,
-        "nodeMs": 373,
+        "nodeMs": 315,
         "ok": true,
         "reason": null,
         "index": 42,
-        "ms": 413,
-        "wallMs": 413
+        "ms": 336,
+        "wallMs": 336
       },
       {
         "seed": 731960030,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 545,
+        "nodeMs": 413,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 551,
-        "wallMs": 551
+        "ms": 480,
+        "wallMs": 481
       },
       {
         "seed": 731960031,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 445,
+        "nodeMs": 361,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 489,
-        "wallMs": 489
+        "ms": 458,
+        "wallMs": 460
       },
       {
         "seed": 731960031,
         "band": "endgame",
         "expected": 1,
-        "nodeMs": 14,
+        "nodeMs": 12,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 16,
-        "wallMs": 16
+        "ms": 14,
+        "wallMs": 14
       },
       {
         "seed": 731960032,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 116,
+        "nodeMs": 106,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 168,
-        "wallMs": 169
+        "ms": 156,
+        "wallMs": 156
       },
       {
         "seed": 731960032,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 27,
+        "nodeMs": 29,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 50,
-        "wallMs": 50
+        "ms": 31,
+        "wallMs": 31
       },
       {
         "seed": 731960033,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 152,
+        "nodeMs": 156,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 230,
-        "wallMs": 230
+        "ms": 192,
+        "wallMs": 193
       },
       {
         "seed": 731960033,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 230,
+        "nodeMs": 237,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 232,
-        "wallMs": 232
+        "ms": 212,
+        "wallMs": 212
       },
       {
         "seed": 731960034,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 410,
+        "nodeMs": 382,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 583,
-        "wallMs": 584
+        "ms": 527,
+        "wallMs": 528
       },
       {
         "seed": 731960035,
         "band": "midgame",
         "expected": 7,
-        "nodeMs": 310,
+        "nodeMs": 256,
         "ok": true,
         "reason": null,
         "index": 7,
-        "ms": 306,
-        "wallMs": 306
+        "ms": 271,
+        "wallMs": 271
       },
       {
         "seed": 731960035,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 2928,
-        "ok": false,
-        "reason": "budget",
-        "index": null,
-        "ms": 558,
-        "wallMs": 558
+        "nodeMs": 2887,
+        "ok": true,
+        "reason": null,
+        "index": 0,
+        "ms": 2878,
+        "wallMs": 2878
       },
       {
         "seed": 731960036,
         "band": "midgame",
         "expected": 5,
-        "nodeMs": 362,
+        "nodeMs": 441,
         "ok": true,
         "reason": null,
         "index": 5,
-        "ms": 450,
-        "wallMs": 450
+        "ms": 391,
+        "wallMs": 391
       },
       {
         "seed": 731960037,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 132,
+        "nodeMs": 172,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 187,
-        "wallMs": 187
+        "ms": 155,
+        "wallMs": 155
       },
       {
         "seed": 731960037,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 770,
-        "ok": false,
-        "reason": "budget",
-        "index": null,
-        "ms": 280,
-        "wallMs": 281
+        "nodeMs": 782,
+        "ok": true,
+        "reason": null,
+        "index": 0,
+        "ms": 1289,
+        "wallMs": 1289
       },
       {
         "seed": 731960038,
         "band": "midgame",
         "expected": 78,
-        "nodeMs": 356,
+        "nodeMs": 351,
         "ok": true,
         "reason": null,
         "index": 78,
-        "ms": 593,
-        "wallMs": 593
+        "ms": 519,
+        "wallMs": 520
       },
       {
         "seed": 731960040,
         "band": "midgame",
         "expected": 13,
-        "nodeMs": 254,
+        "nodeMs": 244,
         "ok": true,
         "reason": null,
         "index": 13,
-        "ms": 303,
-        "wallMs": 303
+        "ms": 229,
+        "wallMs": 229
       },
       {
         "seed": 731960040,
         "band": "endgame",
         "expected": 1,
-        "nodeMs": 7,
+        "nodeMs": 8,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 8,
-        "wallMs": 9
+        "ms": 7,
+        "wallMs": 7
       },
       {
         "seed": 731960041,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 238,
+        "nodeMs": 134,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 155,
-        "wallMs": 156
+        "ms": 129,
+        "wallMs": 129
       },
       {
         "seed": 731960042,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 161,
+        "nodeMs": 163,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 161,
-        "wallMs": 161
+        "ms": 134,
+        "wallMs": 135
       },
       {
         "seed": 731960042,
         "band": "endgame",
         "expected": 6,
-        "nodeMs": 2861,
-        "ok": false,
-        "reason": "budget",
-        "index": null,
-        "ms": 933,
-        "wallMs": 933
+        "nodeMs": 2945,
+        "ok": true,
+        "reason": null,
+        "index": 6,
+        "ms": 3880,
+        "wallMs": 3880
       },
       {
         "seed": 731960043,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 281,
+        "nodeMs": 315,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 443,
-        "wallMs": 443
+        "ms": 426,
+        "wallMs": 426
       },
       {
         "seed": 731960044,
         "band": "midgame",
         "expected": 3,
-        "nodeMs": 378,
+        "nodeMs": 422,
         "ok": true,
         "reason": null,
         "index": 3,
-        "ms": 503,
-        "wallMs": 503
+        "ms": 479,
+        "wallMs": 479
       },
       {
         "seed": 731960044,
         "band": "endgame",
         "expected": 53,
-        "nodeMs": 1156,
-        "ok": false,
-        "reason": "budget",
-        "index": null,
-        "ms": 893,
-        "wallMs": 893
+        "nodeMs": 1158,
+        "ok": true,
+        "reason": null,
+        "index": 53,
+        "ms": 4134,
+        "wallMs": 4134
       },
       {
         "seed": 731960045,
         "band": "midgame",
         "expected": 6,
-        "nodeMs": 441,
+        "nodeMs": 431,
         "ok": true,
         "reason": null,
         "index": 6,
-        "ms": 523,
-        "wallMs": 532
+        "ms": 455,
+        "wallMs": 456
       },
       {
         "seed": 731960046,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 149,
+        "nodeMs": 184,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 159,
-        "wallMs": 160
+        "ms": 131,
+        "wallMs": 131
       },
       {
         "seed": 731960046,
         "band": "endgame",
         "expected": 3,
-        "nodeMs": 8,
+        "nodeMs": 12,
         "ok": true,
         "reason": null,
         "index": 3,
@@ -1947,45 +1947,45 @@
         "seed": 731960047,
         "band": "midgame",
         "expected": 5,
-        "nodeMs": 319,
+        "nodeMs": 426,
         "ok": true,
         "reason": null,
         "index": 5,
-        "ms": 448,
-        "wallMs": 449
+        "ms": 394,
+        "wallMs": 394
       },
       {
         "seed": 731960047,
         "band": "endgame",
         "expected": 1,
-        "nodeMs": 349,
+        "nodeMs": 547,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 459,
-        "wallMs": 459
+        "ms": 399,
+        "wallMs": 399
       },
       {
         "seed": 731960048,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 114,
+        "nodeMs": 173,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 138,
-        "wallMs": 138
+        "ms": 119,
+        "wallMs": 119
       },
       {
         "seed": 731960049,
         "band": "midgame",
         "expected": 2,
-        "nodeMs": 195,
+        "nodeMs": 210,
         "ok": true,
         "reason": null,
         "index": 2,
-        "ms": 240,
-        "wallMs": 240
+        "ms": 199,
+        "wallMs": 199
       },
       {
         "seed": 731960049,
@@ -1996,84 +1996,84 @@
         "reason": null,
         "index": 1,
         "ms": 2,
-        "wallMs": 3
+        "wallMs": 2
       },
       {
         "seed": 731960050,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 175,
+        "nodeMs": 199,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 208,
-        "wallMs": 209
+        "ms": 198,
+        "wallMs": 199
       },
       {
         "seed": 731960051,
         "band": "midgame",
         "expected": 0,
-        "nodeMs": 760,
-        "ok": false,
-        "reason": "budget",
-        "index": null,
-        "ms": 876,
-        "wallMs": 876
+        "nodeMs": 860,
+        "ok": true,
+        "reason": null,
+        "index": 0,
+        "ms": 925,
+        "wallMs": 926
       },
       {
         "seed": 731960052,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 203,
+        "nodeMs": 246,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 281,
-        "wallMs": 281
+        "ms": 280,
+        "wallMs": 280
       },
       {
         "seed": 731960053,
         "band": "midgame",
         "expected": 9,
-        "nodeMs": 443,
+        "nodeMs": 474,
         "ok": true,
         "reason": null,
         "index": 9,
-        "ms": 556,
-        "wallMs": 557
+        "ms": 526,
+        "wallMs": 526
       },
       {
         "seed": 731960054,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 169,
+        "nodeMs": 182,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 187,
-        "wallMs": 188
+        "ms": 169,
+        "wallMs": 170
       },
       {
         "seed": 731960054,
         "band": "endgame",
         "expected": 16,
-        "nodeMs": 74,
+        "nodeMs": 90,
         "ok": true,
         "reason": null,
         "index": 16,
-        "ms": 83,
+        "ms": 84,
         "wallMs": 84
       },
       {
         "seed": 731960055,
         "band": "midgame",
         "expected": 3,
-        "nodeMs": 439,
+        "nodeMs": 619,
         "ok": true,
         "reason": null,
         "index": 3,
-        "ms": 659,
-        "wallMs": 660
+        "ms": 600,
+        "wallMs": 600
       },
       {
         "seed": 731960055,
@@ -2083,74 +2083,74 @@
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 83,
-        "wallMs": 83
+        "ms": 79,
+        "wallMs": 79
       },
       {
         "seed": 731960056,
         "band": "midgame",
         "expected": 34,
-        "nodeMs": 612,
+        "nodeMs": 611,
         "ok": true,
         "reason": null,
         "index": 34,
-        "ms": 753,
-        "wallMs": 753
+        "ms": 680,
+        "wallMs": 680
       },
       {
         "seed": 731960056,
         "band": "endgame",
         "expected": 0,
-        "nodeMs": 78,
+        "nodeMs": 70,
         "ok": true,
         "reason": null,
         "index": 0,
-        "ms": 80,
-        "wallMs": 80
+        "ms": 78,
+        "wallMs": 78
       },
       {
         "seed": 731960057,
         "band": "midgame",
         "expected": 6,
-        "nodeMs": 750,
-        "ok": false,
-        "reason": "budget",
-        "index": null,
-        "ms": 876,
-        "wallMs": 876
+        "nodeMs": 647,
+        "ok": true,
+        "reason": null,
+        "index": 6,
+        "ms": 834,
+        "wallMs": 834
       },
       {
         "seed": 731960057,
         "band": "endgame",
         "expected": 7,
-        "nodeMs": 151,
+        "nodeMs": 147,
         "ok": true,
         "reason": null,
         "index": 7,
-        "ms": 161,
-        "wallMs": 161
+        "ms": 130,
+        "wallMs": 130
       },
       {
         "seed": 731960058,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 352,
+        "nodeMs": 349,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 479,
-        "wallMs": 480
+        "ms": 487,
+        "wallMs": 487
       },
       {
         "seed": 731960059,
         "band": "midgame",
         "expected": 1,
-        "nodeMs": 481,
+        "nodeMs": 325,
         "ok": true,
         "reason": null,
         "index": 1,
-        "ms": 522,
-        "wallMs": 522
+        "ms": 482,
+        "wallMs": 482
       },
       {
         "seed": 731960059,
@@ -2161,7 +2161,7 @@
         "reason": null,
         "index": 7,
         "ms": 4,
-        "wallMs": 4
+        "wallMs": 5
       }
     ]
   ]

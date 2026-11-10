@@ -24,7 +24,7 @@
 | 选项 | 说明 |
 | --- | --- |
 | **默认** | Clint 的规则机器人（本项目自己的），开局默认选中。四家都只剩 12 张以内时换上**残局大脑**：把没见过的牌随机发给另外三家（按他们出牌、过牌的表现加权，最多 40 种），每种用精确求解器算每个出法的结果，只有别的出法明显比规则的出法好（≥0.2 级）才改；一次出牌最多算 30 秒，来不及就用规则的出法；只用公开信息和自己的手牌，不偷看别人的牌 |
-| **danMCai** | **引用自 [guandanai](https://github.com/stevensun1005/guandanai)**：danMCai 冠军 `017` 的网络，加上 guandanai 的搜索（编号 `9001`）。桌上四家合计剩 40 张以内时，先从公开出牌推断别家可能的暗牌、抽 8 种牌分布；21–40 张把 017 估值前 6 的出法和"过"在每种分布里都打到本局结束比较，20 张以内对每种出法精确求解。超过 40 张、只有一种出法或一手能出完时直接按 017 出；搜索没算完也按 017 出 |
+| **danMCai** | **引用自 [guandanai](https://github.com/stevensun1005/guandanai)**：danMCai 冠军 `017` 的网络，加上 guandanai 的搜索（编号 `9001`）。桌上四家合计剩 40 张以内时，先从公开出牌推断别家可能的暗牌、抽 8 种牌分布；21–40 张把 017 估值前 6 的出法和"过"在每种分布里都打到本局结束比较，20 张以内对每种出法精确求解。超过 40 张、只有一种出法或一手能出完时直接按 017 出。电脑和真人一样每手最多 60 秒：从轮到它起最多搜索 50 秒，没算完就出同时算好的 017，留 10 秒余量；这一手没算完不影响下一手照常搜索（多数决策不到 1 秒） |
 | GuanZero | 神经网络 `guanzero-adp-io48-303975`，**引用自 guandanai** 最新发布的 GuanZero |
 
 神经网络和搜索在房主的浏览器里运行（onnxruntime-web；danMCai 的搜索在单独的 Worker 线程里，不卡页面），只看自己的手牌和公开信息；进贡、还贡仍按 Clint 规则。
@@ -83,7 +83,7 @@ danMCai（含它的搜索）、GuanZero 两个神经网络机器人和出牌评�
 | danMCai 权重 | Release [`web-model-017`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-017)（训练任务 `mac-20261105`，版本 `v000855042`） | `bot/danmcai/danmcai-v000855042.onnx` |
 | GuanZero 权重 | Release [`web-model-023`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-023)（训练任务 `guanzero-adp-io48`，步数 303975） | `bot/guanzero/guanzero-adp-io48-303975.onnx` |
 | 浏览器推理代码 | `web/src/ai/` 的 `encoding.mjs`、`history.mjs`、`candidates.js`、`observation.js`、`endgame.js`、`policy-inference.mjs`、`table-policy.mjs` | 移植为 `bot/neural/neural-bot.js` |
-| danMCai 的搜索（`9001`） | 按 [`web/docs/REASON_BOT_INTEGRATION.md`](https://github.com/stevensun1005/guandanai/blob/main/web/docs/REASON_BOT_INTEGRATION.md) 第 4.1 节打包（提交 `181c12f`），推断网络来自 Release [`web-belief-v1-16d76783`](https://github.com/stevensun1005/guandanai/releases/tag/web-belief-v1-16d76783) | `bot/reason/`（原样，SHA-256 见 [bot/reason/README](bot/reason/README.md)），接入代码 `web/src/game/reason-bot.js` |
+| danMCai 的搜索（`9001`） | 按 [`web/docs/REASON_BOT_INTEGRATION.md`](https://github.com/stevensun1005/guandanai/blob/main/web/docs/REASON_BOT_INTEGRATION.md) 第 4.1 节打包（提交 `bbc7ed6`），推断网络来自 Release [`web-belief-v1-16d76783`](https://github.com/stevensun1005/guandanai/releases/tag/web-belief-v1-16d76783) | `bot/reason/`（原样，SHA-256 见 [bot/reason/README](bot/reason/README.md)），接入代码 `web/src/game/reason-bot.js` |
 | 出牌评价 | `web/src/coach/evaluation.mjs`、`controller.js` | `bot/neural/neural-bot.js`（017 打分）、`bot/reason/`（搜索值）、`web/src/coach/coach.js`（显示） |
 
 权重文件和 guandanai 发布的完全相同（SHA-256 记录在 `bot/models.json`，构建时核对）；代码移植自 guandanai `main`

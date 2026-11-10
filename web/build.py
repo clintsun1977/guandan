@@ -54,8 +54,8 @@ def check_models():
 # danMCai-reason (guandanai's search bot 9001): the bundle built by guandanai's web/docs/REASON_BOT_INTEGRATION.md (section 4.1),
 # copied unchanged; every file must be byte for byte what was checked against that guide's table
 REASON = {
-    "reason/assets/search-worker.mjs": ("f5d632bf9214d62839b952b479476f58eea8942caec5f74fc8f18b85ebafba14", 87977),
-    "reason/assets/reason-client.mjs": ("45c395363cdb7eb427c5b23aa344888746f653ed46b0cb62757a8d0a63a83d36", 49455),
+    "reason/assets/search-worker.mjs": ("10079e4bddc771241cdb617ce7dab799a08870b9aca87cb97e77b6d993ba27a4", 89142),
+    "reason/assets/reason-client.mjs": ("869ab81e3975e82bb21b8c2e49d73b4a6e57f3d24fce5d8f1493678002e27f0f", 51063),
     "reason/assets/vendor/ort.wasm.min.mjs": ("c21d9c326d453a4a61398270c804d5979e118540597cb0c07f7b3d64e6098234", 53725),
     "reason/assets/vendor/ort-wasm-simd-threaded.mjs": ("30ed0b5cd1182ede931fea448afb567d4dc705ec957af09f108a2be5f770dac3", 24738),
     "reason/assets/vendor/ort-wasm-simd-threaded.wasm": ("4b884c203b0fa48d057be3332c65513ff85aa3c5bddd6946acc0fab7ecda001d", 14848852),

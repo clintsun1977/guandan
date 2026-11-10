@@ -3454,7 +3454,7 @@ function hintOrder(hand,L,cur,plays){
   return fin.concat(list).filter(pl=>{const k=pl.cards.map(c=>c.id).sort((a,b)=>a-b).join();return!seen.has(k)&&seen.add(k)});
 }
 
-const BOT_MODELS={"schema":1,"defaultId":"clint","models":[{"id":"clint","name":"Clint","label":"Clint 规则机器人","kind":"rules","path":"clint/clint-bot.js"},{"id":"danmcai","name":"danMCai","label":"danMCai-v000855042","kind":"onnx","path":"danmcai/danmcai-v000855042.onnx","file":"danmcai-v000855042.onnx","sha256":"462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7","bytes":5368650,"config":{"stateFeatures":513,"actionFeatures":54},"source":{"repo":"stevensun1005/guandanai","release":"web-model-017","run":"mac-20261105","version":"v000855042","step":855042,"note":"guandanai 网页默认的 danMCai 现任门控冠军（归档 017）"},"guandanaiId":"017"},{"id":"danmcai-reason","name":"danMCai","label":"danMCai-v000855042","kind":"search","base":"danmcai","dir":"reason/","identity":{"id":"9001","sha256":"442d888ada3b59c56cb1e809bb24a97268f00c3daaa6345c6b53f2f84aca6a24","version":"v000855042-bsearch1-16d76783"},"source":{"repo":"stevensun1005/guandanai","commit":"181c12f033b48738f8b96b203e0115e361c82569","searchBot":"9001","status":"research-bot-not-champion-deployment-not-acceptance","note":"带推理搜索的 danMCai（底座：冠军 017），打包方法见 guandanai web/docs/REASON_BOT_INTEGRATION.md"}},{"id":"guanzero","name":"GuanZero","label":"guanzero-adp-io48-303975","kind":"onnx","path":"guanzero/guanzero-adp-io48-303975.onnx","file":"guanzero-adp-io48-303975.onnx","sha256":"e02bd26f3d90cb9ef90f7075ad1acd845c709bebac734611c44eb66d48fdbd4b","bytes":6346014,"config":{"stateFeatures":513,"actionFeatures":54,"history":"guanzero-v1"},"source":{"repo":"stevensun1005/guandanai","release":"web-model-023","run":"guanzero-adp-io48","version":"model-000000303975","step":303975,"note":"guandanai 最新发布的 GuanZero（归档 023）"},"guandanaiId":"023"}]};
+const BOT_MODELS={"schema":1,"defaultId":"clint","models":[{"id":"clint","name":"Clint","label":"Clint 规则机器人","kind":"rules","path":"clint/clint-bot.js"},{"id":"danmcai","name":"danMCai","label":"danMCai-v000855042","kind":"onnx","path":"danmcai/danmcai-v000855042.onnx","file":"danmcai-v000855042.onnx","sha256":"462afc99ee6bcfb788871d7a8f84d4298c008d57465c62d48ca1792cdb11b3f7","bytes":5368650,"config":{"stateFeatures":513,"actionFeatures":54},"source":{"repo":"stevensun1005/guandanai","release":"web-model-017","run":"mac-20261105","version":"v000855042","step":855042,"note":"guandanai 网页默认的 danMCai 现任门控冠军（归档 017）"},"guandanaiId":"017"},{"id":"danmcai-reason","name":"danMCai","label":"danMCai-v000855042","kind":"search","base":"danmcai","dir":"reason/","identity":{"id":"9001","sha256":"442d888ada3b59c56cb1e809bb24a97268f00c3daaa6345c6b53f2f84aca6a24","version":"v000855042-bsearch1-16d76783"},"source":{"repo":"stevensun1005/guandanai","commit":"bbc7ed657af29c440b56da30daa8f2048cf6f92a","searchBot":"9001","status":"research-bot-not-champion-deployment-not-acceptance","note":"带推理搜索的 danMCai（底座：冠军 017），打包方法见 guandanai web/docs/REASON_BOT_INTEGRATION.md"}},{"id":"guanzero","name":"GuanZero","label":"guanzero-adp-io48-303975","kind":"onnx","path":"guanzero/guanzero-adp-io48-303975.onnx","file":"guanzero-adp-io48-303975.onnx","sha256":"e02bd26f3d90cb9ef90f7075ad1acd845c709bebac734611c44eb66d48fdbd4b","bytes":6346014,"config":{"stateFeatures":513,"actionFeatures":54,"history":"guanzero-v1"},"source":{"repo":"stevensun1005/guandanai","release":"web-model-023","run":"guanzero-adp-io48","version":"model-000000303975","step":303975,"note":"guandanai 最新发布的 GuanZero（归档 023）"},"guandanaiId":"023"}]};
 /* ---------- neural computer players: danMCai and GuanZero (bot/models.json), run in the browser with onnxruntime-web ---------- */
 // Taken from stevensun1005/guandanai (https://github.com/stevensun1005/guandanai), not written for this project: ported from its web/src/ai (encoding.mjs, history.mjs, candidates.js, observation.js, endgame.js,
 // policy-inference.mjs, table-policy.mjs), keeping the exact inputs the networks were trained on. A network sees only its
@@ -4216,28 +4216,24 @@ function reasonSeed(seeds){
   return seeds.get(key);
 }
 const REASON_SEEDS=new Map();
+// the turn rule (the owner's, guandanai 699674b): a computer has 60 s for a move like anyone else, at most 50 s of it searching,
+// and the last 10 s kept for 017 should the search not finish. The 50 s count from the start of the turn (botStart), the
+// "thinking" pause, the first load and any wait behind the coach included: the client stops the search 50 s in and gives up
+// 52 s in. One move falling back changes nothing for the next: every move searches afresh
+const REASON_CAP_MS=53000; // HARD_MS (52 s) + 1 s: our own last limit on the whole search, the module load included, from the start of the turn
 // the table: the search's play for seat p, null for a pass, or undefined when there is no search (017 plays instead)
-async function reasonSearch(p){
+async function reasonSearch(p,startedAt){
   const now=()=>G.tok+':'+G.log.length+':'+G.turn,at=now();
   if(G.turn!==p||G.phase!=='play'||isHumanSeat(p))return undefined;
-  // no search over 40 cards: do not even wait for the module there
+  // no search over 40 cards: do not even load the module there
   if(G.hands.reduce((s,h)=>s+h.length,0)>40)return undefined;
-  // the module gets a time limit too: a load that hangs must fall back to 017, never run into BOT_WAIT_MS (and botFail)
-  let lt;
-  const rc=await Promise.race([reasonClient(),new Promise(res=>{lt=setTimeout(res,5000)})]).finally(()=>clearTimeout(lt));
-  if(!rc)return undefined;
-  const{m,client}=rc;
+  const{m,client}=await reasonClient();
   if(now()!==at)return undefined;
   if(!m.searchBand(G.hands.reduce((s,h)=>s+h.length,0)))return undefined;
   const plays=m.candidates(G.hands[p],G.L,G.trick&&G.trick.play);
   if(plays.length<=1||plays.some(x=>x&&x.cards.length===G.hands[p].length))return undefined;
   const payload=m.searchPayload(G,p,NET.off,reasonSeed(REASON_SEEDS));
-  // a limit of our own, so that the search and then 017 together stay inside BOT_WAIT_MS
-  const b=client.stats.budget;
-  let timer;
-  const r=await Promise.race([client.decide(REASON_BOT,payload),
-    new Promise(res=>{timer=setTimeout(()=>res({fallback:true,reason:'caller-timeout'}),b.midgameMs+m.hardTimeoutMs(b)+1000)})])
-    .finally(()=>clearTimeout(timer));
+  const r=await client.decide(REASON_BOT,payload,{startedAt});
   if(!r||!r.ok||now()!==at)return undefined;
   const trick=G.trick&&G.trick.play;
   if(!r.ids.length)return!r.shape&&trick?null:undefined;
@@ -4247,11 +4243,17 @@ async function reasonSearch(p){
   const s=analyze(cards,G.L).find(x=>x.type===r.shape.type&&x.value===r.shape.value&&x.n===r.shape.n&&beats(x,trick));
   return s?{...s,cards,wu:cards.filter(c=>isWild(c,G.L)).length}:undefined;
 }
-// search, else 017; only 017 failing reaches botFail (and the Clint rules)
-async function reasonDecide(p,g){
-  let pl;
-  try{pl=await reasonSearch(p)}catch(e){pl=undefined;console.warn('推理搜索出错，改用 danMCai',e)}
-  return pl!==undefined?pl:NeuralBot.decide(REASON_BASE,g,p,NET.off);
+// search, else 017. 017 is worked out at the same time as the search, so it is ready the moment the search falls back; only
+// 017 failing reaches botFail (and the Clint rules), never the search
+async function reasonDecide(p,g,startedAt){
+  const champion=Promise.resolve().then(()=>NeuralBot.decide(REASON_BASE,g,p,NET.off));
+  champion.catch(()=>{});
+  let timer;
+  const pl=await Promise.race([
+    reasonSearch(p,startedAt).catch(e=>{console.warn('推理搜索出错，改用 danMCai',e);return undefined}),
+    new Promise(res=>{timer=setTimeout(()=>res(undefined),Math.max(0,startedAt+REASON_CAP_MS-performance.now()))}),
+  ]).finally(()=>clearTimeout(timer));
+  return pl!==undefined?pl:champion;
 }
 // 电脑: the computers at a table play by the Clint rules (bot/clint) or by one of the networks in bot/models.json, chosen in the lobby
 // by whoever plays alone or opens the room (only the host's computers move, so only the host's page runs a network). A network's
@@ -4259,7 +4261,9 @@ async function reasonDecide(p,g){
 // network cannot be loaded the Clint rules play instead, which the table is told once. danMCai-reason (reason-bot.js) searches
 // first and falls back to the danMCai network, so it needs only that network to be there. Tribute and the return card always
 // follow the Clint rules
-const BOT_WAIT_MS=30000;
+// a computer's whole move, from the start of its turn (botStart): 60 s, like anyone's (guandanai's 60/50/10 turn rule: at most
+// 50 s of search, 10 s kept for 017). Only a network that is still not done by then counts as failing (botFail)
+const BOT_WAIT_MS=60000;
 const botId=()=>RULES.bot===REASON_ID?(NeuralBot.has(REASON_BASE)?REASON_ID:''):RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
 const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'clint'));return m?m.label:'Clint 规则机器人'};
 let botFailed='';
@@ -4273,12 +4277,13 @@ function botPreload(){
 function botStart(p){
   const id=botId();
   if(!id||botFailed===id){G.nn=null;brainStart(p);return}
+  // at: the start of the turn, on the page clock the search client keeps too (its 50 s are counted from here)
   const nn={key:G.tok+':'+G.log.length+':'+p,id,at:performance.now(),done:false,pl:null,err:null};
   G.nn=nn;
   // the network gets a copy of the table as it stands; it reads only seat p's own hand from it, the rest is public
   const g={hands:G.hands.map(h=>h.slice()),trick:G.trick?{player:G.trick.player,play:G.trick.play}:null,passes:G.passes||0,
     log:G.log.slice(),levels:G.levels.slice(),L:G.L};
-  (id===REASON_ID?reasonDecide(p,g):NeuralBot.decide(id,g,p,NET.off)).then(pl=>{nn.pl=pl;nn.done=true},e=>{nn.err=e;nn.done=true;console.warn('电脑模型出错',e)});
+  (id===REASON_ID?reasonDecide(p,g,nn.at):NeuralBot.decide(id,g,p,NET.off)).then(pl=>{nn.pl=pl;nn.done=true},e=>{nn.err=e;nn.done=true;console.warn('电脑模型出错',e)});
 }
 // the playing rules' move; when every hand is down to a few cards the 残局大脑 may put a better play in its place (bot/clint/endgame-brain.js)
 const rulesMove=p=>endgameBrain(p,aiDecide(p));
@@ -9523,9 +9528,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1109-1835';
+const VERSION='1109-1925';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977db981';
+const APP_HASH='c1977edf7d';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

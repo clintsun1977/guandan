@@ -4,7 +4,9 @@
 // network cannot be loaded the Clint rules play instead, which the table is told once. danMCai-reason (reason-bot.js) searches
 // first and falls back to the danMCai network, so it needs only that network to be there. Tribute and the return card always
 // follow the Clint rules
-const BOT_WAIT_MS=30000;
+// a computer's whole move, from the start of its turn (botStart): 60 s, like anyone's (guandanai's 60/50/10 turn rule: at most
+// 50 s of search, 10 s kept for 017). Only a network that is still not done by then counts as failing (botFail)
+const BOT_WAIT_MS=60000;
 const botId=()=>RULES.bot===REASON_ID?(NeuralBot.has(REASON_BASE)?REASON_ID:''):RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
 const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'clint'));return m?m.label:'Clint 规则机器人'};
 let botFailed='';
@@ -18,12 +20,13 @@ function botPreload(){
 function botStart(p){
   const id=botId();
   if(!id||botFailed===id){G.nn=null;brainStart(p);return}
+  // at: the start of the turn, on the page clock the search client keeps too (its 50 s are counted from here)
   const nn={key:G.tok+':'+G.log.length+':'+p,id,at:performance.now(),done:false,pl:null,err:null};
   G.nn=nn;
   // the network gets a copy of the table as it stands; it reads only seat p's own hand from it, the rest is public
   const g={hands:G.hands.map(h=>h.slice()),trick:G.trick?{player:G.trick.player,play:G.trick.play}:null,passes:G.passes||0,
     log:G.log.slice(),levels:G.levels.slice(),L:G.L};
-  (id===REASON_ID?reasonDecide(p,g):NeuralBot.decide(id,g,p,NET.off)).then(pl=>{nn.pl=pl;nn.done=true},e=>{nn.err=e;nn.done=true;console.warn('电脑模型出错',e)});
+  (id===REASON_ID?reasonDecide(p,g,nn.at):NeuralBot.decide(id,g,p,NET.off)).then(pl=>{nn.pl=pl;nn.done=true},e=>{nn.err=e;nn.done=true;console.warn('电脑模型出错',e)});
 }
 // the playing rules' move; when every hand is down to a few cards the 残局大脑 may put a better play in its place (bot/clint/endgame-brain.js)
 const rulesMove=p=>endgameBrain(p,aiDecide(p));

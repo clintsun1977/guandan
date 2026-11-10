@@ -27,28 +27,24 @@ function reasonSeed(seeds){
   return seeds.get(key);
 }
 const REASON_SEEDS=new Map();
+// the turn rule (the owner's, guandanai 699674b): a computer has 60 s for a move like anyone else, at most 50 s of it searching,
+// and the last 10 s kept for 017 should the search not finish. The 50 s count from the start of the turn (botStart), the
+// "thinking" pause, the first load and any wait behind the coach included: the client stops the search 50 s in and gives up
+// 52 s in. One move falling back changes nothing for the next: every move searches afresh
+const REASON_CAP_MS=53000; // HARD_MS (52 s) + 1 s: our own last limit on the whole search, the module load included, from the start of the turn
 // the table: the search's play for seat p, null for a pass, or undefined when there is no search (017 plays instead)
-async function reasonSearch(p){
+async function reasonSearch(p,startedAt){
   const now=()=>G.tok+':'+G.log.length+':'+G.turn,at=now();
   if(G.turn!==p||G.phase!=='play'||isHumanSeat(p))return undefined;
-  // no search over 40 cards: do not even wait for the module there
+  // no search over 40 cards: do not even load the module there
   if(G.hands.reduce((s,h)=>s+h.length,0)>40)return undefined;
-  // the module gets a time limit too: a load that hangs must fall back to 017, never run into BOT_WAIT_MS (and botFail)
-  let lt;
-  const rc=await Promise.race([reasonClient(),new Promise(res=>{lt=setTimeout(res,5000)})]).finally(()=>clearTimeout(lt));
-  if(!rc)return undefined;
-  const{m,client}=rc;
+  const{m,client}=await reasonClient();
   if(now()!==at)return undefined;
   if(!m.searchBand(G.hands.reduce((s,h)=>s+h.length,0)))return undefined;
   const plays=m.candidates(G.hands[p],G.L,G.trick&&G.trick.play);
   if(plays.length<=1||plays.some(x=>x&&x.cards.length===G.hands[p].length))return undefined;
   const payload=m.searchPayload(G,p,NET.off,reasonSeed(REASON_SEEDS));
-  // a limit of our own, so that the search and then 017 together stay inside BOT_WAIT_MS
-  const b=client.stats.budget;
-  let timer;
-  const r=await Promise.race([client.decide(REASON_BOT,payload),
-    new Promise(res=>{timer=setTimeout(()=>res({fallback:true,reason:'caller-timeout'}),b.midgameMs+m.hardTimeoutMs(b)+1000)})])
-    .finally(()=>clearTimeout(timer));
+  const r=await client.decide(REASON_BOT,payload,{startedAt});
   if(!r||!r.ok||now()!==at)return undefined;
   const trick=G.trick&&G.trick.play;
   if(!r.ids.length)return!r.shape&&trick?null:undefined;
@@ -58,9 +54,15 @@ async function reasonSearch(p){
   const s=analyze(cards,G.L).find(x=>x.type===r.shape.type&&x.value===r.shape.value&&x.n===r.shape.n&&beats(x,trick));
   return s?{...s,cards,wu:cards.filter(c=>isWild(c,G.L)).length}:undefined;
 }
-// search, else 017; only 017 failing reaches botFail (and the Clint rules)
-async function reasonDecide(p,g){
-  let pl;
-  try{pl=await reasonSearch(p)}catch(e){pl=undefined;console.warn('推理搜索出错，改用 danMCai',e)}
-  return pl!==undefined?pl:NeuralBot.decide(REASON_BASE,g,p,NET.off);
+// search, else 017. 017 is worked out at the same time as the search, so it is ready the moment the search falls back; only
+// 017 failing reaches botFail (and the Clint rules), never the search
+async function reasonDecide(p,g,startedAt){
+  const champion=Promise.resolve().then(()=>NeuralBot.decide(REASON_BASE,g,p,NET.off));
+  champion.catch(()=>{});
+  let timer;
+  const pl=await Promise.race([
+    reasonSearch(p,startedAt).catch(e=>{console.warn('推理搜索出错，改用 danMCai',e);return undefined}),
+    new Promise(res=>{timer=setTimeout(()=>res(undefined),Math.max(0,startedAt+REASON_CAP_MS-performance.now()))}),
+  ]).finally(()=>clearTimeout(timer));
+  return pl!==undefined?pl:champion;
 }

@@ -590,6 +590,9 @@ var model_catalog_default = {
   ]
 };
 
+// web/src/ai/turn-timing.mjs
+var REASON_MS = 5e4;
+
 // web/src/ai/search/constants.mjs
 var SEARCH_BOT_V1 = Object.freeze({
   lo: 21,
@@ -612,12 +615,17 @@ function searchBand(cards, params = SEARCH_BOT_V1) {
 var worldSeed = (seed, ply) => seed * 1009 + ply * 7919 >>> 0;
 var SEARCH_BUDGETS = Object.freeze({
   desktop: Object.freeze({
-    midgameMs: 3e3,
-    endgameMs: 4e3,
+    midgameMs: REASON_MS,
+    endgameMs: REASON_MS,
     solverMs: 3e3,
     solverTable: 3e5
   }),
-  mobile: Object.freeze({ midgameMs: 3500, endgameMs: 3500, solverMs: 1e3, solverTable: 1e5 })
+  mobile: Object.freeze({
+    midgameMs: REASON_MS,
+    endgameMs: REASON_MS,
+    solverMs: 3e3,
+    solverTable: 1e5
+  })
 });
 var NODE_SOLVER_MS = 3e3;
 
@@ -2215,7 +2223,13 @@ async function midgameDecision(game, seed, ctx, params = SEARCH_BOT_V1) {
 }
 var forMover = (team0Value, seat) => seat % 2 === 0 ? team0Value : -team0Value;
 function pimcLabelFromWorlds(game, plays, worlds, solver, minWorlds, check = () => {
-}, { timeIsBudget = false, maxNodes = SEARCH_BOT_V1.solverMaxNodes } = {}) {
+}, {
+  timeIsBudget = false,
+  maxNodes = SEARCH_BOT_V1.solverMaxNodes,
+  remaining = null,
+  cappedSolver: cappedSolver2 = null,
+  solverMs = NODE_SOLVER_MS
+} = {}) {
   const sums = new Float64Array(plays.length);
   let used = 0;
   for (const hands of worlds) {
@@ -2227,23 +2241,37 @@ function pimcLabelFromWorlds(game, plays, worlds, solver, minWorlds, check = () 
       passes: game.passes,
       out: game.out.slice()
     };
-    let values;
-    try {
-      values = plays.map((play) => {
-        check();
-        return forMover(solver.actionValue(position, play), position.turn);
-      });
-    } catch (error) {
-      if (!(error instanceof SolverBudget)) throw error;
-      if (timeIsBudget && !(error.nodes > maxNodes)) throw new SearchBudgetError("endgame");
-      continue;
+    const values = [];
+    let skipped = false;
+    for (const play of plays) {
+      check();
+      const left = remaining ? remaining() : Infinity;
+      const capped = !!cappedSolver2 && left < solverMs;
+      try {
+        const callSolver = capped ? cappedSolver2(Math.max(0, left)) : solver;
+        values.push(forMover(callSolver.actionValue(position, play), position.turn));
+      } catch (error) {
+        if (!(error instanceof SolverBudget)) throw error;
+        if (capped || timeIsBudget && !(error.nodes > maxNodes))
+          throw new SearchBudgetError("endgame");
+        skipped = true;
+        break;
+      }
     }
+    if (skipped) continue;
     values.forEach((v, i) => sums[i] += v);
     used++;
   }
   if (used < minWorlds) return { q: null, used };
   return { q: Array.from(sums, (s) => s / used), used };
 }
+var solverOptions = (ctx, params = SEARCH_BOT_V1) => ({
+  timeIsBudget: !!ctx.solverTimeIsBudget,
+  maxNodes: params.solverMaxNodes,
+  remaining: ctx.deadline !== void 0 ? () => ctx.deadline - ctx.now() : null,
+  cappedSolver: ctx.cappedSolver || null,
+  solverMs: ctx.solverMs ?? NODE_SOLVER_MS
+});
 function pimcPick({ q, used }, base, tolerance = SEARCH_BOT_V1.tieTolerance) {
   if (!q) return { index: null, used, tied: 0 };
   const top = Math.max(...q);
@@ -2262,10 +2290,15 @@ async function endgameDecision(game, seed, ctx, params = SEARCH_BOT_V1) {
   const championIndex = argmax(base);
   const worlds = await beliefWorlds(game, seed, params.endgameWorlds, guard);
   const choice = pimcPick(
-    pimcLabelFromWorlds(game, plays, worlds, ctx.solver, params.minWorlds, guard.check, {
-      timeIsBudget: !!ctx.solverTimeIsBudget,
-      maxNodes: params.solverMaxNodes
-    }),
+    pimcLabelFromWorlds(
+      game,
+      plays,
+      worlds,
+      ctx.solver,
+      params.minWorlds,
+      guard.check,
+      solverOptions(ctx, params)
+    ),
     base,
     params.tieTolerance
   );
@@ -2317,10 +2350,15 @@ async function coachSearchValues(game, seed, ctx, params = SEARCH_BOT_V1) {
   let used = 0;
   for (const world of worlds) {
     await ctx.pause?.();
-    const one = pimcLabelFromWorlds(game, plays, [world], ctx.solver, 1, guard.check, {
-      timeIsBudget: !!ctx.solverTimeIsBudget,
-      maxNodes: params.solverMaxNodes
-    });
+    const one = pimcLabelFromWorlds(
+      game,
+      plays,
+      [world],
+      ctx.solver,
+      1,
+      guard.check,
+      solverOptions(ctx, params)
+    );
     if (!one.q) continue;
     one.q.forEach((value, i) => sums[i] += value);
     used++;
@@ -2425,7 +2463,16 @@ async function load(id, budget) {
     })
   };
 }
-async function search(payload) {
+var cappedSolver = (ms) => createSolver({
+  maxNodes: SEARCH_BOT_V1.solverMaxNodes,
+  maxMs: ms,
+  maxTable: engine.budget.solverTable
+});
+function deadlineOf(started, band, remainingMs) {
+  const bandMs = band === "midgame" ? engine.budget.midgameMs : engine.budget.endgameMs;
+  return started + Math.min(bandMs, Number.isFinite(remainingMs) ? remainingMs : Infinity);
+}
+async function search(payload, remainingMs) {
   const started = performance.now();
   let game;
   try {
@@ -2442,9 +2489,11 @@ async function search(payload) {
     probabilities: engine.probabilities,
     solver: engine.solver,
     solverTimeIsBudget: engine.budget.solverMs < NODE_SOLVER_MS,
+    solverMs: engine.budget.solverMs,
+    cappedSolver,
     offset: payload.offset,
     now: () => performance.now(),
-    deadline: started + (band === "midgame" ? engine.budget.midgameMs : engine.budget.endgameMs),
+    deadline: deadlineOf(started, band, remainingMs),
     counter
   };
   let decision;
@@ -2516,13 +2565,15 @@ async function coach(payload, job) {
       maxTable: engine.budget.solverTable
     }),
     solverTimeIsBudget: engine.budget.solverMs < NODE_SOLVER_MS,
+    solverMs: engine.budget.solverMs,
+    cappedSolver,
     offset: payload.offset,
     pause,
     now: () => {
       if (job.cancelled) throw new SearchBudgetError("cancelled");
       return performance.now();
     },
-    deadline: started + (band === "midgame" ? engine.budget.midgameMs : engine.budget.endgameMs),
+    deadline: deadlineOf(started, band),
     counter: { inferences: 0 }
   };
   let result;
@@ -2572,7 +2623,7 @@ self.onmessage = ({ data }) => {
         throw Error("Search worker not ready");
       self.postMessage({
         id,
-        result: type === "coach" ? await coach(data.payload, job) : await search(data.payload)
+        result: type === "coach" ? await coach(data.payload, job) : await search(data.payload, data.remainingMs)
       });
     } catch (error) {
       if (type === "init") engine = null;

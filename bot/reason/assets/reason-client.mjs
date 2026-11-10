@@ -1,3 +1,8 @@
+// web/src/ai/turn-timing.mjs
+var TURN_MS = 6e4;
+var REASON_MS = 5e4;
+var HARD_MS = 52e3;
+
 // web/src/ai/search/constants.mjs
 var SEARCH_BOT_V1 = Object.freeze({
   lo: 21,
@@ -19,14 +24,20 @@ function searchBand(cards, params = SEARCH_BOT_V1) {
 }
 var SEARCH_BUDGETS = Object.freeze({
   desktop: Object.freeze({
-    midgameMs: 3e3,
-    endgameMs: 4e3,
+    midgameMs: REASON_MS,
+    endgameMs: REASON_MS,
     solverMs: 3e3,
     solverTable: 3e5
   }),
-  mobile: Object.freeze({ midgameMs: 3500, endgameMs: 3500, solverMs: 1e3, solverTable: 1e5 })
+  mobile: Object.freeze({
+    midgameMs: REASON_MS,
+    endgameMs: REASON_MS,
+    solverMs: 3e3,
+    solverTable: 1e5
+  })
 });
-var hardTimeoutMs = (budget) => Math.max(budget.midgameMs, budget.endgameMs) + budget.solverMs + 3e3;
+var hardTimeoutMs = (budget) => Math.max(budget.midgameMs, budget.endgameMs) + (HARD_MS - REASON_MS);
+var FIRST_LOAD_WAIT_MS = 1e4;
 
 // web/src/ai/search/client.js
 var PREEMPT_MS = 500;
@@ -39,13 +50,21 @@ function deviceClass(nav = globalThis.navigator) {
   if (Number.isFinite(nav.deviceMemory) && nav.deviceMemory <= 4) return "mobile";
   return "desktop";
 }
-function createSearchClient({ version, device = deviceClass(), spawn } = {}) {
+function createSearchClient({
+  version,
+  device = deviceClass(),
+  spawn,
+  now = () => performance.now()
+} = {}) {
   const budget = SEARCH_BUDGETS[device];
-  let worker = null, requestId = 0, initialized = null, initFailedAt = -Infinity, loadedBot = null, active = null, preemptTimer = null;
+  const reasonMs = Math.min(REASON_MS, Math.max(budget.midgameMs, budget.endgameMs));
+  let worker = null, requestId = 0, initialized = null, loadedBot = null, active = null, preemptTimer = null;
   const queue = [];
   const stats = {
     device,
     budget,
+    firstLoadWaitMs: FIRST_LOAD_WAIT_MS,
+    hardTimeoutMs: hardTimeoutMs(budget),
     requests: 0,
     searched: 0,
     differs: 0,
@@ -105,13 +124,24 @@ function createSearchClient({ version, device = deviceClass(), spawn } = {}) {
     let index = queue.findIndex((job2) => job2.owner !== "coach");
     if (index < 0) index = 0;
     const [job] = queue.splice(index, 1);
+    if (job.deadline !== void 0) {
+      const remainingMs = job.deadline - now();
+      if (remainingMs <= 0) {
+        clearTimeout(job.timer);
+        job.reject(new Error("search-budget"));
+        pump();
+        return;
+      }
+      job.message = { ...job.message, remainingMs };
+    }
     ensureWorker();
     active = job;
     job.id = ++requestId;
-    job.timer = setTimeout(
-      () => job.owner === "coach" ? abandon(job, "search-timeout") : stop("search-timeout"),
-      job.timeout
-    );
+    if (job.timeout !== void 0)
+      job.timer = setTimeout(
+        () => job.owner === "coach" ? abandon(job, "search-timeout") : stop("search-timeout"),
+        job.timeout
+      );
     worker.postMessage({ id: job.id, ...job.message });
   }
   function call(message, timeout, owner = "table", front = false) {
@@ -122,13 +152,27 @@ function createSearchClient({ version, device = deviceClass(), spawn } = {}) {
       pump();
     });
   }
+  function tableCall(message, deadline, expires) {
+    return new Promise((resolve, reject) => {
+      const job = { message, owner: "table", deadline, resolve, reject };
+      job.timer = setTimeout(
+        () => {
+          if (active === job) return stop("search-timeout");
+          const index = queue.indexOf(job);
+          if (index >= 0) queue.splice(index, 1);
+          reject(new Error("search-timeout"));
+        },
+        Math.max(0, expires - now())
+      );
+      queue.push(job);
+      pump();
+    });
+  }
   function init(bot) {
-    if (performance.now() - initFailedAt < 3e4) return Promise.reject(Error("search-init-wait"));
     if (!initialized) {
       loadedBot = bot;
       initialized = call({ type: "init", bot, budget }, 6e4, "init", true).catch((error) => {
         initialized = null;
-        if (error.message !== "search-preempted") initFailedAt = performance.now();
         throw error;
       });
     }
@@ -144,7 +188,12 @@ function createSearchClient({ version, device = deviceClass(), spawn } = {}) {
     stats.coach.preempted++;
     preemptTimer = setTimeout(() => abandon(job, "search-preempted"), PREEMPT_MS);
   }
-  async function ready(bot) {
+  function cancelActiveCoach() {
+    if (active?.owner !== "coach" || active.cancelled) return;
+    active.cancelled = true;
+    worker.postMessage({ type: "cancel", id: active.id });
+  }
+  async function ready(bot, limit = Infinity) {
     const loading = init(bot);
     loading.catch(() => {
     });
@@ -152,11 +201,14 @@ function createSearchClient({ version, device = deviceClass(), spawn } = {}) {
     await Promise.race([
       loading,
       new Promise((_, reject) => {
-        timer = setTimeout(() => reject(Error("search-loading")), budget.midgameMs);
+        timer = setTimeout(
+          () => reject(Error("search-loading")),
+          Math.max(0, Math.min(FIRST_LOAD_WAIT_MS, limit))
+        );
       })
     ]).finally(() => clearTimeout(timer));
   }
-  const reasonOf = (error) => /timeout/.test(error.message) ? "timeout" : error.message === "search-loading" ? "loading" : error.message === "search-preempted" ? "preempted" : "error";
+  const reasonOf = (error) => /timeout/.test(error.message) ? "timeout" : error.message === "search-loading" ? "loading" : error.message === "search-budget" ? "budget" : error.message === "search-preempted" ? "preempted" : "error";
   function fallback(reason, extra = {}, bucket = stats) {
     bucket.fallbacks[reason] = (bucket.fallbacks[reason] || 0) + 1;
     return { fallback: true, reason, ...extra };
@@ -168,13 +220,18 @@ function createSearchClient({ version, device = deviceClass(), spawn } = {}) {
       void init(bot).catch(() => {
       });
     },
-    async decide(bot, payload) {
+    /**
+     * One table decision. `startedAt` (same clock as `now`) is when the seat's turn started on
+     * the host; the search ends by startedAt + 50 s and the reply is given up at startedAt + 52 s.
+     */
+    async decide(bot, payload, { startedAt = now() } = {}) {
       stats.requests++;
       yieldToTable();
+      const deadline = startedAt + reasonMs, expires = startedAt + hardTimeoutMs(budget);
       let result;
       try {
-        await ready(bot);
-        result = await call({ type: "search", payload }, hardTimeoutMs(budget));
+        await ready(bot, deadline - now());
+        result = await tableCall({ type: "search", payload }, deadline, expires);
       } catch (error) {
         return fallback(reasonOf(error), { message: error.message });
       }
@@ -194,6 +251,7 @@ function createSearchClient({ version, device = deviceClass(), spawn } = {}) {
       bucket.requests++;
       for (let i = queue.length - 1; i >= 0; i--)
         if (queue[i].owner === "coach") queue.splice(i, 1)[0].reject(new Error("search-preempted"));
+      cancelActiveCoach();
       let result;
       try {
         await ready(bot);
@@ -211,10 +269,7 @@ function createSearchClient({ version, device = deviceClass(), spawn } = {}) {
     cancelCoach() {
       for (let i = queue.length - 1; i >= 0; i--)
         if (queue[i].owner === "coach") queue.splice(i, 1)[0].reject(new Error("search-cancelled"));
-      if (active?.owner === "coach" && !active.cancelled) {
-        active.cancelled = true;
-        worker.postMessage({ type: "cancel", id: active.id });
-      }
+      cancelActiveCoach();
     }
   };
 }
@@ -1467,8 +1522,11 @@ function relativeRating(values, selected) {
   return { percent: flat ? 100 : Math.round(100 * (selected - low) / (high - low)), flat };
 }
 export {
+  HARD_MS,
+  REASON_MS,
   SEARCH_BOT_V1,
   SEARCH_BUDGETS,
+  TURN_MS,
   actionKey,
   botIdentity,
   botModelName,
