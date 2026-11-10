@@ -11,6 +11,13 @@
 // in its time, fails, or does not fit the table, 017 (NeuralBot) plays instead, and if that fails too, the Clint rules (botFail).
 const REASON_ID='danmcai-reason',REASON_BASE='danmcai',REASON_BOT='9001';
 let RS=null,RSM=null; // the client (a promise), and the bundle's module once it has loaded
+let ORS=null; // stezer0's full-information coach has its own Worker and search queue
+function reasonOpenClient(){
+  if(!ORS)ORS=reasonClient().then(({m})=>({m,client:m.createSearchClient({
+    spawn:()=>new Worker(new URL('bot/reason/assets/open-coach-worker.mjs?v='+VERSION,location.href),{type:'module'})
+  })})).catch(e=>{ORS=null;throw e});
+  return ORS;
+}
 function reasonClient(){
   if(!/^https?:$/.test(location.protocol))return Promise.reject(Error('the search Worker needs the page served over http(s)'));
   return RS||(RS=import(new URL('bot/reason/assets/reason-client.mjs?v='+VERSION,location.href).href).then(m=>{
