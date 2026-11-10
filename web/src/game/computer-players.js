@@ -18,6 +18,7 @@ function botPreload(){
   if(id===REASON_ID)reasonWarm();
 }
 function botStart(p){
+  if(aiSeesAll(p)){G.nn=null;brainStart(p);return}
   const id=botId();
   if(!id||botFailed===id){G.nn=null;brainStart(p);return}
   // at: the start of the turn, on the page clock the search client keeps too (its 50 s are counted from here)
@@ -35,12 +36,15 @@ const BRAIN_WAIT_MS=32000; // (a little over the brain's own limit, BRAIN.ms)
 function brainStart(p){
   G.brain=null;
   if(!brainOn(p))return;
-  const key=G.tok+':'+G.log.length+':'+p,rules=aiDecide(p),b={key,at:performance.now(),done:false,pl:rules,rules};
+  const key=G.tok+':'+G.log.length+':'+p,rules=aiDecide(p),b={key,at:performance.now(),done:false,pl:rules,rules,open:aiSeesAll(p)};
   G.brain=b;
   endgameBrainAsync(p,rules,()=>G.brain===b,pl=>{b.pl=pl;b.done=true});
 }
 // the computer's move now; undefined while its network is still working on it
 function aiMove(p){
+  if(G.brain&&G.brain.open!==aiSeesAll(p))G.brain=null;
+  // Networks encode public information only; this seat uses the rules and brain with the true hands.
+  if(aiSeesAll(p)&&G.nn){G.nn=null;brainStart(p)}
   const nn=G.nn;
   BOT_USED[p]='clint';
   const br=G.brain;

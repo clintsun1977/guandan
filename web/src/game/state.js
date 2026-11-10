@@ -15,6 +15,13 @@ const isHost=()=>NET.mode!=='guest';
 const RULES={trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
 const isHumanSeat=p=>NET.humans.has(p);
 const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
+// Only stezer0's computer partner gets full hand knowledge, without changing the table display.
+function aiSeesAll(p){
+  const mate=(p+2)%4;
+  if(isHumanSeat(p)||!isHumanSeat(mate))return false;
+  const name=mate===0?myNick:NET.mode==='solo'?'':NAMES[mate];
+  return name.toLowerCase()==='stezer0';
+}
 let hints=[],hintIdx=0;
 let msgTimer=0;
 
