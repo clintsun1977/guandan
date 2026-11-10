@@ -35,7 +35,7 @@ function openRoom(){
   });
   hostListen(peer);
 }
-// the room's peer answers voice calls and takes friends' connections (also for a room taken up again, see host-restore.js)
+// the room's peer answers voice calls and takes friends' connections
 function hostListen(peer){
   peer.on('call',c=>VC.incoming(c));
   peer.on('connection',conn=>{

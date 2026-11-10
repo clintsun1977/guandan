@@ -17,7 +17,7 @@ function boot(data){
     }else{if(G.phase==='roundEnd'||G.phase==='over')G.reveal=4;render();if(G.phase==='roundEnd'||G.phase==='over')showResult()}
   }else{
     showStart();
-    // the host's table from before a refresh or a closed page: straight back to it (network/host-restore.js)
-    if(hrLoad())hrRestore();
+    // a host's table kept by an earlier version of the page (it took the host straight back after a refresh): no longer used
+    try{localStorage.removeItem('guandan-host-table-v1')}catch(_){}
   }
 }

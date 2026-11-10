@@ -1898,7 +1898,7 @@ html.phone .handtools .emote-fab {
 <div class="lobby" id="lobby" hidden>
   <div class="lobby-box">
     <h1 class="lobby-title">掼蛋</h1>
-    <div class="lobby-by">made by Clint &amp; SteZero</div>
+    <div class="lobby-by">made by Clint</div>
     <div class="lobby-name"><label class="lobby-label" for="nick">玩家昵称</label><input class="lobby-nick" id="nick" maxlength="8" autocomplete="off" placeholder="输入你的昵称"></div>
     <div class="lobby-modes">
       <button class="mode-btn on" data-mode="solo">单人</button>
@@ -4761,7 +4761,7 @@ function act(e){
     if(NET.hostConn&&NET.hostConn.open){NET.pending=['play','pass','return','tribute'].includes(e.k);NET.pendingAt=Date.now();NET.hostConn.send({t:'act',e})}
     return;
   }
-  if(applyEvt(e)&&NET.mode==='host'){broadcast({t:'evt',e});hrSave()}
+  if(applyEvt(e)&&NET.mode==='host')broadcast({t:'evt',e});
 }
 // apply one event if this table has reached the point where it fits; false means "not yet", so a friend's page
 // keeps it queued until its own animations and pauses catch up with the host's
@@ -6775,7 +6775,7 @@ function askQuit(){
 }
 function quitGame(){
   try{
-    if(NET.mode==='host'){broadcast({t:'bye'});hrForget()} // left on purpose: nothing to come back to
+    if(NET.mode==='host')broadcast({t:'bye'});
     if(NET.mode==='guest'&&NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'bye'});
   }catch(_){}
   // a moment for the goodbye to go out, then back to the lobby
@@ -8155,8 +8155,8 @@ function boot(data){
     }else{if(G.phase==='roundEnd'||G.phase==='over')G.reveal=4;render();if(G.phase==='roundEnd'||G.phase==='over')showResult()}
   }else{
     showStart();
-    // the host's table from before a refresh or a closed page: straight back to it (network/host-restore.js)
-    if(hrLoad())hrRestore();
+    // a host's table kept by an earlier version of the page (it took the host straight back after a refresh): no longer used
+    try{localStorage.removeItem('guandan-host-table-v1')}catch(_){}
   }
 }
 /* ---------- the lobby: a nickname, then play alone or with friends ---------- */
@@ -9561,9 +9561,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1109-2015';
+const VERSION='1109-2111';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19779ac6c';
+const APP_HASH='c1977ba183';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -9754,7 +9754,7 @@ function openRoom(){
   });
   hostListen(peer);
 }
-// the room's peer answers voice calls and takes friends' connections (also for a room taken up again, see host-restore.js)
+// the room's peer answers voice calls and takes friends' connections
 function hostListen(peer){
   peer.on('call',c=>VC.incoming(c));
   peer.on('connection',conn=>{
@@ -9973,7 +9973,6 @@ function hostOnClose(conn,how='drop'){
 }
 // the host starts: everyone learns where everyone sits, then the first deal goes out
 function startOnline(){
-  hrClear();
   NET.started=true;NET.hostDir=myDir;
   const names={};
   for(const d of DIRS)if(NET.lobby[d])names[absOf(d,myDir)]=NET.lobby[d];
@@ -10224,90 +10223,6 @@ setInterval(()=>{
     const c=NET.hostConn;NET.hostSeen=0;try{c.close()}catch(_){}hostGone(true);
   }
 },2000);
-/* ---------- 房主回到牌局: the host's page keeps the table in this browser, so a refresh or a closed page can take it up again ---------- */
-// The whole game runs on the host's page, so before this a refresh or a closed tab lost the round being played. Now, after every
-// move, the host's page keeps in this browser the table as it stands (the same picture a friend who drops out is sent when they
-// come back: every hand, the plays so far, whose turn, the tribute), with the room number, who sat where and the round's record
-// for the AI collector. Opened again in the same browser, the page goes straight back to the game (no button in the lobby): the
-// room opens again under the same number and the table is exactly as it was. The friends' seats are played by the computer until they press
-// 「回到游戏」 (or enter the room number again and take their seat), as when a friend drops out. Kept three hours; a match that
-// is over, or the host leaving with 退出, forgets it
-const HR_KEY='guandan-host-table-v1',HR_KEEP_MS=3*3600000;
-function hrLoad(){
-  try{const d=JSON.parse(localStorage.getItem(HR_KEY)||'null');return d&&d.v===1&&d.snap&&d.code&&Date.now()-d.savedAt<HR_KEEP_MS?d:null}
-  catch(_){return null}
-}
-function hrClear(){try{localStorage.removeItem(HR_KEY)}catch(_){}}
-// the host left with 退出: forgotten, and not kept again as the page goes away
-let hrQuit=false;
-function hrForget(){hrQuit=true;hrClear()}
-// after every move the host applies, every few seconds, and as the page goes away
-function hrSave(){
-  if(hrQuit||NET.mode!=='host'||!NET.started||TEST||SPEC||!G||G.phase==='start')return;
-  if(G.phase==='over'){hrClear();return}
-  const s=REC.byGame.get(G);
-  const d={v:1,savedAt:Date.now(),code:NET.code,hostDir:NET.hostDir,myDir,nick:myNick,names:NET.names,rules:RULES,snap:snapG(),
-    ml:ML.g===G?{id:ML.id,seats:ML.seats,base:ML.base}:null,
-    rec:s&&s.rec?{match:s.match,seats:s.seats,rec:s.rec,elapsed:performance.now()-s.t0}:null};
-  try{localStorage.setItem(HR_KEY,JSON.stringify(d))}catch(_){}
-}
-setInterval(hrSave,3000);
-addEventListener('pagehide',hrSave);
-// open the same room number again: the old page's hold on it is let go a few seconds after it closed, so ask again until it is free
-function hrRestore(){
-  const d=hrLoad();
-  if(!d||!peerReady())return;
-  leaveNet();
-  myNick=d.nick;$('#nick').value=d.nick;myDir=d.myDir;
-  Object.assign(RULES,d.rules);
-  let tries=0;
-  const open=()=>{
-    const peer=new Peer(ROOM_PREFIX+d.code);
-    NET.peer=peer;
-    lobbyStatus(`正在找回房间 ${d.code}…`,true);
-    peer.on('open',()=>{if(NET.peer!==peer)return;NET.peerOpen=true;NET.code=d.code;hrResume(d)});
-    peer.on('error',err=>{
-      if(NET.peer!==peer)return;
-      if(err.type==='unavailable-id'&&++tries<=24){peer.destroy();lobbyStatus(`房间 ${d.code} 还没释放，正在重试…`,true);setTimeout(open,2500);return}
-      lobbyStatus(err.type==='unavailable-id'?`房间 ${d.code} 一直被占用，刷新页面再试`:'连不上刚才的房间，请检查网络后刷新页面再试');
-    });
-    hostListen(peer);
-  };
-  open();
-}
-// the room is open again: the table as it was, the friends' seats with the computer until they come back
-function hrResume(d){
-  NET.started=true;NET.names=d.names;
-  enterOnline('host',d.hostDir,d.names);
-  resetGame();
-  Object.assign(G,loadSnap(d.snap,0),{tok:G.tok+1,myOrder:[],fixed:[],rest:[],fresh:[],pw:[],busy:false,stepWait:null});
-  setHumans([0],d.names);
-  // the round's record goes on where it stopped (its clock counts the time the page was away), and the match keeps its ID
-  if(d.ml)Object.assign(ML,{g:G,id:d.ml.id,seats:d.ml.seats.slice(),base:d.ml.base});
-  if(d.rec)REC.byGame.set(G,{match:d.rec.match,seats:d.rec.seats,rec:d.rec.rec,t0:performance.now()-d.rec.elapsed-(Date.now()-d.savedAt)});
-  sel=new Set();hideOverlay();pileRebuild();botPreload();
-  const c=G.clock;G.clock=null;
-  if(G.phase==='shuffle'||G.phase==='cut'){G.busy=false;if(G.phase==='shuffle')startShuffle();else startCut()}
-  else if(G.phase==='deal')finishDeal();
-  else if(G.phase==='tribute')runGives();
-  else if(G.phase==='tribPick')tribWait();
-  else if(G.phase==='return')retWait();
-  else if(G.phase==='prep'){G.clock=c&&c.who==='prep'?c:{who:'prep',left:PREP_MS,total:PREP_MS};render()}
-  else if(G.phase==='play'){
-    // a finished trick that was still on show: it is turned over and its winner leads, as after a live page update
-    if(G.turn===-1){
-      G.heapN+=(G.trickPlays||[]).reduce((s,t)=>s+t.play.cards.length,0);G.trickPlays=[];
-      G.trick=null;G.passes=0;G.last=[null,null,null,null];G.turn=G.nextLeader??G.leader??0;G.tribHold=false;
-    }
-    startTurn();
-  }
-  else if(G.phase==='roundEnd'||G.phase==='over'){G.reveal=4;render();showResult()}
-  render();
-  hrSave();
-  // said on the table for five seconds (the computers may play on meanwhile)
-  $('#msg').textContent=`已回到刚才的牌局，房间号 ${d.code}，朋友点「回到游戏」就能回来`;$('#msg').classList.remove('err');
-  clearTimeout(msgTimer);msgTimer=setTimeout(()=>{msgTimer=0;renderMsg()},5000);
-}
 window.claude?.hot?.snapshot?.(()=>({G}));
 window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??{});
 

@@ -10,7 +10,7 @@ function act(e){
     if(NET.hostConn&&NET.hostConn.open){NET.pending=['play','pass','return','tribute'].includes(e.k);NET.pendingAt=Date.now();NET.hostConn.send({t:'act',e})}
     return;
   }
-  if(applyEvt(e)&&NET.mode==='host'){broadcast({t:'evt',e});hrSave()}
+  if(applyEvt(e)&&NET.mode==='host')broadcast({t:'evt',e});
 }
 // apply one event if this table has reached the point where it fits; false means "not yet", so a friend's page
 // keeps it queued until its own animations and pauses catch up with the host's
