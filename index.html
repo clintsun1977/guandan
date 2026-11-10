@@ -213,6 +213,16 @@ body.test #seat3,body.test #seat1{justify-content:flex-start;transform:none}
 .mebar .meinfo{border-color:color-mix(in srgb,var(--team,#fff) 45%,transparent)}
 /* the count sits beside the name plate, never inside it */
 .whorow{display:flex;align-items:center;gap:12px;position:relative}
+.seat-power{position:absolute;top:calc(100% + 4px);left:0;pointer-events:none;white-space:nowrap;
+  font-size:12px;line-height:1.3;font-weight:600;font-variant-numeric:tabular-nums;
+  color:var(--ink);background:var(--felt-deep);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+#seat1 .seat-power{left:auto;right:0}
+#seat2 .seat-power{left:50%;translate:-50% 0}
+#mebar .seat-power{top:auto;bottom:calc(100% + 5px);left:50%;translate:-50% 0}
+html:not(.phone) #seat1 .seat-power,html:not(.phone) #seat3 .seat-power{top:calc(100% + 36px)}
+html:not(.phone) #seat1 .whorow:has(>.cnt:not(:empty)) .seat-power,
+html:not(.phone) #seat3 .whorow:has(>.cnt:not(:empty)) .seat-power{top:calc(100% + 72px)}
+#seat2 .who:has(.place:not(:empty)) .seat-power{top:calc(100% + 52px)}
 .actlbl{position:absolute;z-index:5;pointer-events:none;white-space:nowrap}
 #seat1 .actlbl,#seat3 .actlbl{bottom:calc(100% + 30px);left:50%;translate:-50% 0}
 #seat2 .actlbl{left:50%;top:calc(100% + 8px);translate:-50% 0}
@@ -5364,6 +5374,7 @@ function render(){
     if(el.dataset.s!==k){el.dataset.s=k;el.textContent=t}
   }
   $('#mebar').classList.toggle('turn',G.phase==='play'&&G.turn===0);
+  renderSeatPowers();
   renderLastPlay();
   renderControls();
   renderHand();
@@ -5485,6 +5496,28 @@ function renderMsg(){
   m.innerHTML=t;
   syncTribBox();
   syncTribInfo();
+}
+// These readouts belong to this viewer only; no scores or display flags are broadcast to the room.
+const seatPowersVisible=()=>!!G&&!SPEC&&!TEST&&isHumanSeat(0)&&
+  (myNick||'').trim().toLowerCase()==='stezer0'&&
+  ['tribPick','tribute','return','prep','play','roundEnd','over'].includes(G.phase);
+function renderSeatPowers(){
+  if(!seatPowersVisible()){
+    document.querySelectorAll('.seat-power').forEach(el=>el.remove());
+    return;
+  }
+  for(let p=0;p<4;p++){
+    const plate=p===0?$('#mebar .meinfo'):$('#seat'+p+' .who');
+    let el=plate.querySelector('.seat-power');
+    if(!el){
+      el=document.createElement('span');el.className='seat-power';
+      el.title='当前手牌牌力（0–100）';plate.appendChild(el);
+    }
+    const hand=G.hands[p],key=G.L+':'+hand.map(c=>c.id).sort((a,b)=>a-b).join(',');
+    if(el.dataset.key===key)continue;
+    el.dataset.key=key;
+    el.textContent=hand.length?'牌力 '+handPower(hand,G.L):'已出完';
+  }
 }
 // once the play has begun, who paid whom waits behind a 贡 button under the score: a tap opens it, another closes it
 // (the test version keeps it written out in the corner, for going over the round)
@@ -9584,9 +9617,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1109-1943';
+const VERSION='1109-1947';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19777f9ac';
+const APP_HASH='c197791c02';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers

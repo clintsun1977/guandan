@@ -45,6 +45,7 @@ function render(){
     if(el.dataset.s!==k){el.dataset.s=k;el.textContent=t}
   }
   $('#mebar').classList.toggle('turn',G.phase==='play'&&G.turn===0);
+  renderSeatPowers();
   renderLastPlay();
   renderControls();
   renderHand();
