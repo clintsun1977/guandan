@@ -32,11 +32,6 @@
 - 牌谱里这类电脑记成 `9001`（`{"id":"9001","sha256":"442d888a…6a24","version":"v000855042-bsearch1-16d76783"}`，`sha256` 是 guandanai 的搜索清单摘要，不是文件 SHA），包括按 017 出的牌。
 - 页面上仍叫 danMCai。
 
-`stezer0`（忽略大小写）的出牌评价和 Top 5 不受房主的评价开关影响，使用真实四家手牌运行 danMCai 推理：
-`web/build.py` 将校验过的原版 Worker 与 `open-coach-extension.js` 拼接为独立的 `assets/open-coach-worker.mjs`，原版七个文件保持不变。
-这个独立评价 Worker 只搜索唯一的真实牌分布，20 张以内精确求解，其余阶段由 017 推演候选出法；未完成搜索时显示评价不可用，不回落为暗牌推荐。
-其他用户名继续使用原版评价流程，只有 `stezer0` 的评价请求附带完整手牌。
-
 ## 自检
 
 - **构建好的 Worker 与 guandanai 的 Node 参考版逐个比较**（指南第 14 节第 3 条，`web/tools/search-latency.mjs`，种子 731960000–731960059，无头 Chrome 157，

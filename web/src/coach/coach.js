@@ -13,40 +13,35 @@
 // page for the rest of the game.
 // Top 5 (guandanai's list of the network's five best plans, with their scores; a tap picks those cards, it does not play
 // them) is only for the nicknames in TOP5_NAMES, whoever opened the room, and for them the box shows even with 出牌评价 off
-// stezer0 alone uses the true hands in a separate danMCai reasoning Worker, at every stage of the round.
-// Its rankings contain searched values only; failure never falls back to a hidden-information Top 5.
 const COACH_ID='danmcai'; // TOP5_NAMES: lobby.js
 const CO={turn:null,last:null,hidden:false,topOpen:null};
 const COACH_NAME='danMCai',COACH_SEEDS=new Map();
 const coachKey=()=>G.tok+':'+G.log.length;
 const coachTop5=()=>TOP5_NAMES.includes((myNick||'').trim().toLowerCase());
-const coachOpen=()=>(myNick||'').trim().toLowerCase()==='stezer0';
 const coachDeck=makeDeck();
 const coachShown=()=>(RULES.coach===true||coachTop5())&&!CO.hidden&&!TEST&&!SPEC&&NeuralBot.has(COACH_ID)&&isHumanSeat(0)&&!!G&&
   ['play','roundEnd','over'].includes(G.phase);
 // the table as you see it at the start of your turn; the other hands go in only as counts
 function coachSnap(){
   if(CO.turn&&CO.turn.key===coachKey())return CO.turn;
-  const s={key:coachKey(),G,round:G.round,scores:new Map(),values:null,error:false,extra:false,source:'champion',open:coachOpen(),
+  const s={key:coachKey(),G,round:G.round,scores:new Map(),values:null,error:false,extra:false,source:'champion',
     trick:G.trick?G.trick.play:null,L:G.L,
     g:{hands:G.hands.map((h,i)=>i===0?h.slice():new Array(h.length)),trick:G.trick?{player:G.trick.player,play:G.trick.play}:null,
       passes:G.passes||0,log:G.log.slice(),levels:G.levels.slice(),L:G.L}};
   CO.turn=s;
-  if(s.open)s.position={...G,hands:G.hands.map(h=>h.slice()),log:G.log.slice(),levels:G.levels.slice(),out:G.out.slice()};
   const left=G.hands.reduce((n,h)=>n+h.length,0);
-  if(!s.open&&left<=60)reasonWarm(); // load the networks a little before the first searched turn
+  if(left<=60)reasonWarm(); // load the networks a little before the first searched turn
   setTimeout(async()=>{
     try{
       const r=await NeuralBot.rate(COACH_ID,s.g);
       s.actions=r.actions;s.base=r.values.slice();
       // 017's values come first (quick); a search only while this turn is still open and there is a real choice
       let result=null;
-      if(left>=1&&(s.open||left<=40)&&coachLive(s)){
+      if(left>=1&&left<=40&&s.actions.length>1&&coachLive(s)){
         try{
-          const{m,client}=await(s.open?reasonOpenClient():reasonClient());
-          if((s.open||m.searchBand(left))&&coachLive(s)){
-            s.payload=m.searchPayload(s.open?s.position:G,0,0,reasonSeed(COACH_SEEDS));
-            if(s.open)s.payload.fullHands=s.position.hands.map(h=>h.map(c=>c.id));
+          const{m,client}=await reasonClient();
+          if(m.searchBand(left)&&coachLive(s)){
+            s.payload=m.searchPayload(G,0,0,reasonSeed(COACH_SEEDS));
             s.searching=true;renderCoach();
             result=await client.evaluate(REASON_BOT,s.payload);
           }
@@ -62,10 +57,7 @@ function coachSnap(){
 const coachLive=s=>CO.turn===s&&s.key===coachKey()&&G.phase==='play'&&G.turn===0&&coachShown();
 // the values on show: the search's where it finished, otherwise 017's
 function coachValues(s,result){
-  // A full-information recommendation must never silently become a hidden-information ranking.
-  if(s.open&&(!result?.ok||!result.openHands)){s.error=true;return}
   const shown=s.payload&&result&&RSM?RSM.mergeSearchValues(s.actions,result):null;
-  if(s.open&&!shown){s.error=true;return}
   if(shown){
     s.source=result.kind;s.shown=shown;
     s.reasoning={worlds:result.used,evaluated:shown.filter(v=>v!==null).length};
@@ -80,7 +72,6 @@ function coachRerank(s){
   s.scores=new Map(s.actions.map((ids,i)=>[NeuralBot.actionKey(ids),s.shown[i]]));
   s.ranked=RSM?RSM.rankedCoachActions(s.actions,s.shown,s.L,5,s.trick,s.source==='champion'?undefined:s.base)
     :NeuralBot.ranked(s.actions,s.shown,s.L,s.trick,5);
-  if(s.open)s.ranked=s.ranked.filter(row=>row.value!==null);
 }
 // the picked cards read the strongest legal way, as 出牌 plays them; nothing picked when you may pass is a pass
 function coachPick(){
@@ -119,7 +110,7 @@ function coachRemember(pl){
 function renderCoach(){
   const box=$('#coach'),on=coachShown();
   box.hidden=!on;
-  if(!on){$('#coachSide').hidden=true;top5Room(false);for(const pending of[RS,ORS])if(pending)pending.then(({client})=>client.cancelCoach(),()=>{});return}
+  if(!on){$('#coachSide').hidden=true;top5Room(false);if(RS)RS.then(({client})=>client.cancelCoach(),()=>{});return}
   if(CO.last&&(CO.last.s.G!==G||CO.last.s.round!==G.round))CO.last=null;
   let now='轮到你时评价';
   if(G.phase==='play'&&G.turn===0){

@@ -101,9 +101,5 @@ if __name__ == "__main__":
     page, version = build(sys.argv[1] if len(sys.argv) > 1 else None)
     check_models()
     check_reason()
-    # Separate full-information coach, built from the verified upstream engine plus our adapter.
-    worker = (root / "bot/reason/assets/search-worker.mjs").read_text(encoding="utf-8")
-    extension = (root / "bot/reason/open-coach-extension.js").read_text(encoding="utf-8")
-    (root / "bot/reason/assets/open-coach-worker.mjs").write_text(worker + "\n" + extension, encoding="utf-8")
     (root / "index.html").write_text(page, encoding="utf-8")
     print("wrote index.html", len(page), "chars, version", version)
