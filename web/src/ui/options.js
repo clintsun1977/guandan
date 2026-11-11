@@ -26,6 +26,8 @@ for(const ev of ['pointerdown','pointerup','touchend','click','keydown'])documen
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden)return;
   Sound.wake();
+  // and its line to the matching server, if it dropped meanwhile, is put back now (connection.js)
+  signalBack(NET.peer);
   // a page that was out of sight may not have heard the others' hellos meanwhile: it gives them a fresh 20 seconds
   // rather than taking the silence for their leaving
   if(NET.hostSeen)NET.hostSeen=Date.now();

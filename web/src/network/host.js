@@ -12,10 +12,13 @@ function openRoom(){
   let code=clint?'8888':String(1000+(Math.random()*9000|0));
   while(!clint&&code==='8888')code=String(1000+(Math.random()*9000|0));
   const peer=new Peer(ROOM_PREFIX+code);
-  NET.peer=peer;
+  let opened=false;
+  NET.peer=peer;keepSignal(peer);
   lobbyStatus('正在开房间…');
   peer.on('open',()=>{
-    if(NET.peer!==peer)return;
+    // (the line to the matching server coming back (keepSignal) opens the peer again: the room is already set up)
+    if(NET.peer!==peer||opened)return;
+    opened=true;
     NET.peerOpen=true;NET.code=code;
     $('#roomCodeShow').textContent=code;$('#roomInfo').hidden=false;
     lobbyStatus('把房间号告诉朋友，再选你的座位');
@@ -23,11 +26,14 @@ function openRoom(){
   });
   peer.on('error',err=>{
     if(NET.peer!==peer)return;
+    // once the room is open, an error is about its line to the matching server (keepSignal puts it back), or a voice call
+    if(opened)return;
     if(err.type==='unavailable-id'){
       if(!clint){peer.destroy();openRoom();return}
-      // 8888 is still held (the last room's number is let go a few seconds after its page closed): wait and ask again
+      // 8888 is still held: by another page that has it open, or by a page that has just closed or been refreshed, whose
+      // number the matching server lets go only when it notices (often a minute or more later): wait and ask again, for 90 seconds
       peer.destroy();
-      if((NET.clintTries=(NET.clintTries||0)+1)<=6){lobbyStatus('8888 号房间还被占用，正在重试…');setTimeout(()=>{if(lobbyMode==='host'&&!NET.started&&!NET.peerOpen)openRoom()},2500)}
+      if((NET.clintTries=(NET.clintTries||0)+1)<=36){lobbyStatus('8888 号房间还被占用，正在重试…');setTimeout(()=>{if(lobbyMode==='host'&&!NET.started&&!NET.peerOpen)openRoom()},2500)}
       else lobbyStatus('8888 号房间被占用，请稍后再试（关掉旧的房间页面）');
       return;
     }

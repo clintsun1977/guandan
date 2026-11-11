@@ -7303,6 +7303,8 @@ for(const ev of ['pointerdown','pointerup','touchend','click','keydown'])documen
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden)return;
   Sound.wake();
+  // and its line to the matching server, if it dropped meanwhile, is put back now (connection.js)
+  signalBack(NET.peer);
   // a page that was out of sight may not have heard the others' hellos meanwhile: it gives them a fresh 20 seconds
   // rather than taking the silence for their leaving
   if(NET.hostSeen)NET.hostSeen=Date.now();
@@ -8172,13 +8174,15 @@ const seatBtns=[...document.querySelectorAll('.seat-btn')];
 const lobbyStatus=(t,hot)=>{const e=$('#lobbyStatus');e.textContent=t||'';e.classList.toggle('hot',!!hot)};
 // names end up in the page's markup, so characters that could form tags are dropped; a phone allows three characters
 // (letters or Chinese characters), so the name fits its small plates, a computer or tablet eight.
-// The nicknames that get Top 5 (coach.js) are allowed in full on a phone too: while what is typed could still become one of
-// them the box takes eight characters, and the name is kept whole only if it is one of them exactly
+// The nicknames that get Top 5 (coach.js), and clint (whose rooms are 8888, host.js), are allowed in full on a phone too:
+// while what is typed could still become one of them the box takes eight characters, and the name is kept whole only
+// if it is one of them exactly
 const TOP5_NAMES=['stezer0','koala'];
+const WHOLE_NAMES=[...TOP5_NAMES,'clint'];
 const nickClean=v=>v.replace(/[<>&"']/g,'').trim();
-const nickTop5Start=v=>{const s=nickClean(v).toLowerCase();return!!s&&TOP5_NAMES.some(n=>n.startsWith(s))};
-const nickMax=()=>isPhone()&&!nickTop5Start($('#nick').value)?3:8;
-const nickNow=()=>{const v=nickClean($('#nick').value);return v.slice(0,isPhone()&&!TOP5_NAMES.includes(v.toLowerCase())?3:8)};
+const nickWholeStart=v=>{const s=nickClean(v).toLowerCase();return!!s&&WHOLE_NAMES.some(n=>n.startsWith(s))};
+const nickMax=()=>isPhone()&&!nickWholeStart($('#nick').value)?3:8;
+const nickNow=()=>{const v=nickClean($('#nick').value);return v.slice(0,isPhone()&&!WHOLE_NAMES.includes(v.toLowerCase())?3:8)};
 // (the box itself always takes eight, so a whole name pasted or typed at once is still seen before it is cut down)
 function syncNickMax(){const n=$('#nick'),m=nickMax();n.maxLength=8;if(n.value.length>m)n.value=n.value.slice(0,m)}
 syncNickMax();addEventListener('resize',syncNickMax);
@@ -9561,13 +9565,27 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1110-1016';
+const VERSION='1110-1940';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c197785c9e';
+const APP_HASH='c1977efb00';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
 const peerReady=()=>{if(window.Peer&&!window.claude)return true;lobbyStatus('联机需要在 clintsun1977.github.io/guandan 打开');return false};
+// A page can be found by others only while its line to the PeerJS matching server is up. An iPad or phone that locks or
+// switches apps, or a tab left in the background, can lose that line: a room then still shows its number and the friends
+// already in it play on, but nobody new can reach it (「没有这个房间」), nor come back after dropping out. So the line is
+// put back whenever it drops (waiting longer each time it fails), and at once when the page comes to the front again;
+// the room keeps its number.
+function keepSignal(peer){
+  let tries=0,timer=0;
+  peer.on('open',()=>{tries=0});
+  peer.on('disconnected',()=>{clearTimeout(timer);timer=setTimeout(()=>signalBack(peer),Math.min(30000,1000*2**tries++))});
+}
+function signalBack(peer){
+  if(!peer||peer!==NET.peer||peer.destroyed||!peer.disconnected)return;
+  try{peer.reconnect()}catch(_){}
+}
 /* ---------- voice: the people at an online table talk to each other as on a conference call ---------- */
 // every two people have their own audio line (the lower seat, in the host's numbering, calls the higher), so no voice
 // goes through the host. A line starts with a silent track; turning the microphone on puts the real one in its place,
@@ -9731,10 +9749,13 @@ function openRoom(){
   let code=clint?'8888':String(1000+(Math.random()*9000|0));
   while(!clint&&code==='8888')code=String(1000+(Math.random()*9000|0));
   const peer=new Peer(ROOM_PREFIX+code);
-  NET.peer=peer;
+  let opened=false;
+  NET.peer=peer;keepSignal(peer);
   lobbyStatus('正在开房间…');
   peer.on('open',()=>{
-    if(NET.peer!==peer)return;
+    // (the line to the matching server coming back (keepSignal) opens the peer again: the room is already set up)
+    if(NET.peer!==peer||opened)return;
+    opened=true;
     NET.peerOpen=true;NET.code=code;
     $('#roomCodeShow').textContent=code;$('#roomInfo').hidden=false;
     lobbyStatus('把房间号告诉朋友，再选你的座位');
@@ -9742,11 +9763,14 @@ function openRoom(){
   });
   peer.on('error',err=>{
     if(NET.peer!==peer)return;
+    // once the room is open, an error is about its line to the matching server (keepSignal puts it back), or a voice call
+    if(opened)return;
     if(err.type==='unavailable-id'){
       if(!clint){peer.destroy();openRoom();return}
-      // 8888 is still held (the last room's number is let go a few seconds after its page closed): wait and ask again
+      // 8888 is still held: by another page that has it open, or by a page that has just closed or been refreshed, whose
+      // number the matching server lets go only when it notices (often a minute or more later): wait and ask again, for 90 seconds
       peer.destroy();
-      if((NET.clintTries=(NET.clintTries||0)+1)<=6){lobbyStatus('8888 号房间还被占用，正在重试…');setTimeout(()=>{if(lobbyMode==='host'&&!NET.started&&!NET.peerOpen)openRoom()},2500)}
+      if((NET.clintTries=(NET.clintTries||0)+1)<=36){lobbyStatus('8888 号房间还被占用，正在重试…');setTimeout(()=>{if(lobbyMode==='host'&&!NET.started&&!NET.peerOpen)openRoom()},2500)}
       else lobbyStatus('8888 号房间被占用，请稍后再试（关掉旧的房间页面）');
       return;
     }
@@ -9998,22 +10022,37 @@ function joinRoom(code){
   NET.resumeSent=false;
   lobbyStatus('正在连接…');
   const peer=new Peer();
-  NET.peer=peer;
+  NET.peer=peer;keepSignal(peer);
   peer.on('call',c=>VC.incoming(c));
   peer.on('open',()=>{
-    if(NET.peer!==peer)return;
+    // (only the first time: the line to the matching server coming back (keepSignal) opens the peer again)
+    if(NET.peer!==peer||NET.hostConn)return;
     const conn=peer.connect(ROOM_PREFIX+code,{reliable:true});
     NET.hostConn=conn;
     conn.on('open',()=>{NET.hostSeen=Date.now();lobbyStatus('选一个空座位');$('#roomCodeShow').textContent=code;$('#roomInfo').hidden=false;renderLobby()});
     conn.on('data',guestOnData);
     // (only the current line's closing counts: an old one closed on the way back in must not start another round)
     conn.on('close',()=>{if(NET.hostConn===conn)hostGone(true)});
+    noAnswer(conn,()=>{$('#joinBtn').disabled=false;$('#roomCode').classList.add('call')});
   });
   peer.on('error',err=>{
-    if(NET.peer!==peer)return;
+    // (once in the room, an error is about the line to the matching server (keepSignal) or a voice call, not the room)
+    if(NET.peer!==peer||(NET.hostConn&&NET.hostConn.open))return;
     lobbyStatus(err.type==='peer-unavailable'?'没有这个房间，请核对房间号':'连接失败，请检查网络后重试');
     $('#joinBtn').disabled=false;$('#roomCode').classList.add('call');
   });
+}
+// a room number still held for a page that has just closed or been refreshed answers nothing, and the matching server lets
+// it go only when it notices (often a minute or more later): in the lobby, a join or watch that has had no answer in
+// 15 seconds gives up and says so, rather than staying at 正在连接… for good (a player coming back to the table has its own wait)
+function noAnswer(conn,reset){
+  if(NET.mode==='guest')return;
+  setTimeout(()=>{
+    if(NET.hostConn!==conn||conn.open||NET.mode==='guest')return;
+    leaveNet();
+    lobbyStatus('房间没有回应：房主可能刚关掉或刷新了页面，请稍后再试');
+    reset();
+  },15000);
 }
 // 观战: connects to the room number and asks to watch (the host answers with the table once it is on and still)
 function watchRoom(code){
@@ -10022,18 +10061,20 @@ function watchRoom(code){
   NET.watching=true;NET.gone=false;
   lobbyStatus('正在连接…');
   const peer=new Peer();
-  NET.peer=peer;NET.specCode=code;
+  NET.peer=peer;NET.specCode=code;keepSignal(peer);
   peer.on('call',c=>VC.incoming(c));
   peer.on('open',()=>{
-    if(NET.peer!==peer)return;
+    // (only the first time: the line to the matching server coming back (keepSignal) opens the peer again)
+    if(NET.peer!==peer||NET.hostConn)return;
     const conn=peer.connect(ROOM_PREFIX+code,{reliable:true});
     NET.hostConn=conn;
     conn.on('open',()=>{NET.hostSeen=Date.now();conn.send({t:'watch',name:nickNow(),ver:VERSION})});
     conn.on('data',specOnData);
     conn.on('close',()=>{if(NET.hostConn===conn)hostGone(true)});
+    noAnswer(conn,()=>{NET.watching=false;$('#specGo').disabled=false});
   });
   peer.on('error',err=>{
-    if(NET.peer!==peer)return;
+    if(NET.peer!==peer||(NET.hostConn&&NET.hostConn.open))return;
     lobbyStatus(err.type==='peer-unavailable'?'没有这个房间，请核对房间号':'连接失败，请检查网络后重试');
     NET.watching=false;$('#specGo').disabled=false;
   });

@@ -25,22 +25,37 @@ function joinRoom(code){
   NET.resumeSent=false;
   lobbyStatus('正在连接…');
   const peer=new Peer();
-  NET.peer=peer;
+  NET.peer=peer;keepSignal(peer);
   peer.on('call',c=>VC.incoming(c));
   peer.on('open',()=>{
-    if(NET.peer!==peer)return;
+    // (only the first time: the line to the matching server coming back (keepSignal) opens the peer again)
+    if(NET.peer!==peer||NET.hostConn)return;
     const conn=peer.connect(ROOM_PREFIX+code,{reliable:true});
     NET.hostConn=conn;
     conn.on('open',()=>{NET.hostSeen=Date.now();lobbyStatus('选一个空座位');$('#roomCodeShow').textContent=code;$('#roomInfo').hidden=false;renderLobby()});
     conn.on('data',guestOnData);
     // (only the current line's closing counts: an old one closed on the way back in must not start another round)
     conn.on('close',()=>{if(NET.hostConn===conn)hostGone(true)});
+    noAnswer(conn,()=>{$('#joinBtn').disabled=false;$('#roomCode').classList.add('call')});
   });
   peer.on('error',err=>{
-    if(NET.peer!==peer)return;
+    // (once in the room, an error is about the line to the matching server (keepSignal) or a voice call, not the room)
+    if(NET.peer!==peer||(NET.hostConn&&NET.hostConn.open))return;
     lobbyStatus(err.type==='peer-unavailable'?'没有这个房间，请核对房间号':'连接失败，请检查网络后重试');
     $('#joinBtn').disabled=false;$('#roomCode').classList.add('call');
   });
+}
+// a room number still held for a page that has just closed or been refreshed answers nothing, and the matching server lets
+// it go only when it notices (often a minute or more later): in the lobby, a join or watch that has had no answer in
+// 15 seconds gives up and says so, rather than staying at 正在连接… for good (a player coming back to the table has its own wait)
+function noAnswer(conn,reset){
+  if(NET.mode==='guest')return;
+  setTimeout(()=>{
+    if(NET.hostConn!==conn||conn.open||NET.mode==='guest')return;
+    leaveNet();
+    lobbyStatus('房间没有回应：房主可能刚关掉或刷新了页面，请稍后再试');
+    reset();
+  },15000);
 }
 // 观战: connects to the room number and asks to watch (the host answers with the table once it is on and still)
 function watchRoom(code){
@@ -49,18 +64,20 @@ function watchRoom(code){
   NET.watching=true;NET.gone=false;
   lobbyStatus('正在连接…');
   const peer=new Peer();
-  NET.peer=peer;NET.specCode=code;
+  NET.peer=peer;NET.specCode=code;keepSignal(peer);
   peer.on('call',c=>VC.incoming(c));
   peer.on('open',()=>{
-    if(NET.peer!==peer)return;
+    // (only the first time: the line to the matching server coming back (keepSignal) opens the peer again)
+    if(NET.peer!==peer||NET.hostConn)return;
     const conn=peer.connect(ROOM_PREFIX+code,{reliable:true});
     NET.hostConn=conn;
     conn.on('open',()=>{NET.hostSeen=Date.now();conn.send({t:'watch',name:nickNow(),ver:VERSION})});
     conn.on('data',specOnData);
     conn.on('close',()=>{if(NET.hostConn===conn)hostGone(true)});
+    noAnswer(conn,()=>{NET.watching=false;$('#specGo').disabled=false});
   });
   peer.on('error',err=>{
-    if(NET.peer!==peer)return;
+    if(NET.peer!==peer||(NET.hostConn&&NET.hostConn.open))return;
     lobbyStatus(err.type==='peer-unavailable'?'没有这个房间，请核对房间号':'连接失败，请检查网络后重试');
     NET.watching=false;$('#specGo').disabled=false;
   });
