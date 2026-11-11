@@ -119,7 +119,7 @@ function returnNow(p,id){
 function startPrep(leader){
   G.phase='prep';G.turn=leader;G.ready=[];G.retPick={};
   // the test version gives ten minutes, to sort the computer's hands too
-  G.clock={who:'prep',left:TEST?600000:PREP_MS,total:TEST?600000:PREP_MS};
+  G.clock={who:'prep',left:TEST?600000:prepMs(),total:TEST?600000:prepMs()};
   render();
   // the computer players return their card early in the sorting minute, one after the other
   (G.returns||[]).filter(x=>!isHumanSeat(x.from)).forEach((x,i)=>later(()=>{

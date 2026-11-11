@@ -247,7 +247,7 @@ function goSolo(){
   else if(G.phase==='cut'&&!G.busy)startCut();
   else if(G.phase==='return')retWait();
   else if(G.phase==='tribPick')tribWait();
-  else if(G.phase==='prep'){if(G.ready.includes(0))beginPlay();else{G.clock=c&&c.who==='prep'?c:{who:'prep',left:PREP_MS,total:PREP_MS};render()}}
+  else if(G.phase==='prep'){if(G.ready.includes(0))beginPlay();else{G.clock=c&&c.who==='prep'?c:{who:'prep',left:prepMs(),total:prepMs()};render()}}
   else if(G.phase==='play'&&G.turn>=0)startTurn();
   else if(G.phase==='roundEnd'||G.phase==='over')showResult();
   render();

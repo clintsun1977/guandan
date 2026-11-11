@@ -12,7 +12,7 @@ const TV={open:false};
 const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),specs:new Map(),lobby:{S:null,E:null,N:null,W:null},mics:{}};
 const isHost=()=>NET.mode!=='guest';
 // table rules, chosen in the lobby (online, by the host): tribute on or off, and what happens after three failed tries at A
-const RULES={trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
+const RULES={trib:true,aFail:'draw',bot:'clint',coach:false,prepSec:90,playSec:60,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
 const isHumanSeat=p=>NET.humans.has(p);
 const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
 let hints=[],hintIdx=0;

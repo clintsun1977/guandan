@@ -6,7 +6,8 @@
 // follow the Clint rules
 // a computer's whole move, from the start of its turn (botStart): 60 s, like anyone's (guandanai's 60/50/10 turn rule: at most
 // 50 s of search, 10 s kept for 017). Only a network that is still not done by then counts as failing (botFail)
-const BOT_WAIT_MS=60000;
+// (the host may set a shorter time for a move in the lobby: the computer's waits shrink with it, and keep their margins)
+const botWaitMs=()=>Math.min(60000,playMs());
 const botId=()=>RULES.bot===REASON_ID?(NeuralBot.has(REASON_BASE)?REASON_ID:''):RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
 const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'clint'));return m?m.label:'Clint 规则机器人'};
 let botFailed='';
@@ -31,7 +32,7 @@ function botStart(p){
 // the playing rules' move; when every hand is down to a few cards the 残局大脑 may put a better play in its place (bot/clint/endgame-brain.js)
 const rulesMove=p=>endgameBrain(p,aiDecide(p));
 // a computer on the rules, down to the last few cards: the 残局大脑 works while it "thinks" (a little at a time), and its play waits in G.brain
-const BRAIN_WAIT_MS=32000; // (a little over the brain's own limit, BRAIN.ms)
+const brainWaitMs=()=>Math.min(32000,Math.max(1000,playMs()-3000)); // (a little over the brain's own limit, BRAIN.ms)
 function brainStart(p){
   G.brain=null;
   if(!brainOn(p))return;
@@ -45,13 +46,13 @@ function aiMove(p){
   BOT_USED[p]='clint';
   const br=G.brain;
   if(!nn&&br&&br.key===G.tok+':'+G.log.length+':'+p){
-    if(!br.done&&performance.now()-br.at<BRAIN_WAIT_MS)return undefined;
+    if(!br.done&&performance.now()-br.at<brainWaitMs())return undefined;
     G.brain=null;
     return br.done?br.pl:br.rules;
   }
   if(!nn||nn.key!==G.tok+':'+G.log.length+':'+p)return rulesMove(p);
   if(!nn.done){
-    if(performance.now()-nn.at<BOT_WAIT_MS)return undefined;
+    if(performance.now()-nn.at<botWaitMs())return undefined;
     nn.err=Error('timeout');
   }
   G.nn=null;

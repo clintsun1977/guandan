@@ -1910,6 +1910,8 @@ html.phone .handtools .emote-fab {
       <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="once">一次机会</button></div>
       <div class="rule-row"><span class="rule-k">电脑模型</span><button class="rule-btn" data-rule="bot" data-val="clint">默认</button><button class="rule-btn" data-rule="bot" data-val="danmcai-reason"><span class="fl">danMCai</span><span class="sh">dMC</span></button><button class="rule-btn" data-rule="bot" data-val="guanzero"><span class="fl">GuanZero</span><span class="sh">GZe</span></button></div>
       <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
+      <div class="rule-row"><span class="rule-k">理牌时间（秒）</span><button class="rule-btn" data-rule="prepSec" data-val="30">30</button><button class="rule-btn" data-rule="prepSec" data-val="60">60</button><button class="rule-btn" data-rule="prepSec" data-val="90">90</button><button class="rule-btn" data-rule="prepSec" data-val="120">120</button><button class="rule-btn" data-rule="prepSec" data-val="180">180</button></div>
+      <div class="rule-row"><span class="rule-k">出牌时间（秒）</span><button class="rule-btn" data-rule="playSec" data-val="15">15</button><button class="rule-btn" data-rule="playSec" data-val="30">30</button><button class="rule-btn" data-rule="playSec" data-val="60">60</button><button class="rule-btn" data-rule="playSec" data-val="90">90</button><button class="rule-btn" data-rule="playSec" data-val="120">120</button></div>
       <div class="rule-note" id="rulesNote"></div>
     </div>
     <div class="lobby-join" id="joinRow" hidden>
@@ -3822,7 +3824,7 @@ const TV={open:false};
 const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),specs:new Map(),lobby:{S:null,E:null,N:null,W:null},mics:{}};
 const isHost=()=>NET.mode!=='guest';
 // table rules, chosen in the lobby (online, by the host): tribute on or off, and what happens after three failed tries at A
-const RULES={trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
+const RULES={trib:true,aFail:'draw',bot:'clint',coach:false,prepSec:90,playSec:60,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
 const isHumanSeat=p=>NET.humans.has(p);
 const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
 let hints=[],hintIdx=0;
@@ -4125,7 +4127,7 @@ function returnNow(p,id){
 function startPrep(leader){
   G.phase='prep';G.turn=leader;G.ready=[];G.retPick={};
   // the test version gives ten minutes, to sort the computer's hands too
-  G.clock={who:'prep',left:TEST?600000:PREP_MS,total:TEST?600000:PREP_MS};
+  G.clock={who:'prep',left:TEST?600000:prepMs(),total:TEST?600000:prepMs()};
   render();
   // the computer players return their card early in the sorting minute, one after the other
   (G.returns||[]).filter(x=>!isHumanSeat(x.from)).forEach((x,i)=>later(()=>{
@@ -4159,6 +4161,21 @@ function nextActive(i){for(let k=1;k<=4;k++){const j=(i+k)%4;if(active(j))return
 
 function later(fn,ms){const t=G.tok;setTimeout(()=>{if(G.tok===t)fn()},ms)}
 
+// fewer cards in hand than the play on the table has: nothing you hold can beat it (not even a bomb, which takes four), so
+// the pass is made for you after a moment, nothing to wait for
+function autoPassShort(){
+  const cur=G.trick&&G.trick.play;
+  if(TEST||SPEC||!cur||G.hands[0].length>=cur.n)return;
+  const tok=G.tok,len=G.log.length;
+  const go=()=>{
+    if(G.tok!==tok||G.log.length!==len||G.phase!=='play'||G.turn!==0||!G.trick)return;
+    if(G.paused){setTimeout(go,500);return}
+    setMsg('牌数不够，管不上，自动过');
+    onPass();
+  };
+  setTimeout(go,900);
+}
+
 function startTurn(){
   hints=[];hintIdx=0;
   // the test version stops before every turn, yours as much as a computer's, until the space bar (or 继续) is pressed,
@@ -4179,22 +4196,27 @@ function startTurn(){
     const cur=G.trick?G.trick.play:null;
     hints=sortHints(genPlays(G.hands[0],G.L).filter(pl=>beats(pl,cur)));
     Sound.play('turn');
-    G.clock={who:0,left:PLAY_MS,total:PLAY_MS};
+    G.clock={who:0,left:playMs(),total:playMs()};
     render();
+    autoPassShort();
     return;
   }
   // a friend's turn: their clock runs here too, and their move arrives as an event
-  if(isHumanSeat(p)){G.clock={who:p,left:PLAY_MS,total:PLAY_MS};renderClocks();return}
+  if(isHumanSeat(p)){G.clock={who:p,left:playMs(),total:playMs()};renderClocks();return}
   // once you are out the computers stop pretending to think so long; only the host's computers actually move
   // the test version gives the computer more time, so each play can be followed
   const think=TEST?0:active(0)?AI_THINK_MIN+Math.random()*(AI_THINK_MAX-AI_THINK_MIN):400+Math.random()*300;
-  G.clock={who:p,left:PLAY_MS,total:PLAY_MS,think:isHost()?think:undefined};
+  G.clock={who:p,left:playMs(),total:playMs(),think:isHost()?think:undefined};
   if(isHost()&&!TEST)botStart(p);
   renderClocks();
 }
 
 /* ---------- clocks: one ticker drives turn limits, computer thinking and the pre-play countdown ---------- */
-const PLAY_MS=60000,TRIB_MS=30000,RET_MS=60000,PREP_MS=90000,HURRY_MS=10000;
+const TRIB_MS=30000,RET_MS=60000,HURRY_MS=10000;
+// the sorting and playing times are the host's choice in the lobby (RULES.prepSec, RULES.playSec; a room of an older page sends none: 90 and 60)
+const PREP_CHOICES=[30,60,90,120,180],PLAY_CHOICES=[15,30,60,90,120];
+const prepMs=()=>(PREP_CHOICES.includes(RULES.prepSec)?RULES.prepSec:90)*1000;
+const playMs=()=>(PLAY_CHOICES.includes(RULES.playSec)?RULES.playSec:60)*1000;
 // computer "thinking" time per move; shortened for testing (the full-feel setting was 2000-5000)
 const AI_THINK_MIN=500,AI_THINK_MAX=1000;
 /* ---------- danMCai-reason: guandanai's danMCai with reasoning search (search bot 9001), for the table and the move coach ---------- */
@@ -4230,7 +4252,7 @@ const REASON_SEEDS=new Map();
 // and the last 10 s kept for 017 should the search not finish. The 50 s count from the start of the turn (botStart), the
 // "thinking" pause, the first load and any wait behind the coach included: the client stops the search 50 s in and gives up
 // 52 s in. One move falling back changes nothing for the next: every move searches afresh
-const REASON_CAP_MS=53000; // HARD_MS (52 s) + 1 s: our own last limit on the whole search, the module load included, from the start of the turn
+const reasonCapMs=()=>Math.max(1000,Math.min(53000,playMs()-7000)); // HARD_MS (52 s) + 1 s: our own last limit on the whole search, the module load included, from the start of the turn
 // the table: the search's play for seat p, null for a pass, or undefined when there is no search (017 plays instead)
 async function reasonSearch(p,startedAt){
   const now=()=>G.tok+':'+G.log.length+':'+G.turn,at=now();
@@ -4261,7 +4283,7 @@ async function reasonDecide(p,g,startedAt){
   let timer;
   const pl=await Promise.race([
     reasonSearch(p,startedAt).catch(e=>{console.warn('推理搜索出错，改用 danMCai',e);return undefined}),
-    new Promise(res=>{timer=setTimeout(()=>res(undefined),Math.max(0,startedAt+REASON_CAP_MS-performance.now()))}),
+    new Promise(res=>{timer=setTimeout(()=>res(undefined),Math.max(0,startedAt+reasonCapMs()-performance.now()))}),
   ]).finally(()=>clearTimeout(timer));
   return pl!==undefined?pl:champion;
 }
@@ -4273,7 +4295,8 @@ async function reasonDecide(p,g,startedAt){
 // follow the Clint rules
 // a computer's whole move, from the start of its turn (botStart): 60 s, like anyone's (guandanai's 60/50/10 turn rule: at most
 // 50 s of search, 10 s kept for 017). Only a network that is still not done by then counts as failing (botFail)
-const BOT_WAIT_MS=60000;
+// (the host may set a shorter time for a move in the lobby: the computer's waits shrink with it, and keep their margins)
+const botWaitMs=()=>Math.min(60000,playMs());
 const botId=()=>RULES.bot===REASON_ID?(NeuralBot.has(REASON_BASE)?REASON_ID:''):RULES.bot&&RULES.bot!=='clint'&&NeuralBot.has(RULES.bot)?RULES.bot:'';
 const botLabel=()=>{const m=NeuralBot.models.find(x=>x.id===(RULES.bot||'clint'));return m?m.label:'Clint 规则机器人'};
 let botFailed='';
@@ -4298,7 +4321,7 @@ function botStart(p){
 // the playing rules' move; when every hand is down to a few cards the 残局大脑 may put a better play in its place (bot/clint/endgame-brain.js)
 const rulesMove=p=>endgameBrain(p,aiDecide(p));
 // a computer on the rules, down to the last few cards: the 残局大脑 works while it "thinks" (a little at a time), and its play waits in G.brain
-const BRAIN_WAIT_MS=32000; // (a little over the brain's own limit, BRAIN.ms)
+const brainWaitMs=()=>Math.min(32000,Math.max(1000,playMs()-3000)); // (a little over the brain's own limit, BRAIN.ms)
 function brainStart(p){
   G.brain=null;
   if(!brainOn(p))return;
@@ -4312,13 +4335,13 @@ function aiMove(p){
   BOT_USED[p]='clint';
   const br=G.brain;
   if(!nn&&br&&br.key===G.tok+':'+G.log.length+':'+p){
-    if(!br.done&&performance.now()-br.at<BRAIN_WAIT_MS)return undefined;
+    if(!br.done&&performance.now()-br.at<brainWaitMs())return undefined;
     G.brain=null;
     return br.done?br.pl:br.rules;
   }
   if(!nn||nn.key!==G.tok+':'+G.log.length+':'+p)return rulesMove(p);
   if(!nn.done){
-    if(performance.now()-nn.at<BOT_WAIT_MS)return undefined;
+    if(performance.now()-nn.at<botWaitMs())return undefined;
     nn.err=Error('timeout');
   }
   G.nn=null;
@@ -4823,7 +4846,7 @@ function applyEvt(e){
         setMsg(`${e.back} 回到了游戏`);
         // the seat was the computer's a moment ago: if it was thinking about its move, the player gets the turn now
         const c=G.clock;
-        if(G.phase==='play'&&c&&typeof c.who==='number'&&c.think!=null&&isHumanSeat(c.who)){G.clock={who:c.who,left:PLAY_MS,total:PLAY_MS};renderClocks()}
+        if(G.phase==='play'&&c&&typeof c.who==='number'&&c.think!=null&&isHumanSeat(c.who)){G.clock={who:c.who,left:playMs(),total:playMs()};renderClocks()}
       }
       setTimeout(startNextIfReady,0);
       return true;
@@ -6880,8 +6903,8 @@ function rulesPages(){
         ruleItem('成组区','把选好的牌点「成组」放进左边的成组区，作为你拟定的一组牌，旁边会写出它是什么牌型。'),
       ]},
       {label:'计时',items:[
-        ruleItem('一局的流程','洗牌、切牌（上一局头游的上家洗、头游切，第一局随机）→ 发牌 → 进贡 → 90 秒理牌（理好点「理牌结束」）→ 还贡 → 出牌。',{tag:'每局开始'}),
-        ruleItem('限时','进贡 30 秒，理牌 90 秒，还贡 60 秒，每次出牌 60 秒；最后 10 秒会闪烁倒计时。'),
+        ruleItem('一局的流程','洗牌、切牌（上一局头游的上家洗、头游切，第一局随机）→ 发牌 → 进贡 → '+prepMs()/1000+' 秒理牌（理好点「理牌结束」）→ 还贡 → 出牌。',{tag:'每局开始'}),
+        ruleItem('限时','进贡 30 秒，理牌 '+prepMs()/1000+' 秒，还贡 60 秒，每次出牌 '+playMs()/1000+' 秒（理牌和出牌的时间由房主在大厅选）；最后 10 秒会闪烁倒计时。'),
         ruleItem('超时代打','超时由系统代你出：跟牌时一律过；先出时出活动区里最小的单张、对子、三张、三带二、顺子、连对、钢板（整组出，不拆对子），没有就出成组区里不是炸弹的一手，再没有出最小的炸弹。',{tag:'超时'}),
       ]},
     ]},
@@ -8198,14 +8221,14 @@ function showStart(){
 }
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
-  Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
-  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2){const b=r.bot==='danmcai'?REASON_ID:r.bot;if(b==='clint'||b===REASON_ID||NeuralBot.has(b))RULES.bot=b} /* (danMCai is offered as danMCai-reason now) */ /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach}catch(_){}
+  Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,prepSec:90,playSec:60,lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
+  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2){const b=r.bot==='danmcai'?REASON_ID:r.bot;if(b==='clint'||b===REASON_ID||NeuralBot.has(b))RULES.bot=b} /* (danMCai is offered as danMCai-reason now) */ /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach;if(PREP_CHOICES.includes(r.prepSec))RULES.prepSec=r.prepSec;if(PLAY_CHOICES.includes(r.playSec))RULES.playSec=r.playSec}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){
   const mine=lobbyMode!=='join';
   for(const b of ruleBtns){
-    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'clint'):b.dataset.rule==='coach'?(RULES.coach?'1':'0'):RULES.aFail));
+    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'clint'):b.dataset.rule==='coach'?(RULES.coach?'1':'0'):b.dataset.rule==='prepSec'?String(prepMs()/1000):b.dataset.rule==='playSec'?String(playMs()/1000):RULES.aFail));
     b.disabled=!mine;
   }
   $('#rulesNote').textContent=mine?'':'规则由房主选定';
@@ -8283,8 +8306,8 @@ $('#levelPick').addEventListener('click',e=>{
 });
 ruleBtns.forEach(b=>b.addEventListener('click',()=>{
   if(lobbyMode==='join')return;
-  if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else if(b.dataset.rule==='bot'){RULES.bot=b.dataset.val;botPreload()}else if(b.dataset.rule==='coach')RULES.coach=b.dataset.val==='1';else RULES.aFail=b.dataset.val;
-  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,botV:2,coach:RULES.coach}))}catch(_){}
+  if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else if(b.dataset.rule==='bot'){RULES.bot=b.dataset.val;botPreload()}else if(b.dataset.rule==='coach')RULES.coach=b.dataset.val==='1';else if(b.dataset.rule==='prepSec'||b.dataset.rule==='playSec')RULES[b.dataset.rule]=+b.dataset.val;else RULES.aFail=b.dataset.val;
+  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,botV:2,coach:RULES.coach,prepSec:RULES.prepSec,playSec:RULES.playSec}))}catch(_){}
   Sound.unlock();Sound.play('select');
   renderRules();
   if(lobbyMode==='host')broadcastLobby();
@@ -9565,9 +9588,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1110-1952';
+const VERSION='1110-2202';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19777ca43';
+const APP_HASH='c1977e66d1';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -10245,7 +10268,7 @@ function goSolo(){
   else if(G.phase==='cut'&&!G.busy)startCut();
   else if(G.phase==='return')retWait();
   else if(G.phase==='tribPick')tribWait();
-  else if(G.phase==='prep'){if(G.ready.includes(0))beginPlay();else{G.clock=c&&c.who==='prep'?c:{who:'prep',left:PREP_MS,total:PREP_MS};render()}}
+  else if(G.phase==='prep'){if(G.ready.includes(0))beginPlay();else{G.clock=c&&c.who==='prep'?c:{who:'prep',left:prepMs(),total:prepMs()};render()}}
   else if(G.phase==='play'&&G.turn>=0)startTurn();
   else if(G.phase==='roundEnd'||G.phase==='over')showResult();
   render();

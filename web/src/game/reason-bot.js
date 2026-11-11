@@ -31,7 +31,7 @@ const REASON_SEEDS=new Map();
 // and the last 10 s kept for 017 should the search not finish. The 50 s count from the start of the turn (botStart), the
 // "thinking" pause, the first load and any wait behind the coach included: the client stops the search 50 s in and gives up
 // 52 s in. One move falling back changes nothing for the next: every move searches afresh
-const REASON_CAP_MS=53000; // HARD_MS (52 s) + 1 s: our own last limit on the whole search, the module load included, from the start of the turn
+const reasonCapMs=()=>Math.max(1000,Math.min(53000,playMs()-7000)); // HARD_MS (52 s) + 1 s: our own last limit on the whole search, the module load included, from the start of the turn
 // the table: the search's play for seat p, null for a pass, or undefined when there is no search (017 plays instead)
 async function reasonSearch(p,startedAt){
   const now=()=>G.tok+':'+G.log.length+':'+G.turn,at=now();
@@ -62,7 +62,7 @@ async function reasonDecide(p,g,startedAt){
   let timer;
   const pl=await Promise.race([
     reasonSearch(p,startedAt).catch(e=>{console.warn('推理搜索出错，改用 danMCai',e);return undefined}),
-    new Promise(res=>{timer=setTimeout(()=>res(undefined),Math.max(0,startedAt+REASON_CAP_MS-performance.now()))}),
+    new Promise(res=>{timer=setTimeout(()=>res(undefined),Math.max(0,startedAt+reasonCapMs()-performance.now()))}),
   ]).finally(()=>clearTimeout(timer));
   return pl!==undefined?pl:champion;
 }

@@ -16,6 +16,21 @@ function nextActive(i){for(let k=1;k<=4;k++){const j=(i+k)%4;if(active(j))return
 
 function later(fn,ms){const t=G.tok;setTimeout(()=>{if(G.tok===t)fn()},ms)}
 
+// fewer cards in hand than the play on the table has: nothing you hold can beat it (not even a bomb, which takes four), so
+// the pass is made for you after a moment, nothing to wait for
+function autoPassShort(){
+  const cur=G.trick&&G.trick.play;
+  if(TEST||SPEC||!cur||G.hands[0].length>=cur.n)return;
+  const tok=G.tok,len=G.log.length;
+  const go=()=>{
+    if(G.tok!==tok||G.log.length!==len||G.phase!=='play'||G.turn!==0||!G.trick)return;
+    if(G.paused){setTimeout(go,500);return}
+    setMsg('牌数不够，管不上，自动过');
+    onPass();
+  };
+  setTimeout(go,900);
+}
+
 function startTurn(){
   hints=[];hintIdx=0;
   // the test version stops before every turn, yours as much as a computer's, until the space bar (or 继续) is pressed,
@@ -36,16 +51,17 @@ function startTurn(){
     const cur=G.trick?G.trick.play:null;
     hints=sortHints(genPlays(G.hands[0],G.L).filter(pl=>beats(pl,cur)));
     Sound.play('turn');
-    G.clock={who:0,left:PLAY_MS,total:PLAY_MS};
+    G.clock={who:0,left:playMs(),total:playMs()};
     render();
+    autoPassShort();
     return;
   }
   // a friend's turn: their clock runs here too, and their move arrives as an event
-  if(isHumanSeat(p)){G.clock={who:p,left:PLAY_MS,total:PLAY_MS};renderClocks();return}
+  if(isHumanSeat(p)){G.clock={who:p,left:playMs(),total:playMs()};renderClocks();return}
   // once you are out the computers stop pretending to think so long; only the host's computers actually move
   // the test version gives the computer more time, so each play can be followed
   const think=TEST?0:active(0)?AI_THINK_MIN+Math.random()*(AI_THINK_MAX-AI_THINK_MIN):400+Math.random()*300;
-  G.clock={who:p,left:PLAY_MS,total:PLAY_MS,think:isHost()?think:undefined};
+  G.clock={who:p,left:playMs(),total:playMs(),think:isHost()?think:undefined};
   if(isHost()&&!TEST)botStart(p);
   renderClocks();
 }
