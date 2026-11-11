@@ -1,7 +1,7 @@
 function doPlay(p,play){
   if(G.phase!=='play'||G.turn!==p)return;
   // the clock goes at once, before the cards are laid out, so the plate is back to its own size for them
-  G.clock=null;renderClocks();
+  commitRes(G.clock);G.clock=null;renderClocks();
   if(G.notice&&(play||G.trick))G.notice='';
   if(play)Sound.play(isBomb(play)?'bomb':'play',play.type==='jokers'||play.n>=6);
   else Sound.play('pass');

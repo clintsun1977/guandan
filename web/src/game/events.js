@@ -72,7 +72,7 @@ function applyEvt(e){
         setMsg(`${e.back} 回到了游戏`);
         // the seat was the computer's a moment ago: if it was thinking about its move, the player gets the turn now
         const c=G.clock;
-        if(G.phase==='play'&&c&&typeof c.who==='number'&&c.think!=null&&isHumanSeat(c.who)){G.clock={who:c.who,left:playMs(),total:playMs()};renderClocks()}
+        if(G.phase==='play'&&c&&typeof c.who==='number'&&c.think!=null&&isHumanSeat(c.who)){G.clock=turnClock(c.who);renderClocks()}
       }
       setTimeout(startNextIfReady,0);
       return true;

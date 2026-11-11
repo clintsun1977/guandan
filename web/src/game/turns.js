@@ -51,17 +51,17 @@ function startTurn(){
     const cur=G.trick?G.trick.play:null;
     hints=sortHints(genPlays(G.hands[0],G.L).filter(pl=>beats(pl,cur)));
     Sound.play('turn');
-    G.clock={who:0,left:playMs(),total:playMs()};
+    G.clock=turnClock(0);
     render();
     autoPassShort();
     return;
   }
   // a friend's turn: their clock runs here too, and their move arrives as an event
-  if(isHumanSeat(p)){G.clock={who:p,left:playMs(),total:playMs()};renderClocks();return}
+  if(isHumanSeat(p)){G.clock=turnClock(p);renderClocks();return}
   // once you are out the computers stop pretending to think so long; only the host's computers actually move
   // the test version gives the computer more time, so each play can be followed
   const think=TEST?0:active(0)?AI_THINK_MIN+Math.random()*(AI_THINK_MAX-AI_THINK_MIN):400+Math.random()*300;
-  G.clock={who:p,left:playMs(),total:playMs(),think:isHost()?think:undefined};
+  G.clock=turnClock(p,{think:isHost()?think:undefined});
   if(isHost()&&!TEST)botStart(p);
   renderClocks();
 }

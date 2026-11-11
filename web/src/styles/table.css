@@ -212,4 +212,6 @@ html body.test #seat1 .stat{top:auto;bottom:calc(100% + 35px);right:0;left:auto;
 .msg{font-size:17px;color:var(--ink);min-height:2.6em;max-width:28em;line-height:1.35;text-wrap:balance}
 .msg.err{color:var(--warn)}
 .msg small{display:block;color:var(--muted);font-size:15px}
-
+/* the overtime of a round: a small +60 under the clock; in overtime the clock itself turns red and shows what is left, marked + */
+.clock b i{position:absolute;top:100%;left:50%;translate:-50% 0;margin-top:.1em;font-size:.55em;font-style:normal;font-weight:700;white-space:nowrap;color:var(--gold);opacity:.85}
+.clock.over{color:#ff6b5f;border-color:#ff6b5f}

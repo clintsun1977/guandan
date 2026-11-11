@@ -7,12 +7,12 @@ setInterval(()=>{
   if(TEST&&c.think==null)return; // the test version has no time limits: nobody is hurried, nothing runs out
   const before=c.left;
   c.left-=dt;
-  if(c.think==null&&c.left>0&&c.left<=HURRY_MS&&Math.ceil(before/1000)!==Math.ceil(c.left/1000))Sound.play('tick');
+  {const a=clockShown({...c,left:before}),b=clockShown(c);if(c.think==null&&b>0&&(c.left<=0||b<=HURRY_MS)&&Math.ceil(a/1000)!==Math.ceil(b/1000))Sound.play('tick')}
   if(c.think!=null&&c.total-c.left>=c.think){
     const pl=TEST?testDecide(c.who):aiMove(c.who);
     if(pl!==undefined){G.clock=null;act(playEvt(c.who,pl));return}
   }
-  if(c.left<=0){if(isHost()){G.clock=null;timeUp(c)}else c.left=0;return}
+  if(c.left<=-(c.res||0)){if(isHost()){c.left=-(c.res||0);commitRes(c);G.clock=null;timeUp(c)}else c.left=-(c.res||0);return}
   renderClocks();
 },100);
 // a clock ran out (host only): the computer makes the move for whoever's turn it was
@@ -113,9 +113,11 @@ function renderClocks(){
   for(let p=0;p<4;p++){
     const el=p===0?$('#myClock'):$('#seat'+p+' .clock');
     const on=!!c&&(c.who===p||(c.who==='deck'&&c.seat===p)||((c.who==='tribute'||c.who==='return')&&c.seats.includes(p)));
-    const n=on?String(Math.max(0,Math.ceil(c.left/1000))):'';
-    if(el.dataset.n!==n){el.dataset.n=n;el.innerHTML=n?`<b>${n}</b>`:''}
-    el.classList.toggle('hurry',on&&c.left<=HURRY_MS);
+    // in overtime the number is what is left of the round's overtime, marked +; before that, a small +60 under the clock says how much overtime there is
+    const over=on&&c.left<=0&&c.res>0,sh=on?clockShown(c):0;
+    const n=on?(over?'+':'')+String(Math.max(0,Math.ceil(sh/1000)))+(on&&!over&&c.res>0?'|'+Math.ceil(c.res/1000):''):'';
+    if(el.dataset.n!==n){el.dataset.n=n;const[big,res]=n.split('|');el.innerHTML=n?`<b>${big}${res?`<i>+${res}</i>`:''}</b>`:''}
+    el.classList.toggle('hurry',on&&sh<=HURRY_MS);el.classList.toggle('over',over);
   }
   const prep=!!c&&c.who==='prep';
   $('#prep').hidden=!prep;$('#prepBig').hidden=!prep;
