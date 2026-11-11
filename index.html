@@ -9565,9 +9565,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1110-1940';
+const VERSION='1110-1952';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977efb00';
+const APP_HASH='c19777ca43';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -9828,13 +9828,14 @@ function hostOnData(conn,d){
 const SPEC_MAX=6;
 function hostWatch(conn,info,d){
   NET.conns.delete(conn.peer);
-  if(d.ver&&d.ver!==VERSION){if(conn.open)conn.send({t:'old'});return}
+  // (a spectator on another version of the page is let in too: a new version is often put up while a game is on, and
+  // watching only shows the host's table; players, who make moves, must still have the host's version)
   if(NET.specs.size>=SPEC_MAX){if(conn.open)conn.send({t:'specfull'});return}
   const name=String(d.name||'').replace(/[<>&"']/g,'').slice(0,8)||'观众';
   NET.specs.set(conn.peer,{conn,name,seen:Date.now(),ready:false,sid:NET.specSeq=(NET.specSeq||9)+1,muted:false});
   const n=NET.specs.size,say=`${name} 来观战（现在 ${n} 人观战）`;
   if(NET.started)setMsg(say);else lobbyStatus(say);
-  if(conn.open)conn.send({t:'wait',started:!!NET.started});
+  if(conn.open)conn.send({t:'wait',started:!!NET.started,ver:VERSION});
   syncRoomOpt();
 }
 // a friend's move: only for their own seat, and a play must be legal, exactly what their own buttons check
@@ -10068,7 +10069,9 @@ function watchRoom(code){
     if(NET.peer!==peer||NET.hostConn)return;
     const conn=peer.connect(ROOM_PREFIX+code,{reliable:true});
     NET.hostConn=conn;
-    conn.on('open',()=>{NET.hostSeen=Date.now();conn.send({t:'watch',name:nickNow(),ver:VERSION})});
+    // (the page's version goes as pv, not ver: a room whose page is an older version turned away spectators whose ver differed,
+    // and a new version is often put up while a game is on; a spectator watches whichever version the host has)
+    conn.on('open',()=>{NET.hostSeen=Date.now();conn.send({t:'watch',name:nickNow(),pv:VERSION})});
     conn.on('data',specOnData);
     conn.on('close',()=>{if(NET.hostConn===conn)hostGone(true)});
     noAnswer(conn,()=>{NET.watching=false;$('#specGo').disabled=false});
@@ -10095,7 +10098,7 @@ function specOnData(d){
   if(d.t==='vpeers'){VC.update(d.peers);return}
   if(d.t==='vmuted'){VC.setMuted(d.ids||[]);return}
   if(d.t==='vmute'){VC.lock(!!d.off);return}
-  if(d.t==='wait')lobbyStatus(d.started?'已连上房间，正在进入牌局…':'已连上房间，牌局还没开始，开始后自动进入观战',true);
+  if(d.t==='wait')lobbyStatus((d.started?'已连上房间，正在进入牌局…':'已连上房间，牌局还没开始，开始后自动进入观战')+(d.ver&&d.ver!==VERSION?'（和房主的页面版本不同，画面可能有小出入）':''),true);
   else if(d.t==='spec')enterSpec(d);
   else if(d.t==='evt'&&SPEC)NET.inbox.push(d.e);
 }

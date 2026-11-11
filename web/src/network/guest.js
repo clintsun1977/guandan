@@ -71,7 +71,9 @@ function watchRoom(code){
     if(NET.peer!==peer||NET.hostConn)return;
     const conn=peer.connect(ROOM_PREFIX+code,{reliable:true});
     NET.hostConn=conn;
-    conn.on('open',()=>{NET.hostSeen=Date.now();conn.send({t:'watch',name:nickNow(),ver:VERSION})});
+    // (the page's version goes as pv, not ver: a room whose page is an older version turned away spectators whose ver differed,
+    // and a new version is often put up while a game is on; a spectator watches whichever version the host has)
+    conn.on('open',()=>{NET.hostSeen=Date.now();conn.send({t:'watch',name:nickNow(),pv:VERSION})});
     conn.on('data',specOnData);
     conn.on('close',()=>{if(NET.hostConn===conn)hostGone(true)});
     noAnswer(conn,()=>{NET.watching=false;$('#specGo').disabled=false});
@@ -98,7 +100,7 @@ function specOnData(d){
   if(d.t==='vpeers'){VC.update(d.peers);return}
   if(d.t==='vmuted'){VC.setMuted(d.ids||[]);return}
   if(d.t==='vmute'){VC.lock(!!d.off);return}
-  if(d.t==='wait')lobbyStatus(d.started?'已连上房间，正在进入牌局…':'已连上房间，牌局还没开始，开始后自动进入观战',true);
+  if(d.t==='wait')lobbyStatus((d.started?'已连上房间，正在进入牌局…':'已连上房间，牌局还没开始，开始后自动进入观战')+(d.ver&&d.ver!==VERSION?'（和房主的页面版本不同，画面可能有小出入）':''),true);
   else if(d.t==='spec')enterSpec(d);
   else if(d.t==='evt'&&SPEC)NET.inbox.push(d.e);
 }

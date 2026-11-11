@@ -91,13 +91,14 @@ function hostOnData(conn,d){
 const SPEC_MAX=6;
 function hostWatch(conn,info,d){
   NET.conns.delete(conn.peer);
-  if(d.ver&&d.ver!==VERSION){if(conn.open)conn.send({t:'old'});return}
+  // (a spectator on another version of the page is let in too: a new version is often put up while a game is on, and
+  // watching only shows the host's table; players, who make moves, must still have the host's version)
   if(NET.specs.size>=SPEC_MAX){if(conn.open)conn.send({t:'specfull'});return}
   const name=String(d.name||'').replace(/[<>&"']/g,'').slice(0,8)||'观众';
   NET.specs.set(conn.peer,{conn,name,seen:Date.now(),ready:false,sid:NET.specSeq=(NET.specSeq||9)+1,muted:false});
   const n=NET.specs.size,say=`${name} 来观战（现在 ${n} 人观战）`;
   if(NET.started)setMsg(say);else lobbyStatus(say);
-  if(conn.open)conn.send({t:'wait',started:!!NET.started});
+  if(conn.open)conn.send({t:'wait',started:!!NET.started,ver:VERSION});
   syncRoomOpt();
 }
 // a friend's move: only for their own seat, and a play must be legal, exactly what their own buttons check
