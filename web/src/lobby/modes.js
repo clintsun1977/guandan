@@ -12,21 +12,38 @@ function setMode(m){
   if(m==='join')$('#roomCode').focus();
   renderLobby();
 }
+// random seats: the host stands on a free seat too, until the start draws them all
+function autoSeatHost(){
+  if(lobbyMode!=='host'||RULES.seatMode!=='random'||myDir||!NET.peerOpen)return;
+  const d=DIRS.find(x=>!NET.lobby[x]);
+  if(d){myDir=d;NET.lobby[d]=nickNow()||'房主';broadcastLobby()}
+}
+// the draw: everyone in the room, the host too, gets a seat by chance
+function randomizeSeats(){
+  const ents=[{host:true,name:NET.lobby[myDir]||nickNow()||'房主'}];
+  for(const v of NET.conns.values())if(v.dir)ents.push({v,name:NET.lobby[v.dir]||v.name});
+  const dirs=DIRS.slice();
+  for(let i=dirs.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[dirs[i],dirs[j]]=[dirs[j],dirs[i]]}
+  NET.lobby={S:null,E:null,N:null,W:null};
+  ents.forEach((e,i)=>{const d=dirs[i];NET.lobby[d]=e.name;if(e.host)myDir=d;else e.v.dir=d});
+  broadcastLobby();
+}
 function renderLobby(){
-  const nick=nickNow(),solo=lobbyMode==='solo';
+  autoSeatHost();
+  const nick=nickNow(),solo=lobbyMode==='solo',rnd=RULES.seatMode==='random';
   for(const b of seatBtns){
     const d=b.dataset.seat,me=d===myDir,who=NET.lobby[d],taken=!solo&&!!who&&!me&&!(NET.resumeMode&&who===nick);
     b.classList.toggle('mine',me);
     b.classList.toggle('bot',solo&&!!myDir&&!me);
     b.classList.toggle('taken',taken);
-    b.disabled=taken||(lobbyMode==='join'&&!(NET.hostConn&&NET.hostConn.open))||(lobbyMode==='host'&&!NET.peerOpen);
-    b.querySelector('span').textContent=me?(nick||'你'):taken?who:solo&&myDir?'电脑':'空位';
+    b.disabled=rnd||taken||(lobbyMode==='join'&&!(NET.hostConn&&NET.hostConn.open))||(lobbyMode==='host'&&!NET.peerOpen);
+    b.querySelector('span').textContent=me?(nick||'你'):taken?who:solo&&myDir?'电脑':rnd?'随机':'空位';
   }
   renderRules();
   const go=$('#sitBtn');
   go.hidden=lobbyMode==='join';
   go.textContent=lobbyMode==='host'?'开始':'坐下开始';
-  go.disabled=!nick||!myDir||(lobbyMode==='host'&&!NET.peerOpen);
+  go.disabled=!nick||(!myDir&&!(solo&&rnd))||(lobbyMode==='host'&&!NET.peerOpen);
 }
 document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{if(lobbyMode!==b.dataset.mode)setMode(b.dataset.mode)}));
 $('#nick').addEventListener('input',()=>{
@@ -66,11 +83,13 @@ seatBtns.forEach(b=>b.addEventListener('click',()=>{
 }));
 $('#sitBtn').onclick=()=>{
   myNick=nickNow();
+  // alone with random seats: the one seat is drawn too
+  if(lobbyMode==='solo'&&RULES.seatMode==='random')myDir=DIRS[Math.random()*4|0];
   if(!myNick||!myDir)return;
   phoneFull();
   try{localStorage.setItem('guandan-nick',myNick)}catch(_){}
   Sound.unlock();
-  if(lobbyMode==='host'){if(isClint()!==(NET.code==='8888')){lobbyStatus('房间号正在更换，请稍等');return}startOnline()}
+  if(lobbyMode==='host'){if(isClint()!==(NET.code==='8888')){lobbyStatus('房间号正在更换，请稍等');return}if(RULES.seatMode==='random')randomizeSeats();startOnline()}
   else{
     NET.mode='solo';NET.off=0;setHumans([0]);
     $('#myName').textContent=myNick;

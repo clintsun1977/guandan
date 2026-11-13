@@ -1940,6 +1940,7 @@ html.phone .handtools .emote-fab {
       <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="once">一次机会</button></div>
       <div class="rule-row"><span class="rule-k">电脑模型</span><button class="rule-btn" data-rule="bot" data-val="clint">默认</button><button class="rule-btn" data-rule="bot" data-val="danmcai-reason"><span class="fl">danMCai</span><span class="sh">dMC</span></button><button class="rule-btn" data-rule="bot" data-val="guanzero"><span class="fl">GuanZero</span><span class="sh">GZe</span></button></div>
       <div class="rule-row"><span class="rule-k">出牌评价</span><button class="rule-btn" data-rule="coach" data-val="1">开</button><button class="rule-btn" data-rule="coach" data-val="0">关</button></div>
+      <div class="rule-row"><span class="rule-k">选座方式</span><button class="rule-btn" data-rule="seatMode" data-val="pick">自选</button><button class="rule-btn" data-rule="seatMode" data-val="random">随机</button></div>
       <div class="rule-row"><span class="rule-k">理牌时间（秒）</span><button class="rule-btn" data-rule="prepSec" data-val="30">30</button><button class="rule-btn" data-rule="prepSec" data-val="60">60</button><button class="rule-btn" data-rule="prepSec" data-val="90">90</button></div>
       <div class="rule-row"><span class="rule-k">出牌时间（秒）</span><button class="rule-btn" data-rule="playMode" data-val="20+60">20+60</button><button class="rule-btn" data-rule="playMode" data-val="30+60">30+60</button><button class="rule-btn" data-rule="playMode" data-val="60">60</button></div>
       <div class="rule-note" id="rulesNote"></div>
@@ -3855,7 +3856,7 @@ const TV={open:false};
 const NET={mode:'solo',off:0,humans:new Set([0]),inbox:[],pending:false,conns:new Map(),specs:new Map(),lobby:{S:null,E:null,N:null,W:null},mics:{}};
 const isHost=()=>NET.mode!=='guest';
 // table rules, chosen in the lobby (online, by the host): tribute on or off, and what happens after three failed tries at A
-const RULES={trib:true,aFail:'draw',bot:'clint',coach:false,prepSec:90,playMode:'60',lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
+const RULES={trib:true,aFail:'draw',bot:'clint',coach:false,prepSec:90,playMode:'60',seatMode:'pick',lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0};
 const isHumanSeat=p=>NET.humans.has(p);
 const toAbs=p=>(p+NET.off)%4,toLocal=a=>(a-NET.off+4)%4;
 let hints=[],hintIdx=0;
@@ -8272,17 +8273,17 @@ function showStart(){
 }
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
-  Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,prepSec:90,playMode:'60',lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
-  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2){const b=r.bot==='danmcai'?REASON_ID:r.bot;if(b==='clint'||b===REASON_ID||NeuralBot.has(b))RULES.bot=b} /* (danMCai is offered as danMCai-reason now) */ /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach;if(PREP_CHOICES.includes(r.prepSec))RULES.prepSec=r.prepSec;if(PLAY_MODES[r.playMode])RULES.playMode=r.playMode}catch(_){}
+  Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,prepSec:90,playMode:'60',seatMode:'pick',lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
+  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2){const b=r.bot==='danmcai'?REASON_ID:r.bot;if(b==='clint'||b===REASON_ID||NeuralBot.has(b))RULES.bot=b} /* (danMCai is offered as danMCai-reason now) */ /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach;if(PREP_CHOICES.includes(r.prepSec))RULES.prepSec=r.prepSec;if(PLAY_MODES[r.playMode])RULES.playMode=r.playMode;if(r.seatMode==='random')RULES.seatMode='random'}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){
   const mine=lobbyMode!=='join';
   for(const b of ruleBtns){
-    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'clint'):b.dataset.rule==='coach'?(RULES.coach?'1':'0'):b.dataset.rule==='prepSec'?String(prepMs()/1000):b.dataset.rule==='playMode'?playMode():RULES.aFail));
+    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'clint'):b.dataset.rule==='coach'?(RULES.coach?'1':'0'):b.dataset.rule==='prepSec'?String(prepMs()/1000):b.dataset.rule==='playMode'?playMode():b.dataset.rule==='seatMode'?(RULES.seatMode==='random'?'random':'pick'):RULES.aFail));
     b.disabled=!mine;
   }
-  $('#rulesNote').textContent=mine?'':'规则由房主选定';
+  $('#rulesNote').textContent=(mine?'':'规则由房主选定')+(RULES.seatMode==='random'?(mine?'':'；')+'座位在开始时由系统随机安排':'');
   renderLevel();
 }
 // 选级: the state to start the first match from (see applyStart): so a table that cannot get back to a game it dropped out of can go
@@ -8357,10 +8358,10 @@ $('#levelPick').addEventListener('click',e=>{
 });
 ruleBtns.forEach(b=>b.addEventListener('click',()=>{
   if(lobbyMode==='join')return;
-  if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else if(b.dataset.rule==='bot'){RULES.bot=b.dataset.val;botPreload()}else if(b.dataset.rule==='coach')RULES.coach=b.dataset.val==='1';else if(b.dataset.rule==='prepSec')RULES.prepSec=+b.dataset.val;else if(b.dataset.rule==='playMode')RULES.playMode=b.dataset.val;else RULES.aFail=b.dataset.val;
-  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,botV:2,coach:RULES.coach,prepSec:RULES.prepSec,playMode:RULES.playMode}))}catch(_){}
+  if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else if(b.dataset.rule==='bot'){RULES.bot=b.dataset.val;botPreload()}else if(b.dataset.rule==='coach')RULES.coach=b.dataset.val==='1';else if(b.dataset.rule==='prepSec')RULES.prepSec=+b.dataset.val;else if(b.dataset.rule==='playMode')RULES.playMode=b.dataset.val;else if(b.dataset.rule==='seatMode'){RULES.seatMode=b.dataset.val;autoSeatHost()}else RULES.aFail=b.dataset.val;
+  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,botV:2,coach:RULES.coach,prepSec:RULES.prepSec,playMode:RULES.playMode,seatMode:RULES.seatMode}))}catch(_){}
   Sound.unlock();Sound.play('select');
-  renderRules();
+  renderLobby();
   if(lobbyMode==='host')broadcastLobby();
 }));
 function setMode(m){
@@ -8377,21 +8378,38 @@ function setMode(m){
   if(m==='join')$('#roomCode').focus();
   renderLobby();
 }
+// random seats: the host stands on a free seat too, until the start draws them all
+function autoSeatHost(){
+  if(lobbyMode!=='host'||RULES.seatMode!=='random'||myDir||!NET.peerOpen)return;
+  const d=DIRS.find(x=>!NET.lobby[x]);
+  if(d){myDir=d;NET.lobby[d]=nickNow()||'房主';broadcastLobby()}
+}
+// the draw: everyone in the room, the host too, gets a seat by chance
+function randomizeSeats(){
+  const ents=[{host:true,name:NET.lobby[myDir]||nickNow()||'房主'}];
+  for(const v of NET.conns.values())if(v.dir)ents.push({v,name:NET.lobby[v.dir]||v.name});
+  const dirs=DIRS.slice();
+  for(let i=dirs.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[dirs[i],dirs[j]]=[dirs[j],dirs[i]]}
+  NET.lobby={S:null,E:null,N:null,W:null};
+  ents.forEach((e,i)=>{const d=dirs[i];NET.lobby[d]=e.name;if(e.host)myDir=d;else e.v.dir=d});
+  broadcastLobby();
+}
 function renderLobby(){
-  const nick=nickNow(),solo=lobbyMode==='solo';
+  autoSeatHost();
+  const nick=nickNow(),solo=lobbyMode==='solo',rnd=RULES.seatMode==='random';
   for(const b of seatBtns){
     const d=b.dataset.seat,me=d===myDir,who=NET.lobby[d],taken=!solo&&!!who&&!me&&!(NET.resumeMode&&who===nick);
     b.classList.toggle('mine',me);
     b.classList.toggle('bot',solo&&!!myDir&&!me);
     b.classList.toggle('taken',taken);
-    b.disabled=taken||(lobbyMode==='join'&&!(NET.hostConn&&NET.hostConn.open))||(lobbyMode==='host'&&!NET.peerOpen);
-    b.querySelector('span').textContent=me?(nick||'你'):taken?who:solo&&myDir?'电脑':'空位';
+    b.disabled=rnd||taken||(lobbyMode==='join'&&!(NET.hostConn&&NET.hostConn.open))||(lobbyMode==='host'&&!NET.peerOpen);
+    b.querySelector('span').textContent=me?(nick||'你'):taken?who:solo&&myDir?'电脑':rnd?'随机':'空位';
   }
   renderRules();
   const go=$('#sitBtn');
   go.hidden=lobbyMode==='join';
   go.textContent=lobbyMode==='host'?'开始':'坐下开始';
-  go.disabled=!nick||!myDir||(lobbyMode==='host'&&!NET.peerOpen);
+  go.disabled=!nick||(!myDir&&!(solo&&rnd))||(lobbyMode==='host'&&!NET.peerOpen);
 }
 document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{if(lobbyMode!==b.dataset.mode)setMode(b.dataset.mode)}));
 $('#nick').addEventListener('input',()=>{
@@ -8431,11 +8449,13 @@ seatBtns.forEach(b=>b.addEventListener('click',()=>{
 }));
 $('#sitBtn').onclick=()=>{
   myNick=nickNow();
+  // alone with random seats: the one seat is drawn too
+  if(lobbyMode==='solo'&&RULES.seatMode==='random')myDir=DIRS[Math.random()*4|0];
   if(!myNick||!myDir)return;
   phoneFull();
   try{localStorage.setItem('guandan-nick',myNick)}catch(_){}
   Sound.unlock();
-  if(lobbyMode==='host'){if(isClint()!==(NET.code==='8888')){lobbyStatus('房间号正在更换，请稍等');return}startOnline()}
+  if(lobbyMode==='host'){if(isClint()!==(NET.code==='8888')){lobbyStatus('房间号正在更换，请稍等');return}if(RULES.seatMode==='random')randomizeSeats();startOnline()}
   else{
     NET.mode='solo';NET.off=0;setHumans([0]);
     $('#myName').textContent=myNick;
@@ -9639,9 +9659,9 @@ function testClear(){
 const ROOM_PREFIX='guandan-room-';
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1110-2300';
+const VERSION='1113-1810';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977480b1';
+const APP_HASH='c1977a9385';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -9887,10 +9907,13 @@ function hostOnData(conn,d){
   if(d.t==='emote'){if(NET.started&&info.dir)Emotes.hostEmote(absOf(info.dir,NET.hostDir),d.id,d.to);return}
   if(d.t==='mic'){if(NET.started&&info.dir){NET.mics[absOf(info.dir,NET.hostDir)]=!!d.on;broadcast({t:'mics',m:NET.mics});VC.paint()}return}
   if(d.t==='sit'&&!NET.started){
-    if(!DIRS.includes(d.dir)||(NET.lobby[d.dir]&&info.dir!==d.dir))return;
+    // random seats: the friend does not choose; they are put on a free seat now (just a place to stand: the real seats are drawn at the start)
+    let dir=d.dir;
+    if(RULES.seatMode==='random'){dir=info.dir||DIRS.find(x=>!NET.lobby[x]);if(!dir)return}
+    if(!DIRS.includes(dir)||(NET.lobby[dir]&&info.dir!==dir))return;
     if(info.dir)NET.lobby[info.dir]=null;
-    info.dir=d.dir;info.name=String(d.name||'').replace(/[<>&"']/g,'').slice(0,8)||'玩家';
-    NET.lobby[d.dir]=info.name;
+    info.dir=dir;info.name=String(d.name||'').replace(/[<>&"']/g,'').slice(0,8)||'玩家';
+    NET.lobby[dir]=info.name;
     broadcastLobby();renderLobby();
     if(d.ver&&d.ver!==VERSION)lobbyStatus(`${info.name}的页面版本不同（${d.ver}），请他刷新页面`);
   }
@@ -10230,7 +10253,8 @@ function guestOnData(d){
       const nick=nickNow(),mine=DIRS.filter(x=>d.seats[x]===null||d.seats[x]===nick&&x!==myDir);
       if(!NET.resumeSent&&mine.length===1){NET.resumeSent=true;lobbyStatus('正在回到游戏…',true);sendSit(mine[0])}
       else lobbyStatus(mine.length?'游戏已经开始，选你原来的座位':'游戏已经开始，没有空座位可以回去');
-    }else lobbyStatus(myDir?'已坐下，等待房主开始':'选一个空座位',!!myDir);
+    }else if(RULES.seatMode==='random'&&!myDir){lobbyStatus('座位由系统随机安排，等待房主开始');sendSit('S')}
+    else lobbyStatus(myDir?(RULES.seatMode==='random'?'已进入房间，座位开始时随机安排':'已坐下，等待房主开始'):'选一个空座位',!!myDir);
     renderLobby();
   }else if(d.t==='full'){
     NET.refused=true;lobbyStatus('这个房间已经开始打了');

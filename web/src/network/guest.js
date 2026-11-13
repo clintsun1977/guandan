@@ -158,7 +158,8 @@ function guestOnData(d){
       const nick=nickNow(),mine=DIRS.filter(x=>d.seats[x]===null||d.seats[x]===nick&&x!==myDir);
       if(!NET.resumeSent&&mine.length===1){NET.resumeSent=true;lobbyStatus('正在回到游戏…',true);sendSit(mine[0])}
       else lobbyStatus(mine.length?'游戏已经开始，选你原来的座位':'游戏已经开始，没有空座位可以回去');
-    }else lobbyStatus(myDir?'已坐下，等待房主开始':'选一个空座位',!!myDir);
+    }else if(RULES.seatMode==='random'&&!myDir){lobbyStatus('座位由系统随机安排，等待房主开始');sendSit('S')}
+    else lobbyStatus(myDir?(RULES.seatMode==='random'?'已进入房间，座位开始时随机安排':'已坐下，等待房主开始'):'选一个空座位',!!myDir);
     renderLobby();
   }else if(d.t==='full'){
     NET.refused=true;lobbyStatus('这个房间已经开始打了');

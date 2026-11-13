@@ -76,10 +76,13 @@ function hostOnData(conn,d){
   if(d.t==='emote'){if(NET.started&&info.dir)Emotes.hostEmote(absOf(info.dir,NET.hostDir),d.id,d.to);return}
   if(d.t==='mic'){if(NET.started&&info.dir){NET.mics[absOf(info.dir,NET.hostDir)]=!!d.on;broadcast({t:'mics',m:NET.mics});VC.paint()}return}
   if(d.t==='sit'&&!NET.started){
-    if(!DIRS.includes(d.dir)||(NET.lobby[d.dir]&&info.dir!==d.dir))return;
+    // random seats: the friend does not choose; they are put on a free seat now (just a place to stand: the real seats are drawn at the start)
+    let dir=d.dir;
+    if(RULES.seatMode==='random'){dir=info.dir||DIRS.find(x=>!NET.lobby[x]);if(!dir)return}
+    if(!DIRS.includes(dir)||(NET.lobby[dir]&&info.dir!==dir))return;
     if(info.dir)NET.lobby[info.dir]=null;
-    info.dir=d.dir;info.name=String(d.name||'').replace(/[<>&"']/g,'').slice(0,8)||'玩家';
-    NET.lobby[d.dir]=info.name;
+    info.dir=dir;info.name=String(d.name||'').replace(/[<>&"']/g,'').slice(0,8)||'玩家';
+    NET.lobby[dir]=info.name;
     broadcastLobby();renderLobby();
     if(d.ver&&d.ver!==VERSION)lobbyStatus(`${info.name}的页面版本不同（${d.ver}），请他刷新页面`);
   }

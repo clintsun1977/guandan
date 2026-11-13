@@ -1,16 +1,16 @@
 // your own choice of rules (a room you join shows the host's instead)
 function loadRules(){
-  Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,prepSec:90,playMode:'60',lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
-  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2){const b=r.bot==='danmcai'?REASON_ID:r.bot;if(b==='clint'||b===REASON_ID||NeuralBot.has(b))RULES.bot=b} /* (danMCai is offered as danMCai-reason now) */ /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach;if(PREP_CHOICES.includes(r.prepSec))RULES.prepSec=r.prepSec;if(PLAY_MODES[r.playMode])RULES.playMode=r.playMode}catch(_){}
+  Object.assign(RULES,{trib:true,aFail:'draw',bot:'clint',coach:false,prepSec:90,playMode:'60',seatMode:'pick',lvSN:2,lvEW:2,playSide:'',order:[],aSN:0,aEW:0});NET.startDone=false;
+  try{const r=JSON.parse(localStorage.getItem('guandan-rules')||'{}');if(r.trib!==undefined)RULES.trib=r.trib;if(r.aFail)RULES.aFail=r.aFail;if(r.botV===2){const b=r.bot==='danmcai'?REASON_ID:r.bot;if(b==='clint'||b===REASON_ID||NeuralBot.has(b))RULES.bot=b} /* (danMCai is offered as danMCai-reason now) */ /* (a choice saved before 默认 became the default is ignored once: botV) */if(r.coach!==undefined)RULES.coach=!!r.coach;if(PREP_CHOICES.includes(r.prepSec))RULES.prepSec=r.prepSec;if(PLAY_MODES[r.playMode])RULES.playMode=r.playMode;if(r.seatMode==='random')RULES.seatMode='random'}catch(_){}
 }
 const ruleBtns=[...document.querySelectorAll('.rule-btn')];
 function renderRules(){
   const mine=lobbyMode!=='join';
   for(const b of ruleBtns){
-    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'clint'):b.dataset.rule==='coach'?(RULES.coach?'1':'0'):b.dataset.rule==='prepSec'?String(prepMs()/1000):b.dataset.rule==='playMode'?playMode():RULES.aFail));
+    b.classList.toggle('on',b.dataset.val===(b.dataset.rule==='trib'?(RULES.trib?'1':'0'):b.dataset.rule==='bot'?(RULES.bot||'clint'):b.dataset.rule==='coach'?(RULES.coach?'1':'0'):b.dataset.rule==='prepSec'?String(prepMs()/1000):b.dataset.rule==='playMode'?playMode():b.dataset.rule==='seatMode'?(RULES.seatMode==='random'?'random':'pick'):RULES.aFail));
     b.disabled=!mine;
   }
-  $('#rulesNote').textContent=mine?'':'规则由房主选定';
+  $('#rulesNote').textContent=(mine?'':'规则由房主选定')+(RULES.seatMode==='random'?(mine?'':'；')+'座位在开始时由系统随机安排':'');
   renderLevel();
 }
 // 选级: the state to start the first match from (see applyStart): so a table that cannot get back to a game it dropped out of can go
@@ -85,9 +85,9 @@ $('#levelPick').addEventListener('click',e=>{
 });
 ruleBtns.forEach(b=>b.addEventListener('click',()=>{
   if(lobbyMode==='join')return;
-  if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else if(b.dataset.rule==='bot'){RULES.bot=b.dataset.val;botPreload()}else if(b.dataset.rule==='coach')RULES.coach=b.dataset.val==='1';else if(b.dataset.rule==='prepSec')RULES.prepSec=+b.dataset.val;else if(b.dataset.rule==='playMode')RULES.playMode=b.dataset.val;else RULES.aFail=b.dataset.val;
-  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,botV:2,coach:RULES.coach,prepSec:RULES.prepSec,playMode:RULES.playMode}))}catch(_){}
+  if(b.dataset.rule==='trib')RULES.trib=b.dataset.val==='1';else if(b.dataset.rule==='bot'){RULES.bot=b.dataset.val;botPreload()}else if(b.dataset.rule==='coach')RULES.coach=b.dataset.val==='1';else if(b.dataset.rule==='prepSec')RULES.prepSec=+b.dataset.val;else if(b.dataset.rule==='playMode')RULES.playMode=b.dataset.val;else if(b.dataset.rule==='seatMode'){RULES.seatMode=b.dataset.val;autoSeatHost()}else RULES.aFail=b.dataset.val;
+  try{localStorage.setItem('guandan-rules',JSON.stringify({trib:RULES.trib,aFail:RULES.aFail,bot:RULES.bot,botV:2,coach:RULES.coach,prepSec:RULES.prepSec,playMode:RULES.playMode,seatMode:RULES.seatMode}))}catch(_){}
   Sound.unlock();Sound.play('select');
-  renderRules();
+  renderLobby();
   if(lobbyMode==='host')broadcastLobby();
 }));
