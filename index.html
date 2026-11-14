@@ -864,6 +864,92 @@ html.phone .rule-btn .fl{display:none}
 .lobby-pad[hidden]{display:none}
 /* the keypad has its own 进入: the one beside the box is not needed (the Enter key of a keyboard still works) */
 #joinRow #joinBtn{display:none}
+/* (a computer only) the seats are squares; the version number under the signature is a second copy of the one at the foot (a phone shows only that one) */
+@media (min-width:601px){
+  .lobby-table>*{aspect-ratio:1;min-height:0;min-width:0}
+  .lobby-table .seat-btn{flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px;white-space:normal;align-self:stretch;overflow:hidden}
+  .lobby-table .seat-btn b{font-size:26px;line-height:1}
+  .lobby-table .seat-btn span{font-size:15px;line-height:1.15;text-align:center;word-break:break-all}
+  .lobby-table .lobby-felt{display:flex;align-items:center;justify-content:center}
+  .lobby-left>.lobby-ver{display:none}
+}
+/* the table on the left (the name over it, then the seats as squares and a small 开始游戏 under them), everything to choose on the right:
+   the nickname, the way in, and the rules, in rows that line up (a label, then buttons that fill the same width). A narrow screen
+   keeps one column, in the order of before */
+.lobby-main,.lobby-left,.lobby-right{display:contents}
+.lobby-box>.lobby-brand,.lobby-left>.lobby-brand{order:1}
+.lobby-right>.lobby-name{order:2}.lobby-right>.lobby-modes{order:3}.lobby-right>.lobby-join{order:4}.lobby-right>.lobby-pad{order:5}.lobby-right>.lobby-rules{order:6}
+.lobby-box>.lobby-room{order:7}.lobby-box>.lobby-status{order:8}.lobby-left>.lobby-table{order:9}.lobby-left>.lobby-go{order:10}.lobby-left>.lobby-ver{order:11}.lobby-box>.lobby-photo{order:12}
+.lobby-modek{display:none}
+@media (min-width:601px){
+  .lobby-box{width:min(760px,100%)}
+  .lobby-main{display:grid;grid-template-columns:288px minmax(0,1fr);gap:0 22px;align-items:start}
+  .lobby-left{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .lobby-right{display:grid;grid-template-columns:122px minmax(0,1fr);gap:7px 8px;align-items:center}
+  .lobby-left>.lobby-brand,.lobby-left>.lobby-table,.lobby-left>.lobby-go{order:0}
+  .lobby-left>.lobby-table{width:288px}
+  .lobby-left>.lobby-go{width:150px;font-size:20px;padding:8px 10px;border-radius:12px}
+  .lobby-right>*{order:0}
+  .lobby-right>.lobby-name{display:contents}
+  .lobby-right .lobby-label,.lobby-right .lobby-modek{display:block;grid-column:1;grid-row:auto;text-align:left;font-size:17px}
+  .lobby-right .lobby-name .lobby-nick{grid-column:2;grid-row:auto;width:100%;box-sizing:border-box;font-size:19px;padding:6px 10px;border-radius:10px;text-align:center}
+  .lobby-right .lobby-modes{display:grid;grid-column:2;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .lobby-right .mode-btn{grid-row:auto;grid-column:auto!important;padding:7px 2px}
+  .lobby-right>.lobby-join,.lobby-right>.lobby-pad,.lobby-right>.lobby-rules{grid-column:1/-1}
+  .lobby-right>.lobby-pad{width:min(300px,100%);justify-self:center}
+  .lobby-right>.lobby-rules{padding:8px 0 0;border-width:1px 0 0;gap:7px}
+  .rule-row{grid-template-columns:122px}
+  .lobby-left>.lobby-brand{width:100%}
+  .lobby-box>.lobby-room,.lobby-box>.lobby-status{text-align:center}
+}
+@media (min-width:601px){.lobby-box>.lobby-photo{max-height:min(28vh,250px)}}
+
+/* two columns, 2/5 and 3/5: the table (bigger) with 开始游戏 at its foot on the left; on the right the nickname, the way in and the rules in rows of one
+   height, spread so that the last row ends on the same line as 开始游戏. All the rows are the same distance apart. A card holds it all */
+.lobby-moderow{display:contents}
+@media (min-width:601px){
+  .lobby-box{width:min(880px,100%);box-sizing:border-box;padding:24px 30px 26px;border-radius:24px;
+    background:linear-gradient(180deg,rgba(9,32,24,.62),rgba(7,26,19,.5));border:1px solid rgba(221,176,80,.38);
+    box-shadow:0 22px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,235,170,.12)}
+  .lobby-main{grid-template-columns:2fr 3fr;gap:0 30px;align-items:stretch}
+  .lobby-left{gap:14px;justify-content:flex-start}
+  .lobby-left>.lobby-table{width:100%;gap:8px}
+  .lobby-left>.lobby-go{margin-top:auto;width:170px;font-size:21px;padding:10px 12px;border-radius:14px;
+    background:linear-gradient(180deg,#ecc563,var(--gold) 55%,#c99a34);color:var(--on-gold);border-color:#c99a34;font-weight:800;letter-spacing:.12em;
+    box-shadow:0 6px 16px rgba(0,0,0,.35),0 0 18px rgba(221,176,80,.28)}
+  .lobby-left>.lobby-go:disabled{background:rgba(221,176,80,.28);box-shadow:none;border-color:transparent}
+  .lobby-right{display:flex;flex-direction:column;justify-content:space-between;gap:10px;align-items:stretch;position:relative}
+  .lobby-right>.lobby-name,.lobby-right>.lobby-moderow,.lobby-right>.lobby-join,.lobby-right>.lobby-pad,.lobby-right>.lobby-rules{order:0}
+  .lobby-right>.lobby-rules{display:contents}
+  .lobby-right .rule-note{position:absolute;left:0;right:0;top:calc(100% + 8px);text-align:center;font-size:13px;color:var(--muted)}
+  .lobby-right>.lobby-name,.lobby-right .lobby-moderow{display:grid;grid-template-columns:122px minmax(0,1fr);gap:8px;align-items:center}
+  .lobby-right .lobby-label,.lobby-right .lobby-modek{grid-column:1;grid-row:auto;text-align:left;font-size:17px}
+  .lobby-right .lobby-name .lobby-nick{grid-column:2;grid-row:auto}
+  .lobby-right .lobby-modes{display:grid;grid-column:2;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .lobby-right .rule-row,.lobby-right>.lobby-name,.lobby-right .lobby-moderow{min-height:44px}
+  .lobby-right .rule-btn,.lobby-right .mode-btn{padding:9px 4px;border-radius:11px}
+  .lobby-right .lobby-name .lobby-nick{padding:8px 10px;border-radius:11px}
+  .lobby-right>.lobby-pad{align-self:center}
+  .lobby-table>*{border-radius:14px}
+  .lobby-table .seat-btn{background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(0,0,0,.14)),var(--shade)}
+  .lobby-table .seat-btn b{font-size:30px}
+  .lobby-table .seat-btn span{font-size:16px}
+  .lobby-box>.lobby-photo{margin-top:18px;border-radius:16px}
+}
+/* (one column) the way-in buttons keep their place after the nickname, now that they sit in a row of their own */
+.lobby-right>.lobby-moderow{order:3}
+@media (min-width:601px){.lobby-right>.lobby-moderow{order:0}}
+.lobby-moderow>.lobby-modes{order:3}
+/* (a phone) the rows of the top block stand 8px apart, as they always did */
+@media (max-width:600px){.lobby-right>.lobby-name{margin-top:2px}.lobby-moderow>.lobby-modes{margin-top:2px}}
+
+/* the version number under the signature is a second copy of the one at the foot (a phone shows only that one) */
+.lobby-ver2{display:none}
+@media (min-width:601px){
+  .lobby-ver2{display:block}
+  .lobby-testbox .lobby-ver2{order:-1;font-size:13px;color:var(--muted);opacity:.85;margin:0 4px -2px 0}
+  .lobby-brand .lobby-title{font-size:78px;letter-spacing:.08em;padding-left:.08em}
+}
 /* finishing moments: first place gets a gold badge and confetti, second and third a small badge,
    last place a stamp, a grey-out and a crying face */
 .fx{position:fixed;left:0;top:0;z-index:90;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap}
@@ -1947,15 +2033,29 @@ html.phone .handtools .emote-fab {
 
 <div class="lobby" id="lobby" hidden>
   <div class="lobby-box">
-    <div class="lobby-head">
+    <div class="lobby-main">
+      <div class="lobby-left">
       <div class="lobby-brand"><h1 class="lobby-title">掼蛋</h1><div class="lobby-by">made by Clint</div></div>
+    <div class="lobby-table" id="lobbyTable">
+      <button class="seat-btn t-red" data-seat="N" style="grid-area:n"><b>北</b><span>空位</span></button>
+      <button class="seat-btn t-blue" data-seat="W" style="grid-area:w"><b>西</b><span>空位</span></button>
+      <div class="lobby-felt" style="grid-area:c"><button class="level-btn" id="levelBtn" type="button">选级</button></div>
+      <button class="seat-btn t-blue" data-seat="E" style="grid-area:e"><b>东</b><span>空位</span></button>
+      <button class="seat-btn t-red" data-seat="S" style="grid-area:s"><b>南</b><span>空位</span></button>
+    </div>
+    <button class="btn primary lobby-go" id="sitBtn" disabled>开始游戏</button>
+    <div class="lobby-ver" id="verTag"></div>
+      </div>
+      <div class="lobby-right">
       <div class="lobby-name"><label class="lobby-label" for="nick">玩家昵称</label><input class="lobby-nick" id="nick" maxlength="8" autocomplete="off" placeholder="输入你的昵称"></div>
+      <div class="lobby-moderow">
+        <span class="lobby-label lobby-modek">游戏模式</span>
       <div class="lobby-modes">
         <button class="mode-btn on" data-mode="solo">单人</button>
         <button class="mode-btn" data-mode="host">开房间</button>
         <button class="mode-btn" data-mode="join">进房间</button>
       </div>
-    </div>
+      </div>
     <div class="lobby-join" id="joinRow" hidden>
       <input class="lobby-nick" id="roomCode" inputmode="none" maxlength="4" autocomplete="off" placeholder="请输入房间号">
       <button class="btn primary" id="joinBtn">进入</button>
@@ -1971,17 +2071,10 @@ html.phone .handtools .emote-fab {
       <div class="rule-row"><span class="rule-k">出牌时间（秒）</span><button class="rule-btn" data-rule="playMode" data-val="20+60">20+60</button><button class="rule-btn" data-rule="playMode" data-val="30+60">30+60</button><button class="rule-btn" data-rule="playMode" data-val="60">60</button></div>
       <div class="rule-note" id="rulesNote"></div>
     </div>
+      </div>
+    </div>
     <div class="lobby-room" id="roomInfo" hidden><span>房间号</span><b id="roomCodeShow">----</b></div>
     <div class="lobby-status" id="lobbyStatus"></div>
-    <div class="lobby-table" id="lobbyTable">
-      <button class="seat-btn t-red" data-seat="N" style="grid-area:n"><b>北</b><span>空位</span></button>
-      <button class="seat-btn t-blue" data-seat="W" style="grid-area:w"><b>西</b><span>空位</span></button>
-      <div class="lobby-felt" style="grid-area:c"><button class="level-btn" id="levelBtn" type="button">选级</button></div>
-      <button class="seat-btn t-blue" data-seat="E" style="grid-area:e"><b>东</b><span>空位</span></button>
-      <button class="seat-btn t-red" data-seat="S" style="grid-area:s"><b>南</b><span>空位</span></button>
-    </div>
-    <button class="btn primary lobby-go" id="sitBtn" disabled>坐下开始</button>
-    <div class="lobby-ver" id="verTag"></div>
     <div class="lobby-photo" role="img" aria-label="一只大鹅和一只白头鹰在冰面上对峙"></div>
   </div>
   <div class="level-pick" id="levelPick" hidden></div>
@@ -1996,6 +2089,7 @@ html.phone .handtools .emote-fab {
       <input class="lobby-nick" id="testPw" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="密码">
       <button class="btn primary" id="testGo">进入</button>
     </div>
+    <div class="lobby-ver lobby-ver2"></div>
   </div>
 </div>
 
@@ -8477,7 +8571,8 @@ function renderLobby(){
   $('#joinPad').hidden=lobbyMode!=='join'||!!(NET.hostConn&&NET.hostConn.open);
   const go=$('#sitBtn');
   go.hidden=lobbyMode==='join';
-  go.textContent=lobbyMode==='host'?'开始':'坐下开始';
+  // a computer's button says 开始游戏; a phone's keeps its old words
+  go.textContent=window.matchMedia('(min-width:601px)').matches?'开始游戏':lobbyMode==='host'?'开始':'坐下开始';
   go.disabled=!nick||(!myDir&&!(solo&&rnd))||(lobbyMode==='host'&&!NET.peerOpen);
 }
 document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{if(lobbyMode!==b.dataset.mode)setMode(b.dataset.mode)}));
@@ -9741,10 +9836,11 @@ const ROOM_PREFIX='guandan-room-';
 const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.miwifi.com:3478'},{urls:'stun:stun.qq.com:3478'},{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1114-1005';
+const VERSION='1114-1106';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977632f3';
+const APP_HASH='c1977002c5';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
+document.querySelectorAll('.lobby-ver2').forEach(e=>{e.textContent=$('#verTag').textContent});
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
 const peerReady=()=>{if(window.Peer&&!window.claude)return true;lobbyStatus('联机需要在 clintsun1977.github.io/guandan 打开');return false};

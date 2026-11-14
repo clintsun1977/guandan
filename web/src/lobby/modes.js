@@ -44,7 +44,8 @@ function renderLobby(){
   $('#joinPad').hidden=lobbyMode!=='join'||!!(NET.hostConn&&NET.hostConn.open);
   const go=$('#sitBtn');
   go.hidden=lobbyMode==='join';
-  go.textContent=lobbyMode==='host'?'开始':'坐下开始';
+  // a computer's button says 开始游戏; a phone's keeps its old words
+  go.textContent=window.matchMedia('(min-width:601px)').matches?'开始游戏':lobbyMode==='host'?'开始':'坐下开始';
   go.disabled=!nick||(!myDir&&!(solo&&rnd))||(lobbyMode==='host'&&!NET.peerOpen);
 }
 document.querySelectorAll('.mode-btn').forEach(b=>b.addEventListener('click',()=>{if(lobbyMode!==b.dataset.mode)setMode(b.dataset.mode)}));

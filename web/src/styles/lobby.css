@@ -158,3 +158,89 @@ html.phone .rule-btn .fl{display:none}
 .lobby-pad[hidden]{display:none}
 /* the keypad has its own 进入: the one beside the box is not needed (the Enter key of a keyboard still works) */
 #joinRow #joinBtn{display:none}
+/* (a computer only) the seats are squares; the version number under the signature is a second copy of the one at the foot (a phone shows only that one) */
+@media (min-width:601px){
+  .lobby-table>*{aspect-ratio:1;min-height:0;min-width:0}
+  .lobby-table .seat-btn{flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px;white-space:normal;align-self:stretch;overflow:hidden}
+  .lobby-table .seat-btn b{font-size:26px;line-height:1}
+  .lobby-table .seat-btn span{font-size:15px;line-height:1.15;text-align:center;word-break:break-all}
+  .lobby-table .lobby-felt{display:flex;align-items:center;justify-content:center}
+  .lobby-left>.lobby-ver{display:none}
+}
+/* the table on the left (the name over it, then the seats as squares and a small 开始游戏 under them), everything to choose on the right:
+   the nickname, the way in, and the rules, in rows that line up (a label, then buttons that fill the same width). A narrow screen
+   keeps one column, in the order of before */
+.lobby-main,.lobby-left,.lobby-right{display:contents}
+.lobby-box>.lobby-brand,.lobby-left>.lobby-brand{order:1}
+.lobby-right>.lobby-name{order:2}.lobby-right>.lobby-modes{order:3}.lobby-right>.lobby-join{order:4}.lobby-right>.lobby-pad{order:5}.lobby-right>.lobby-rules{order:6}
+.lobby-box>.lobby-room{order:7}.lobby-box>.lobby-status{order:8}.lobby-left>.lobby-table{order:9}.lobby-left>.lobby-go{order:10}.lobby-left>.lobby-ver{order:11}.lobby-box>.lobby-photo{order:12}
+.lobby-modek{display:none}
+@media (min-width:601px){
+  .lobby-box{width:min(760px,100%)}
+  .lobby-main{display:grid;grid-template-columns:288px minmax(0,1fr);gap:0 22px;align-items:start}
+  .lobby-left{display:flex;flex-direction:column;gap:10px;align-items:center}
+  .lobby-right{display:grid;grid-template-columns:122px minmax(0,1fr);gap:7px 8px;align-items:center}
+  .lobby-left>.lobby-brand,.lobby-left>.lobby-table,.lobby-left>.lobby-go{order:0}
+  .lobby-left>.lobby-table{width:288px}
+  .lobby-left>.lobby-go{width:150px;font-size:20px;padding:8px 10px;border-radius:12px}
+  .lobby-right>*{order:0}
+  .lobby-right>.lobby-name{display:contents}
+  .lobby-right .lobby-label,.lobby-right .lobby-modek{display:block;grid-column:1;grid-row:auto;text-align:left;font-size:17px}
+  .lobby-right .lobby-name .lobby-nick{grid-column:2;grid-row:auto;width:100%;box-sizing:border-box;font-size:19px;padding:6px 10px;border-radius:10px;text-align:center}
+  .lobby-right .lobby-modes{display:grid;grid-column:2;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .lobby-right .mode-btn{grid-row:auto;grid-column:auto!important;padding:7px 2px}
+  .lobby-right>.lobby-join,.lobby-right>.lobby-pad,.lobby-right>.lobby-rules{grid-column:1/-1}
+  .lobby-right>.lobby-pad{width:min(300px,100%);justify-self:center}
+  .lobby-right>.lobby-rules{padding:8px 0 0;border-width:1px 0 0;gap:7px}
+  .rule-row{grid-template-columns:122px}
+  .lobby-left>.lobby-brand{width:100%}
+  .lobby-box>.lobby-room,.lobby-box>.lobby-status{text-align:center}
+}
+@media (min-width:601px){.lobby-box>.lobby-photo{max-height:min(28vh,250px)}}
+
+/* two columns, 2/5 and 3/5: the table (bigger) with 开始游戏 at its foot on the left; on the right the nickname, the way in and the rules in rows of one
+   height, spread so that the last row ends on the same line as 开始游戏. All the rows are the same distance apart. A card holds it all */
+.lobby-moderow{display:contents}
+@media (min-width:601px){
+  .lobby-box{width:min(880px,100%);box-sizing:border-box;padding:24px 30px 26px;border-radius:24px;
+    background:linear-gradient(180deg,rgba(9,32,24,.62),rgba(7,26,19,.5));border:1px solid rgba(221,176,80,.38);
+    box-shadow:0 22px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,235,170,.12)}
+  .lobby-main{grid-template-columns:2fr 3fr;gap:0 30px;align-items:stretch}
+  .lobby-left{gap:14px;justify-content:flex-start}
+  .lobby-left>.lobby-table{width:100%;gap:8px}
+  .lobby-left>.lobby-go{margin-top:auto;width:170px;font-size:21px;padding:10px 12px;border-radius:14px;
+    background:linear-gradient(180deg,#ecc563,var(--gold) 55%,#c99a34);color:var(--on-gold);border-color:#c99a34;font-weight:800;letter-spacing:.12em;
+    box-shadow:0 6px 16px rgba(0,0,0,.35),0 0 18px rgba(221,176,80,.28)}
+  .lobby-left>.lobby-go:disabled{background:rgba(221,176,80,.28);box-shadow:none;border-color:transparent}
+  .lobby-right{display:flex;flex-direction:column;justify-content:space-between;gap:10px;align-items:stretch;position:relative}
+  .lobby-right>.lobby-name,.lobby-right>.lobby-moderow,.lobby-right>.lobby-join,.lobby-right>.lobby-pad,.lobby-right>.lobby-rules{order:0}
+  .lobby-right>.lobby-rules{display:contents}
+  .lobby-right .rule-note{position:absolute;left:0;right:0;top:calc(100% + 8px);text-align:center;font-size:13px;color:var(--muted)}
+  .lobby-right>.lobby-name,.lobby-right .lobby-moderow{display:grid;grid-template-columns:122px minmax(0,1fr);gap:8px;align-items:center}
+  .lobby-right .lobby-label,.lobby-right .lobby-modek{grid-column:1;grid-row:auto;text-align:left;font-size:17px}
+  .lobby-right .lobby-name .lobby-nick{grid-column:2;grid-row:auto}
+  .lobby-right .lobby-modes{display:grid;grid-column:2;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .lobby-right .rule-row,.lobby-right>.lobby-name,.lobby-right .lobby-moderow{min-height:44px}
+  .lobby-right .rule-btn,.lobby-right .mode-btn{padding:9px 4px;border-radius:11px}
+  .lobby-right .lobby-name .lobby-nick{padding:8px 10px;border-radius:11px}
+  .lobby-right>.lobby-pad{align-self:center}
+  .lobby-table>*{border-radius:14px}
+  .lobby-table .seat-btn{background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(0,0,0,.14)),var(--shade)}
+  .lobby-table .seat-btn b{font-size:30px}
+  .lobby-table .seat-btn span{font-size:16px}
+  .lobby-box>.lobby-photo{margin-top:18px;border-radius:16px}
+}
+/* (one column) the way-in buttons keep their place after the nickname, now that they sit in a row of their own */
+.lobby-right>.lobby-moderow{order:3}
+@media (min-width:601px){.lobby-right>.lobby-moderow{order:0}}
+.lobby-moderow>.lobby-modes{order:3}
+/* (a phone) the rows of the top block stand 8px apart, as they always did */
+@media (max-width:600px){.lobby-right>.lobby-name{margin-top:2px}.lobby-moderow>.lobby-modes{margin-top:2px}}
+
+/* the version number under the signature is a second copy of the one at the foot (a phone shows only that one) */
+.lobby-ver2{display:none}
+@media (min-width:601px){
+  .lobby-ver2{display:block}
+  .lobby-testbox .lobby-ver2{order:-1;font-size:13px;color:var(--muted);opacity:.85;margin:0 4px -2px 0}
+  .lobby-brand .lobby-title{font-size:78px;letter-spacing:.08em;padding-left:.08em}
+}

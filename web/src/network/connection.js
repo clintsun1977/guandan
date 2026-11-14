@@ -9,6 +9,7 @@ const VERSION='dev';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
 const APP_HASH='dev';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
+document.querySelectorAll('.lobby-ver2').forEach(e=>{e.textContent=$('#verTag').textContent});
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
 const peerReady=()=>{if(window.Peer&&!window.claude)return true;lobbyStatus('联机需要在 clintsun1977.github.io/guandan 打开');return false};
