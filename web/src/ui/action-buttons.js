@@ -74,28 +74,44 @@ function placeActionBtns(){
 }
 
 // on a computer 表情 stands right of 重选 and 闭麦 right of 过, beside the play column, both within reach of the mouse (a phone and the test
-// version keep them where they were: 闭麦 in the header, 表情 among the hand's buttons). They float over the page at the spot worked out
-// from the column, which moves with the hand: checked a few times a second
+// version keep them where they were: 闭麦 in the header, 表情 among the hand's buttons), and 手持 / 两排 / 复原 are squares under the column,
+// 手持 centred on the same vertical line as 重选. They float at the spot worked out from the column, which moves with the hand: checked a few times
+// a second. Before the column is shown (the shuffle, the cut, the deal) the spot is worked out from where the column will stand
 function placeSideTools(){
-  const mic=$('#micBtn'),em=$('#emoteBtn'),bt=$('#btns');
-  if(!mic||!em||!bt)return;
+  const mic=$('#micBtn'),em=$('#emoteBtn'),bt=$('#btns'),ht=document.querySelector('.handwrap .handtools');
+  if(!mic||!em||!bt||!ht)return;
   const off=isPhone()||TEST||SPEC||window.innerWidth<561;
-  for(const e of [mic,em]){
-    if(off){if(e.dataset.side){e.style.position=e.style.left=e.style.top=e.style.zIndex='';delete e.dataset.side}}
+  if(off){
+    for(const e of [mic,em])if(e.dataset.side){e.style.position=e.style.left=e.style.top=e.style.zIndex='';delete e.dataset.side}
+    if(ht.classList.contains('sidetools')){ht.classList.remove('sidetools');ht.style.paddingLeft=''}
+    return;
   }
-  if(off||bt.hidden||!bt.offsetHeight)return;
   const vis=id=>{const e=$(id);return e&&!e.hidden&&e.offsetHeight?e:null};
-  // 过 is not there while a payment is being made: the row of the first button standing then takes 闭麦
-  const rowMic=vis('#passBtn')||vis('#returnBtn')||vis('#hintBtn'),rowEm=vis('#clearBtn')||rowMic;
-  if(!rowMic)return;
+  // the rows of the column: 过 and 重选 (where 过 is not there, while a payment is made, the first button standing), or when the column is
+  // not shown yet the places they will have (68px buttons, 8px apart, the column's left and top as the layout has set them)
+  let rowMic,rowEm;
+  if(!bt.hidden&&bt.offsetHeight){
+    const a=vis('#passBtn')||vis('#returnBtn')||vis('#hintBtn'),c=vis('#clearBtn')||a;
+    if(!a)return;
+    const ra=a.getBoundingClientRect(),rc=c.getBoundingClientRect();
+    rowMic={right:ra.right,top:ra.top,height:ra.height};rowEm={right:rc.right,top:rc.top,height:rc.height,cx:rc.left+rc.width/2};
+  }else{
+    // (the hint button's spot is SPOT_UP above the bottom of the hand area, the column's middle actionInset in from its right edge)
+    const h=$('#hand').getBoundingClientRect(),d=68,cx=h.right-actionInset(h.width),hintTop=h.bottom-SPOT_UP-d/2;
+    rowMic={right:cx+d/2,top:hintTop+(d+8),height:d};rowEm={right:cx+d/2,top:hintTop+2*(d+8),height:d,cx};
+  }
   const put=(e,row)=>{
-    const r=row.getBoundingClientRect(),h=e.offsetHeight||(e===mic?30:34);
-    const left=Math.round(r.right+8)+'px',top=Math.round(r.top+(r.height-h)/2)+'px';
+    const h=e.offsetHeight||34;
+    const left=Math.round(row.right+8)+'px',top=Math.round(row.top+(row.height-h)/2)+'px';
     e.dataset.side='1';e.style.position='fixed';e.style.zIndex='8';
     if(e.style.left!==left)e.style.left=left;
     if(e.style.top!==top)e.style.top=top;
   };
   put(mic,rowMic);put(em,rowEm);
+  // 手持 centred under 重选: the row's padding puts its first square's middle on 重选's vertical line
+  ht.classList.add('sidetools');
+  const pad=Math.round(rowEm.cx-ht.getBoundingClientRect().left-20)+'px';
+  if(ht.style.paddingLeft!==pad)ht.style.paddingLeft=pad;
 }
 setInterval(placeSideTools,200);
 addEventListener('resize',placeSideTools);
