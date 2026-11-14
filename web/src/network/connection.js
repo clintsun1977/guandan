@@ -1,5 +1,8 @@
 /* ---------- connections (PeerJS: browsers talk to each other directly, matched by the room number) ---------- */
 const ROOM_PREFIX='guandan-room-';
+// STUN servers for the browsers to find each other through their routers. PeerJS's own list leans on Google and on free relay servers (turn.peerjs.com)
+// that no longer answer, so several others are named too, some that are reachable from inside China
+const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.miwifi.com:3478'},{urls:'stun:stun.qq.com:3478'},{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
 const VERSION='dev';

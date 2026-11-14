@@ -4,7 +4,7 @@ function setMode(m){
   lobbyMode=m;myDir='';NET.lastCode=null;NET.rejoinDir=null;NET.clintTries=0;
   NET.lobby={S:null,E:null,N:null,W:null};
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
-  $('#joinRow').hidden=m!=='join';
+  $('#joinRow').hidden=m!=='join';$('#joinPad').hidden=m!=='join';
   $('#roomCode').classList.toggle('call',m==='join');$('#joinBtn').disabled=false;
   $('#roomInfo').hidden=true;
   lobbyStatus('');
@@ -40,6 +40,8 @@ function renderLobby(){
     b.querySelector('span').textContent=me?(nick||'你'):taken?who:solo&&myDir?'电脑':rnd?'随机':'空位';
   }
   renderRules();
+  // the number keypad is for typing the room number: gone once the room is joined
+  $('#joinPad').hidden=lobbyMode!=='join'||!!(NET.hostConn&&NET.hostConn.open);
   const go=$('#sitBtn');
   go.hidden=lobbyMode==='join';
   go.textContent=lobbyMode==='host'?'开始':'坐下开始';
@@ -108,5 +110,15 @@ $('#joinBtn').onclick=()=>{
   joinRoom(code);
 };
 $('#roomCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('#joinBtn').click()});
+// the keypad: the room number is typed on it (the box asks for no keyboard of its own, which on an iPad would cover the box)
+$('#joinPad').addEventListener('click',e=>{
+  const b=e.target.closest('.pad-btn');if(!b)return;
+  const k=b.dataset.k,box=$('#roomCode');
+  Sound.unlock();Sound.play('select');
+  if(k==='go'){$('#joinBtn').click();return}
+  if(k==='del')box.value=box.value.slice(0,-1);
+  else if(box.value.length<4)box.value+=k;
+  box.dispatchEvent(new Event('input',{bubbles:true}));
+});
 if(myNick)$('#myName').textContent=myNick;
 

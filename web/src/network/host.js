@@ -11,7 +11,7 @@ function openRoom(){
   const clint=isClint();
   let code=clint?'8888':String(1000+(Math.random()*9000|0));
   while(!clint&&code==='8888')code=String(1000+(Math.random()*9000|0));
-  const peer=new Peer(ROOM_PREFIX+code);
+  const peer=new Peer(ROOM_PREFIX+code,PEER_OPTS);
   let opened=false;
   NET.peer=peer;keepSignal(peer);
   lobbyStatus('正在开房间…');

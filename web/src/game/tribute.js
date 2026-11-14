@@ -40,10 +40,13 @@ function payTribute(){
   const o=G.prevOut,L=G.L,dbl=o[1]%2===o[0]%2;
   let tribs=G.tribGivers.map(g=>({g,card:G.hands[g].find(c=>c.id===G.tribPick[g])}));
   if(dbl)tribs.sort((a,b)=>val(b.card,L)-val(a.card,L));
-  const recv=dbl?[o[0],o[1]]:[o[0]];
+  // two payers whose cards are equal: 贡左还右, each pays their 上家 (the seat before) and the return comes back from them to the payer, their 下家
+  const same=dbl&&val(tribs[0].card,L)===val(tribs[1].card,L);
+  const recv=same?tribs.map(t=>(t.g+3)%4):dbl?[o[0],o[1]]:[o[0]];
   G.gives=tribs.map((t,i)=>({from:t.g,to:recv[i],id:t.card.id,label:'进贡'}));
   G.trib=[];
-  G.leader=tribs[0].g;
+  // who leads: the payer of the larger card; with two equal cards, the 下家 of whoever came first (头游)
+  G.leader=same?(o[0]+1)%4:tribs[0].g;
   G.returns=tribs.map((t,i)=>({from:recv[i],to:t.g}));
   G.notice='';G.afterTrib=true;
   runGives();

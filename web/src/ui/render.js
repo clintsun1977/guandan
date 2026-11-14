@@ -122,7 +122,7 @@ function renderControls(){
   syncCfmShow();
   for(const id in can){const b=$('#'+id);b.disabled=!can[id];b.classList.toggle('primary',can[id])}
   // 同花顺 beside your name while you sort your cards and while you play them
-  $('#sfBtn').hidden=!['prep','play'].includes(G.phase)||!G.hands[0].length;
+  $('#sfBtn').hidden=!['tribPick','return','prep','play'].includes(G.phase)||!G.hands[0].length;
   // (the test version's button says so when the hand has no straight flush)
   if(TEST&&!$('#sfBtn').hidden){const none=!straightFlushes().length;$('#sfBtn').disabled=none;$('#sfBtn').textContent=none?'无同花顺':'同花顺'}
   const fb=$('#fixBtn'),fixedNow=new Set((G.fixed||[]).flat());

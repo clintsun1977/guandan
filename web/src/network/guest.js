@@ -24,7 +24,7 @@ function joinRoom(code){
   leaveNet();
   NET.resumeSent=false;
   lobbyStatus('正在连接…');
-  const peer=new Peer();
+  const peer=new Peer(PEER_OPTS);
   NET.peer=peer;keepSignal(peer);
   peer.on('call',c=>VC.incoming(c));
   peer.on('open',()=>{
@@ -63,7 +63,7 @@ function watchRoom(code){
   leaveNet();
   NET.watching=true;NET.gone=false;
   lobbyStatus('正在连接…');
-  const peer=new Peer();
+  const peer=new Peer(PEER_OPTS);
   NET.peer=peer;NET.specCode=code;keepSignal(peer);
   peer.on('call',c=>VC.incoming(c));
   peer.on('open',()=>{

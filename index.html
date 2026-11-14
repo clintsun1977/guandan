@@ -843,6 +843,15 @@ html.phone .rule-btn .fl{display:none}
 @media (min-width:601px){.rule-row{grid-template-columns:168px}
   /* no card around the rules: their buttons then start and end exactly under the three mode buttons, between two fine lines */
   .lobby-rules{padding:8px 0;border-radius:0;border-width:1px 0;border-color:var(--line);background:none}}
+
+/* the room number: its box under the name (above the rules), with a keypad of its own below it, so no keyboard is needed on a tablet */
+.lobby-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:min(300px,100%);margin:0 auto}
+.pad-btn{font:inherit;font-size:22px;padding:7px 0;border-radius:12px;cursor:pointer;background:var(--shade);color:var(--ink);border:1.5px solid var(--line-strong)}
+.pad-btn:active{background:var(--gold);color:var(--on-gold);border-color:var(--gold)}
+.pad-btn[data-k="go"]{background:var(--gold);color:var(--on-gold);border-color:var(--gold);font-weight:700;font-size:19px}
+.lobby-pad[hidden]{display:none}
+/* the keypad has its own 进入: the one beside the box is not needed (the Enter key of a keyboard still works) */
+#joinRow #joinBtn{display:none}
 /* finishing moments: first place gets a gold badge and confetti, second and third a small badge,
    last place a stamp, a grey-out and a crying face */
 .fx{position:fixed;left:0;top:0;z-index:90;pointer-events:none;transform:translate(-50%,-50%);white-space:nowrap}
@@ -1935,6 +1944,11 @@ html.phone .handtools .emote-fab {
         <button class="mode-btn" data-mode="join">进房间</button>
       </div>
     </div>
+    <div class="lobby-join" id="joinRow" hidden>
+      <input class="lobby-nick" id="roomCode" inputmode="none" maxlength="4" autocomplete="off" placeholder="请输入房间号">
+      <button class="btn primary" id="joinBtn">进入</button>
+    </div>
+    <div class="lobby-pad" id="joinPad" hidden><button type="button" class="pad-btn" data-k="1">1</button><button type="button" class="pad-btn" data-k="2">2</button><button type="button" class="pad-btn" data-k="3">3</button><button type="button" class="pad-btn" data-k="4">4</button><button type="button" class="pad-btn" data-k="5">5</button><button type="button" class="pad-btn" data-k="6">6</button><button type="button" class="pad-btn" data-k="7">7</button><button type="button" class="pad-btn" data-k="8">8</button><button type="button" class="pad-btn" data-k="9">9</button><button type="button" class="pad-btn" data-k="del">⌫</button><button type="button" class="pad-btn" data-k="0">0</button><button type="button" class="pad-btn" data-k="go">进入</button></div>
     <div class="lobby-rules" id="rulesBox">
       <div class="rule-row"><span class="rule-k">进贡</span><button class="rule-btn" data-rule="trib" data-val="1">进贡</button><button class="rule-btn" data-rule="trib" data-val="0">不进贡</button></div>
       <div class="rule-row"><span class="rule-k">三次打A不过</span><button class="rule-btn" data-rule="aFail" data-val="draw">平局</button><button class="rule-btn" data-rule="aFail" data-val="reset">从2打</button><button class="rule-btn" data-rule="aFail" data-val="once">一次机会</button></div>
@@ -1944,10 +1958,6 @@ html.phone .handtools .emote-fab {
       <div class="rule-row"><span class="rule-k">理牌时间（秒）</span><button class="rule-btn" data-rule="prepSec" data-val="30">30</button><button class="rule-btn" data-rule="prepSec" data-val="60">60</button><button class="rule-btn" data-rule="prepSec" data-val="90">90</button></div>
       <div class="rule-row"><span class="rule-k">出牌时间（秒）</span><button class="rule-btn" data-rule="playMode" data-val="20+60">20+60</button><button class="rule-btn" data-rule="playMode" data-val="30+60">30+60</button><button class="rule-btn" data-rule="playMode" data-val="60">60</button></div>
       <div class="rule-note" id="rulesNote"></div>
-    </div>
-    <div class="lobby-join" id="joinRow" hidden>
-      <input class="lobby-nick" id="roomCode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="请输入房间号">
-      <button class="btn primary" id="joinBtn">进入</button>
     </div>
     <div class="lobby-room" id="roomInfo" hidden><span>房间号</span><b id="roomCodeShow">----</b></div>
     <div class="lobby-status" id="lobbyStatus"></div>
@@ -4080,10 +4090,13 @@ function payTribute(){
   const o=G.prevOut,L=G.L,dbl=o[1]%2===o[0]%2;
   let tribs=G.tribGivers.map(g=>({g,card:G.hands[g].find(c=>c.id===G.tribPick[g])}));
   if(dbl)tribs.sort((a,b)=>val(b.card,L)-val(a.card,L));
-  const recv=dbl?[o[0],o[1]]:[o[0]];
+  // two payers whose cards are equal: 贡左还右, each pays their 上家 (the seat before) and the return comes back from them to the payer, their 下家
+  const same=dbl&&val(tribs[0].card,L)===val(tribs[1].card,L);
+  const recv=same?tribs.map(t=>(t.g+3)%4):dbl?[o[0],o[1]]:[o[0]];
   G.gives=tribs.map((t,i)=>({from:t.g,to:recv[i],id:t.card.id,label:'进贡'}));
   G.trib=[];
-  G.leader=tribs[0].g;
+  // who leads: the payer of the larger card; with two equal cards, the 下家 of whoever came first (头游)
+  G.leader=same?(o[0]+1)%4:tribs[0].g;
   G.returns=tribs.map((t,i)=>({from:recv[i],to:t.g}));
   G.notice='';G.afterTrib=true;
   runGives();
@@ -5479,7 +5492,7 @@ function renderControls(){
   syncCfmShow();
   for(const id in can){const b=$('#'+id);b.disabled=!can[id];b.classList.toggle('primary',can[id])}
   // 同花顺 beside your name while you sort your cards and while you play them
-  $('#sfBtn').hidden=!['prep','play'].includes(G.phase)||!G.hands[0].length;
+  $('#sfBtn').hidden=!['tribPick','return','prep','play'].includes(G.phase)||!G.hands[0].length;
   // (the test version's button says so when the hand has no straight flush)
   if(TEST&&!$('#sfBtn').hidden){const none=!straightFlushes().length;$('#sfBtn').disabled=none;$('#sfBtn').textContent=none?'无同花顺':'同花顺'}
   const fb=$('#fixBtn'),fixedNow=new Set((G.fixed||[]).flat());
@@ -8370,7 +8383,7 @@ function setMode(m){
   lobbyMode=m;myDir='';NET.lastCode=null;NET.rejoinDir=null;NET.clintTries=0;
   NET.lobby={S:null,E:null,N:null,W:null};
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
-  $('#joinRow').hidden=m!=='join';
+  $('#joinRow').hidden=m!=='join';$('#joinPad').hidden=m!=='join';
   $('#roomCode').classList.toggle('call',m==='join');$('#joinBtn').disabled=false;
   $('#roomInfo').hidden=true;
   lobbyStatus('');
@@ -8406,6 +8419,8 @@ function renderLobby(){
     b.querySelector('span').textContent=me?(nick||'你'):taken?who:solo&&myDir?'电脑':rnd?'随机':'空位';
   }
   renderRules();
+  // the number keypad is for typing the room number: gone once the room is joined
+  $('#joinPad').hidden=lobbyMode!=='join'||!!(NET.hostConn&&NET.hostConn.open);
   const go=$('#sitBtn');
   go.hidden=lobbyMode==='join';
   go.textContent=lobbyMode==='host'?'开始':'坐下开始';
@@ -8474,6 +8489,16 @@ $('#joinBtn').onclick=()=>{
   joinRoom(code);
 };
 $('#roomCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('#joinBtn').click()});
+// the keypad: the room number is typed on it (the box asks for no keyboard of its own, which on an iPad would cover the box)
+$('#joinPad').addEventListener('click',e=>{
+  const b=e.target.closest('.pad-btn');if(!b)return;
+  const k=b.dataset.k,box=$('#roomCode');
+  Sound.unlock();Sound.play('select');
+  if(k==='go'){$('#joinBtn').click();return}
+  if(k==='del')box.value=box.value.slice(0,-1);
+  else if(box.value.length<4)box.value+=k;
+  box.dispatchEvent(new Event('input',{bubbles:true}));
+});
 if(myNick)$('#myName').textContent=myNick;
 
 /* ---------- the test version: a solo game for checking how the computer plays ---------- */
@@ -9657,11 +9682,14 @@ function testClear(){
 
 /* ---------- connections (PeerJS: browsers talk to each other directly, matched by the room number) ---------- */
 const ROOM_PREFIX='guandan-room-';
+// STUN servers for the browsers to find each other through their routers. PeerJS's own list leans on Google and on free relay servers (turn.peerjs.com)
+// that no longer answer, so several others are named too, some that are reachable from inside China
+const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.miwifi.com:3478'},{urls:'stun:stun.qq.com:3478'},{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1113-1810';
+const VERSION='1114-0938';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977a9385';
+const APP_HASH='c1977b9389';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -9842,7 +9870,7 @@ function openRoom(){
   const clint=isClint();
   let code=clint?'8888':String(1000+(Math.random()*9000|0));
   while(!clint&&code==='8888')code=String(1000+(Math.random()*9000|0));
-  const peer=new Peer(ROOM_PREFIX+code);
+  const peer=new Peer(ROOM_PREFIX+code,PEER_OPTS);
   let opened=false;
   NET.peer=peer;keepSignal(peer);
   lobbyStatus('正在开房间…');
@@ -10119,7 +10147,7 @@ function joinRoom(code){
   leaveNet();
   NET.resumeSent=false;
   lobbyStatus('正在连接…');
-  const peer=new Peer();
+  const peer=new Peer(PEER_OPTS);
   NET.peer=peer;keepSignal(peer);
   peer.on('call',c=>VC.incoming(c));
   peer.on('open',()=>{
@@ -10158,7 +10186,7 @@ function watchRoom(code){
   leaveNet();
   NET.watching=true;NET.gone=false;
   lobbyStatus('正在连接…');
-  const peer=new Peer();
+  const peer=new Peer(PEER_OPTS);
   NET.peer=peer;NET.specCode=code;keepSignal(peer);
   peer.on('call',c=>VC.incoming(c));
   peer.on('open',()=>{
