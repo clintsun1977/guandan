@@ -56,6 +56,7 @@ const VC=(()=>{
     if(window.claude||!window.Peer||!NET.peer||!p)return;
     peers=p;active=Object.keys(peers).length>1;
     if(!active)return;
+    for(const [a,ln] of [...lines])if(ln.call.peer!==peers[a])drop(a);
     for(const c of waiting.splice(0))answer(c);
     for(const a in peers)if(+a>me()&&!lines.has(+a))dial(+a);
     if(!timer)timer=setInterval(listen,150);
@@ -79,7 +80,8 @@ const VC=(()=>{
   function update(p){
     if(!active){start(p);return}
     peers=p;
-    for(const a of [...lines.keys()])if(!here(a))drop(a);
+    // a line to a connection that is gone (the person dropped and came back under a new name) goes, a new one is made
+    for(const [a,ln] of [...lines])if(!here(a)||ln.call.peer!==peers[a])drop(a);
     for(const a in peers)if(+a>me()&&!lines.has(+a))dial(+a);
     paint();
   }
@@ -137,7 +139,9 @@ const VC=(()=>{
       const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
       const a=toAbs(q),mine=q===0&&!SPEC?on:!!NET.mics[a];
       // (no 闭麦 label anywhere: a plate shows only a mic flashing while its player talks)
-      el.className='vc'+(active&&isHumanSeat(q)&&talking.has(a)?' talk':'');
+      // every person at the table has the mark in their plate: lit while their microphone is on, dim while it is off (and bouncing while they talk)
+      const here=active&&isHumanSeat(q);
+      el.className='vc'+(here?' show':'')+(here&&mine?' on':'')+(here&&talking.has(a)?' talk':'');
     }
   }
   // browsers hold sound back until the page is touched: every tap wakes the listening and the lines up again

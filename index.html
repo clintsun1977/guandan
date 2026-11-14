@@ -123,7 +123,14 @@ html.phone .tribpop{left:auto;right:0}
 .tog::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--gold)}
 .tog[aria-pressed="false"]{opacity:.55}
 .tog[aria-pressed="false"]::before{background:transparent;box-shadow:inset 0 0 0 1px var(--muted)}
-
+/* the mark in every name plate: it floats at the plate's right end and takes no room, so no plate changes size and no name moves */
+.meinfo,.seat .who{position:relative}
+.vc.show{display:inline-flex}
+.vc.show svg{display:block;fill:#9fb0a8;opacity:.4}
+.vc.show.on svg{fill:var(--gold);opacity:1;filter:drop-shadow(0 0 3px rgba(221,176,80,.7))}
+.vc.talk.show svg{animation:vcTalk .45s ease-in-out infinite alternate}
+.meinfo .vc,html:not(.phone) body:not(.test) #mebar .meinfo .vc,html:not(.phone) body:not(.test) #mebar .meinfo span.vc#myVc{position:absolute;top:50%;bottom:auto;right:5px;translate:0 -50%;z-index:6;pointer-events:none}
+.meinfo .vc svg{width:1.1em;height:1.1em}
 /* the deck: shuffled and cut in the middle of the table before every deal */
 .stack{position:absolute;left:0;top:0;width:var(--cw);height:calc(var(--cw)*1.4);margin:calc(var(--cw)*-.7) 0 0 calc(var(--cw)*-.5);
   transition:transform .32s cubic-bezier(.3,.7,.3,1);pointer-events:none;z-index:7000}
@@ -421,7 +428,7 @@ html body.test #seat1 .stat{top:auto;bottom:calc(100% + 35px);right:0;left:auto;
 #hand .card.drag{transition:none;transform:translateY(-6px) scale(1.06);box-shadow:0 12px 26px rgba(0,0,0,.5);cursor:grabbing}
 .mebar .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .handtools{display:flex;gap:6px;justify-content:flex-end;margin-top:2px}
-@media (min-width:561px){.handwrap .handtools{position:absolute;left:0;right:0;bottom:2px;margin:0;z-index:1;pointer-events:none}.handtools .link{pointer-events:auto}}
+@media (min-width:561px){.handwrap .handtools{position:absolute;left:0;right:-10px;bottom:2px;margin:0;z-index:1;pointer-events:none}.handtools .link{pointer-events:auto}}
 /* in the test version 成组 stands at the left end, the hand's own buttons at the right */
 .handtools .toolgap{flex:1}
 @media (min-width:561px){#fixBtn{position:absolute;margin:0}}
@@ -6124,6 +6131,32 @@ function placeActionBtns(){
   }
 }
 
+// on a computer 表情 stands right of 重选 and 闭麦 right of 过, beside the play column, both within reach of the mouse (a phone and the test
+// version keep them where they were: 闭麦 in the header, 表情 among the hand's buttons). They float over the page at the spot worked out
+// from the column, which moves with the hand: checked a few times a second
+function placeSideTools(){
+  const mic=$('#micBtn'),em=$('#emoteBtn'),bt=$('#btns');
+  if(!mic||!em||!bt)return;
+  const off=isPhone()||TEST||SPEC||window.innerWidth<561;
+  for(const e of [mic,em]){
+    if(off){if(e.dataset.side){e.style.position=e.style.left=e.style.top=e.style.zIndex='';delete e.dataset.side}}
+  }
+  if(off||bt.hidden||!bt.offsetHeight)return;
+  const vis=id=>{const e=$(id);return e&&!e.hidden&&e.offsetHeight?e:null};
+  // 过 is not there while a payment is being made: the row of the first button standing then takes 闭麦
+  const rowMic=vis('#passBtn')||vis('#returnBtn')||vis('#hintBtn'),rowEm=vis('#clearBtn')||rowMic;
+  if(!rowMic)return;
+  const put=(e,row)=>{
+    const r=row.getBoundingClientRect(),h=e.offsetHeight||(e===mic?30:34);
+    const left=Math.round(r.right+8)+'px',top=Math.round(r.top+(r.height-h)/2)+'px';
+    e.dataset.side='1';e.style.position='fixed';e.style.zIndex='8';
+    if(e.style.left!==left)e.style.left=left;
+    if(e.style.top!==top)e.style.top=top;
+  };
+  put(mic,rowMic);put(em,rowEm);
+}
+setInterval(placeSideTools,200);
+addEventListener('resize',placeSideTools);
 /* ---------- shuffling and cutting ---------- */
 function makeStack(n){
   const d=document.createElement('div');d.className='stack';
@@ -9687,9 +9720,9 @@ const ROOM_PREFIX='guandan-room-';
 const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.miwifi.com:3478'},{urls:'stun:stun.qq.com:3478'},{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1114-0938';
+const VERSION='1114-0954';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977b9389';
+const APP_HASH='c1977e110d';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
 // the claude.ai viewer (window.claude) does not allow direct connections between browsers
@@ -9766,6 +9799,7 @@ const VC=(()=>{
     if(window.claude||!window.Peer||!NET.peer||!p)return;
     peers=p;active=Object.keys(peers).length>1;
     if(!active)return;
+    for(const [a,ln] of [...lines])if(ln.call.peer!==peers[a])drop(a);
     for(const c of waiting.splice(0))answer(c);
     for(const a in peers)if(+a>me()&&!lines.has(+a))dial(+a);
     if(!timer)timer=setInterval(listen,150);
@@ -9789,7 +9823,8 @@ const VC=(()=>{
   function update(p){
     if(!active){start(p);return}
     peers=p;
-    for(const a of [...lines.keys()])if(!here(a))drop(a);
+    // a line to a connection that is gone (the person dropped and came back under a new name) goes, a new one is made
+    for(const [a,ln] of [...lines])if(!here(a)||ln.call.peer!==peers[a])drop(a);
     for(const a in peers)if(+a>me()&&!lines.has(+a))dial(+a);
     paint();
   }
@@ -9847,7 +9882,9 @@ const VC=(()=>{
       const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
       const a=toAbs(q),mine=q===0&&!SPEC?on:!!NET.mics[a];
       // (no 闭麦 label anywhere: a plate shows only a mic flashing while its player talks)
-      el.className='vc'+(active&&isHumanSeat(q)&&talking.has(a)?' talk':'');
+      // every person at the table has the mark in their plate: lit while their microphone is on, dim while it is off (and bouncing while they talk)
+      const here=active&&isHumanSeat(q);
+      el.className='vc'+(here?' show':'')+(here&&mine?' on':'')+(here&&talking.has(a)?' talk':'');
     }
   }
   // browsers hold sound back until the page is touched: every tap wakes the listening and the lines up again
@@ -10070,6 +10107,8 @@ setInterval(()=>{
     r.conn.send({t:'resume',dir:r.info.dir,hostDir:NET.hostDir,names:NET.names,rules:RULES,peers,humans:list,snap:snapG()});
     // after the picture, so the events that follow reach the returning page behind it
     act({k:'humans',list,names:NET.names,back:r.info.name});
+    // the returning page has a new connection name: everyone (the host's own voice too) is told who can be called now
+    broadcastPeers();
   }
 },500);
 setInterval(()=>{
@@ -10115,6 +10154,8 @@ function hostOnClose(conn,how='drop'){
   const seat=absOf(info.dir,NET.hostDir);
   const list=[...NET.humans].filter(h=>h!==seat);
   act({k:'humans',list,names:NET.names,left:info.name,how});
+  // (their microphone is off now: it must not show as on when they come back)
+  delete NET.mics[seat];broadcast({t:'mics',m:NET.mics});VC.paint();
   const c=G.clock;
   if(c&&(c.who===seat||c.seat===seat)){G.clock=null;timeUp(c)}
   if(owesReturn(seat))act({k:'return',p:seat,id:aiReturnCard(G.hands[seat],G.L).id});

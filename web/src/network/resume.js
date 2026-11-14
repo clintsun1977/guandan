@@ -77,6 +77,8 @@ setInterval(()=>{
     r.conn.send({t:'resume',dir:r.info.dir,hostDir:NET.hostDir,names:NET.names,rules:RULES,peers,humans:list,snap:snapG()});
     // after the picture, so the events that follow reach the returning page behind it
     act({k:'humans',list,names:NET.names,back:r.info.name});
+    // the returning page has a new connection name: everyone (the host's own voice too) is told who can be called now
+    broadcastPeers();
   }
 },500);
 setInterval(()=>{
@@ -122,6 +124,8 @@ function hostOnClose(conn,how='drop'){
   const seat=absOf(info.dir,NET.hostDir);
   const list=[...NET.humans].filter(h=>h!==seat);
   act({k:'humans',list,names:NET.names,left:info.name,how});
+  // (their microphone is off now: it must not show as on when they come back)
+  delete NET.mics[seat];broadcast({t:'mics',m:NET.mics});VC.paint();
   const c=G.clock;
   if(c&&(c.who===seat||c.seat===seat)){G.clock=null;timeUp(c)}
   if(owesReturn(seat))act({k:'return',p:seat,id:aiReturnCard(G.hands[seat],G.L).id});

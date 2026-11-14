@@ -73,3 +73,29 @@ function placeActionBtns(){
   }
 }
 
+// on a computer 表情 stands right of 重选 and 闭麦 right of 过, beside the play column, both within reach of the mouse (a phone and the test
+// version keep them where they were: 闭麦 in the header, 表情 among the hand's buttons). They float over the page at the spot worked out
+// from the column, which moves with the hand: checked a few times a second
+function placeSideTools(){
+  const mic=$('#micBtn'),em=$('#emoteBtn'),bt=$('#btns');
+  if(!mic||!em||!bt)return;
+  const off=isPhone()||TEST||SPEC||window.innerWidth<561;
+  for(const e of [mic,em]){
+    if(off){if(e.dataset.side){e.style.position=e.style.left=e.style.top=e.style.zIndex='';delete e.dataset.side}}
+  }
+  if(off||bt.hidden||!bt.offsetHeight)return;
+  const vis=id=>{const e=$(id);return e&&!e.hidden&&e.offsetHeight?e:null};
+  // 过 is not there while a payment is being made: the row of the first button standing then takes 闭麦
+  const rowMic=vis('#passBtn')||vis('#returnBtn')||vis('#hintBtn'),rowEm=vis('#clearBtn')||rowMic;
+  if(!rowMic)return;
+  const put=(e,row)=>{
+    const r=row.getBoundingClientRect(),h=e.offsetHeight||(e===mic?30:34);
+    const left=Math.round(r.right+8)+'px',top=Math.round(r.top+(r.height-h)/2)+'px';
+    e.dataset.side='1';e.style.position='fixed';e.style.zIndex='8';
+    if(e.style.left!==left)e.style.left=left;
+    if(e.style.top!==top)e.style.top=top;
+  };
+  put(mic,rowMic);put(em,rowEm);
+}
+setInterval(placeSideTools,200);
+addEventListener('resize',placeSideTools);
