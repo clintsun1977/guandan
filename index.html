@@ -866,7 +866,9 @@ html.phone .rule-btn .fl{display:none}
 #joinRow #joinBtn{display:none}
 /* (a computer only) the seats are squares; the version number under the signature is a second copy of the one at the foot (a phone shows only that one) */
 @media (min-width:601px){
-  .lobby-table>*{aspect-ratio:1;min-height:0;min-width:0}
+  /* the table itself is the square, split in nine equal cells (not each cell given its own square: Safari on an iPad then sized the rows by what they hold) */
+  .lobby-table{aspect-ratio:1;min-height:0;grid-template-rows:repeat(3,minmax(0,1fr));grid-template-columns:repeat(3,minmax(0,1fr))}
+  .lobby-table>*{min-height:0;min-width:0;height:auto}
   .lobby-table .seat-btn{flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px;white-space:normal;align-self:stretch;overflow:hidden}
   .lobby-table .seat-btn b{font-size:26px;line-height:1}
   .lobby-table .seat-btn span{font-size:15px;line-height:1.15;text-align:center;word-break:break-all}
@@ -911,7 +913,7 @@ html.phone .rule-btn .fl{display:none}
   .lobby-box{width:min(880px,100%);box-sizing:border-box;padding:24px 30px 26px;border-radius:24px;
     background:linear-gradient(180deg,rgba(9,32,24,.62),rgba(7,26,19,.5));border:1px solid rgba(221,176,80,.38);
     box-shadow:0 22px 60px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,235,170,.12)}
-  .lobby-main{grid-template-columns:2fr 3fr;gap:0 30px;align-items:stretch}
+  .lobby-main{grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:0 30px;align-items:stretch}
   .lobby-left{gap:14px;justify-content:flex-start}
   .lobby-left>.lobby-table{width:100%;gap:8px}
   .lobby-left>.lobby-go{margin-top:auto;width:170px;font-size:21px;padding:10px 12px;border-radius:14px;
@@ -9836,9 +9838,9 @@ const ROOM_PREFIX='guandan-room-';
 const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.miwifi.com:3478'},{urls:'stun:stun.qq.com:3478'},{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1114-1106';
+const VERSION='1114-1114';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977002c5';
+const APP_HASH='c19777b92d';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 document.querySelectorAll('.lobby-ver2').forEach(e=>{e.textContent=$('#verTag').textContent});
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
