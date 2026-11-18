@@ -67,3 +67,15 @@ html.phone .tribpop{left:auto;right:0}
 .vc.talk.show svg{animation:vcTalk .45s ease-in-out infinite alternate}
 .meinfo .vc,html:not(.phone) body:not(.test) #mebar .meinfo .vc,html:not(.phone) body:not(.test) #mebar .meinfo span.vc#myVc{position:absolute;top:50%;bottom:auto;right:5px;translate:0 -50%;z-index:6;pointer-events:none}
 .meinfo .vc svg{width:1.1em;height:1.1em}
+/* the watchers: their names in a column at the top right under the buttons, each with its microphone mark */
+.specbar{position:fixed;z-index:25;top:calc(max(8px,env(safe-area-inset-top,0px)) + 74px);right:max(12px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:5px;align-items:flex-end;pointer-events:none}
+.specbar[hidden]{display:none}
+.stag{display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--felt-deep);border:1px solid var(--line-strong);color:var(--ink);font-size:14px;line-height:1.2}
+.stag .vc{position:static;translate:none;display:none;font-size:15px}
+.stag .vc.show{display:inline-flex}
+.stag .vc svg{width:1em;height:1em}
+/* the notice to the players that a watcher wants to play, with 我要休息 */
+.wantbanner{position:fixed;z-index:45;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:8px 14px;border-radius:14px;background:rgba(19,54,41,.96);border:1.5px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.5);color:var(--ink);font-size:17px}
+.wantbanner[hidden]{display:none}
+.wantbanner .btn{padding:6px 16px;font-size:17px;border-radius:10px}
+#wantBtn:disabled{opacity:.5}

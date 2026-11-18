@@ -17,7 +17,16 @@ function boot(data){
     }else{if(G.phase==='roundEnd'||G.phase==='over')G.reveal=4;render();if(G.phase==='roundEnd'||G.phase==='over')showResult()}
   }else{
     showStart();
+    autoEnter();
     // a host's table kept by an earlier version of the page (it took the host straight back after a refresh): no longer used
     try{localStorage.removeItem('guandan-host-table-v1')}catch(_){}
   }
+}
+// a page reloaded by autoGo (network/guest.js) goes straight on: to watch the room it left, or to take the seat that was freed for it
+function autoEnter(){
+  let o=null;
+  try{o=JSON.parse(sessionStorage.getItem('guandan-auto')||'null');sessionStorage.removeItem('guandan-auto')}catch(_){}
+  if(!o||Date.now()-o.t>60000||!/^\d{4}$/.test(o.code||'')||!myNick)return;
+  if(o.act==='watch'){$('#specCode').value=o.code;$('#specGo').click()}
+  else if(o.act==='join'){setMode('join');$('#roomCode').value=o.code;$('#joinBtn').click()}
 }

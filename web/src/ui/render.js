@@ -116,7 +116,10 @@ function renderControls(){
   // cards are still on show made players press it again and again)
   const playable=my&&picked&&analyze(selectedCards(),G.L).some(r=>beats(r,cur));
   const can={playBtn:playable,hintBtn:my,passBtn:my&&!!G.trick,clearBtn:picked};
-  if(cfm&&(!playable||cfm!==selKey()))cfm=null;
+  if(cfm&&(!(playable||(ret&&picked))||cfm!==selKey()))cfm=null;
+  // (a payment or a return waits for a second press: the button then says 确认)
+  $('#returnBtn').textContent=pay?'进贡':'还贡';
+  $('#returnBtn').disabled=!!(cfm&&ret);
   $('#playBtn').textContent=cfm?'确认':'出牌';
   $('#playBtn').classList.toggle('cfm',!!cfm);
   syncCfmShow();

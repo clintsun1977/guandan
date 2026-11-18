@@ -87,6 +87,8 @@ function watchRoom(code){
 function specOnData(d){
   if(!d)return;
   NET.hostSeen=Date.now();
+  if(d.t==='specs'){NET.specList=d.list||[];NET.swapInfo=d.swap||null;renderSpecBar();return}
+  if(d.t==='toPlayer'){autoGo({act:'join',code:NET.specCode,dir:d.dir});return}
   if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
   if(d.t==='bye'){hostGone(false);return}
   if(d.t==='old'||d.t==='specfull'){
@@ -117,6 +119,7 @@ function enterSpec(d){
   NET.inbox=[];NET.pending=false;sel=new Set();
   hideOverlay();pileRebuild();
   $('#quitBtn').textContent='退出观战';
+  $('#wantBtn').hidden=false;
   if(G.phase==='tribPick'){G.clock=null;tribWait()}
   else if(G.phase==='return')retWait();
   else if(G.phase==='play')startTurn();
@@ -134,9 +137,13 @@ function specGone(lost){
   $('#specBack').onclick=()=>location.reload();
 }
 function sendSit(d){if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'sit',dir:d,name:nickNow(),ver:VERSION})}
+// the page starts over as the other kind of person at the same table: it is reloaded with a note to itself (sessionStorage) saying where to go
+function autoGo(o){try{sessionStorage.setItem('guandan-auto',JSON.stringify({...o,t:Date.now()}))}catch(_){}location.reload()}
 function guestOnData(d){
   if(!d)return;
   NET.hostSeen=Date.now();
+  if(d.t==='specs'){NET.specList=d.list||[];NET.swapInfo=d.swap||null;renderSpecBar();return}
+  if(d.t==='toSpec'){autoGo({act:'watch',code:NET.lastCode});return}
   if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
   if(d.t==='bye'){hostGone(false);return}
   if(d.t==='mics'){NET.mics=d.m||{};VC.paint();return}

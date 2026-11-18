@@ -1,5 +1,5 @@
 /* ---------- clocks: one ticker drives turn limits, computer thinking and the pre-play countdown ---------- */
-const TRIB_MS=30000,RET_MS=60000,HURRY_MS=10000;
+const TRIB_MS=60000,RET_MS=60000,HURRY_MS=10000;
 // the sorting and playing times are the host's choice in the lobby (RULES.prepSec; RULES.playMode: a room of an older page sends none: 90 s, and 60 s a move).
 // Playing: '20+60' is 20 s for each move and, over the whole round, 60 s of overtime for each player to draw on once a move has run past its 20 s;
 // when that is used up the next move that runs over is made for the player. '30+60' the same with 30 s, and '60' is 60 s a move with no overtime

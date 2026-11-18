@@ -1,7 +1,7 @@
 function leaveNet(){
   VC.stop();
   try{NET.peer&&NET.peer.destroy()}catch(_){}
-  NET.peer=null;NET.peerOpen=false;NET.hostConn=null;NET.refused=false;NET.conns=new Map();NET.specs=new Map();NET.watching=false;NET.inbox=[];
+  NET.peer=null;NET.peerOpen=false;NET.hostConn=null;NET.refused=false;NET.specList=[];NET.swap=null;NET.swapIn=null;NET.swapInfo=null;NET.conns=new Map();NET.specs=new Map();NET.watching=false;NET.inbox=[];
 }
 // the host: claims a free room number and keeps the seat list
 // the room number 8888 belongs to Clint: whoever opens a room under that nickname gets 8888 (and only 8888), and nobody else is given it
@@ -58,7 +58,7 @@ function hostListen(peer){
 function broadcast(msg){
   for(const v of NET.conns.values())if(v.conn.open)v.conn.send(msg);
   // spectators get the moves (once they have been sent the table) and the goodbye
-  if(['evt','bye','mics','vpeers','vmuted'].includes(msg.t))for(const v of NET.specs.values())if(v.conn.open&&(v.ready||msg.t==='bye'))v.conn.send(msg);
+  if(['evt','bye','mics','vpeers','vmuted','specs'].includes(msg.t))for(const v of NET.specs.values())if(v.conn.open&&(v.ready||msg.t==='bye'))v.conn.send(msg);
 }
 function broadcastLobby(){for(const v of NET.conns.values())if(v.conn.open)v.conn.send({t:'lobby',seats:NET.lobby,you:v.dir,rules:RULES,ver:VERSION})}
 function hostOnData(conn,d){
@@ -67,12 +67,16 @@ function hostOnData(conn,d){
     sp.seen=Date.now();
     // a spectator's microphone: on only if the host has not turned the spectator's voice off
     if(d&&d.t==='mic'){NET.mics[sp.sid]=!!d.on&&!sp.muted;broadcast({t:'mics',m:NET.mics});VC.paint()}
+    // 请战: the spectator asks to play the next round
+    if(d&&d.t==='want'&&NET.started){sp.want=true;broadcastSpecs()}
     return;
   }
   const info=NET.conns.get(conn.peer);if(!info||!d)return;
   info.seen=Date.now();
   if(d.t==='bye'){hostOnClose(conn,'quit');try{conn.close()}catch(_){}return}
   if(d.t==='watch'){hostWatch(conn,info,d);return}
+  // 我要休息: a player gives up the seat to the spectator who asked
+  if(d.t==='rest'){if(NET.started&&info.dir)hostRest(info);return}
   if(d.t==='emote'){if(NET.started&&info.dir)Emotes.hostEmote(absOf(info.dir,NET.hostDir),d.id,d.to);return}
   if(d.t==='mic'){if(NET.started&&info.dir){NET.mics[absOf(info.dir,NET.hostDir)]=!!d.on;broadcast({t:'mics',m:NET.mics});VC.paint()}return}
   if(d.t==='sit'&&!NET.started){

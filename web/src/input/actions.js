@@ -33,6 +33,11 @@ function syncMini(){
   if(b.classList.contains('mini')!==on){b.classList.toggle('mini',on);if(!on){const t=$('#tplays');if(t){t.innerHTML='';t.dataset.k=''}}}
 }
 const selKey=()=>[...sel].sort((a,b)=>a-b).join(',');
+// paying or returning a tribute card always asks twice: the first press shows the card at twice its size, the second sends it
+function askConfirmNow(){
+  if(cfm===selKey())return false;
+  cfm=selKey();renderControls();return true;
+}
 function askConfirm(){
   if(!confirmPlay||cfm===selKey())return false;
   cfm=selKey();renderControls();return true;
@@ -41,16 +46,30 @@ function askConfirm(){
 // middle of the table; a long play keeps every card's corner in view by overlapping, and shrinks only if it must
 function syncCfmShow(){
   let box=$('#cfmShow');
-  if(!cfm){if(box)box.hidden=true;return}
+  const act=$('#cfmAct');
+  if(!cfm){if(box)box.hidden=true;if(act)act.hidden=true;return}
   if(!box){box=document.createElement('div');box.id='cfmShow';document.body.appendChild(box)}
   const cards=selectedCards(),r=analyze(cards,G.L)[0],shown=r?displayOrder({...r,cards},G.L):cards,n=shown.length;
   const t=$('#table').getBoundingClientRect(),hc=$('#hand .card'),maxW=t.width*.9;
-  const cw=Math.min((hc?hc.offsetWidth:60)*1.8,t.height*.5/1.4,maxW/(1+.45*(n-1)));
+  const big=(G.phase==='tribPick'||G.phase==='return'||owesReturn(0))?2:1.8; // (a tribute card shows twice the size)
+  const cw=Math.min((hc?hc.offsetWidth:60)*big,t.height*.5/1.4,maxW/(1+.45*(n-1)));
   const step=n>1?Math.min(cw*1.08,(maxW-cw)/(n-1)):cw;
   box.style.setProperty('--cw',cw+'px');box.style.setProperty('--step',step-cw+'px');
   box.innerHTML=shown.map(c=>cardHTML(c,G.L)).join('');
   box.style.left=t.left+t.width/2+'px';box.style.top=t.top+t.height/2+'px';
   box.hidden=false;
+  // a payment or a return is confirmed with a button of its own under the card, well away from the one just pressed (and that one is
+  // dimmed meanwhile), so a quick second press cannot send the card
+  const pay=G.phase==='tribPick'?'进贡':'还贡',tribute=G.phase==='tribPick'||G.phase==='return'||owesReturn(0);
+  let a=act;
+  if(tribute){
+    if(!a){a=document.createElement('div');a.id='cfmAct';a.innerHTML='<button type="button" class="btn primary" id="cfmGo"></button><button type="button" class="btn" id="cfmNo">取消</button>';document.body.appendChild(a);
+      $('#cfmGo').onclick=()=>onReturn();
+      $('#cfmNo').onclick=()=>{cfm=null;syncCfmShow();renderControls()}}
+    $('#cfmGo').textContent='确认'+pay;
+    const br=box.getBoundingClientRect();
+    a.style.left=t.left+t.width/2+'px';a.style.top=br.bottom+16+'px';a.hidden=false;
+  }else if(a)a.hidden=true;
 }
 addEventListener('resize',()=>{if(cfm)syncCfmShow()});
 function onPass(){
@@ -72,6 +91,8 @@ function onReturn(){
     if(!G.tribGivers.includes(0)||G.tribPick[0]!=null)return;
     const cards=selectedCards(),ok=tribOptions(0);
     if(cards.length!==1||!ok.includes(cards[0])){setMsg('要进贡手里最大的一张牌（百搭除外）',true);return}
+    if(askConfirmNow())return;
+    cfm=null;syncCfmShow();
     act({k:'tribute',p:toAbs(0),id:cards[0].id});
     return;
   }
@@ -80,6 +101,8 @@ function onReturn(){
   if(cards.length!==1){setMsg('选一张 10 或以下的牌还贡',true);return}
   const c=cards[0];
   if(c.r>10||isWild(c,G.L)){setMsg('还贡的牌要在 10 或以下，且不能是百搭',true);return}
+  if(askConfirmNow())return;
+  cfm=null;syncCfmShow();
   act({k:'return',p:toAbs(0),id:c.id});
 }
 

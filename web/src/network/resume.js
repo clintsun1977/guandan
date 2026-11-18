@@ -99,7 +99,33 @@ function vcPeers(){
   return peers;
 }
 const mutedIds=()=>[...NET.specs.values()].filter(v=>v.muted).map(v=>v.sid);
-function broadcastPeers(){const peers=vcPeers();broadcast({t:'vpeers',peers});VC.update(peers)}
+function broadcastPeers(){const peers=vcPeers();broadcast({t:'vpeers',peers});VC.update(peers);broadcastSpecs()}
+// who is watching (names, and who has asked to play) and, once a player has agreed to rest, who gives way to whom: told to everyone
+function specsMsg(){
+  return{t:'specs',list:[...NET.specs.values()].filter(v=>v.ready).map(v=>({sid:v.sid,name:v.name,want:!!v.want})),
+    swap:NET.swap?{spec:NET.swap.specName,rest:NET.swap.restName}:null};
+}
+function broadcastSpecs(){const m=specsMsg();NET.specList=m.list;NET.swapInfo=m.swap;broadcast(m);renderSpecBar()}
+// a player (a friend, never the host, whose page runs the game) presses 我要休息 while a spectator has asked to play
+function hostRest(info){
+  const seat=absOf(info.dir,NET.hostDir);
+  const w=[...NET.specs.values()].find(v=>v.ready&&v.want);
+  if(!w||NET.swap||seat===0)return;
+  NET.swap={seat,dir:info.dir,sid:w.sid,specName:w.name,restName:info.name};
+  setMsg(`${info.name} 休息，下一局 ${w.name} 上场`);
+  broadcastSpecs();
+}
+// when the round is over the two change places: the player's page goes to watching, and once the seat is free the spectator's page
+// comes in to it (as a player who dropped out comes back)
+setInterval(()=>{
+  if(NET.mode!=='host'||!NET.swap||NET.swapIn)return;
+  if(!(G&&(G.phase==='roundEnd'||G.phase==='over')&&G.reveal>=4))return;
+  const sw=NET.swap,v=[...NET.conns.values()].find(x=>x.dir===sw.dir),sp=[...NET.specs.values()].find(x=>x.sid===sw.sid);
+  if(!v||!sp||!v.conn.open||!sp.conn.open){NET.swap=null;if(sp)sp.want=false;broadcastSpecs();return}
+  NET.swapIn={dir:sw.dir,sid:sw.sid};
+  v.conn.send({t:'toSpec'});
+  setTimeout(()=>{if(NET.swapIn){try{v.conn.close()}catch(_){}}},5000);
+},500);
 function hostSpecMute(sid){
   const sp=[...NET.specs.values()].find(v=>v.sid===sid);if(!sp)return;
   sp.muted=!sp.muted;
@@ -112,6 +138,7 @@ function hostOnClose(conn,how='drop'){
   const sp=NET.specs.get(conn.peer);
   if(sp&&sp.conn===conn){
     NET.specs.delete(conn.peer);delete NET.mics[sp.sid];
+    if(NET.swap&&NET.swap.sid===sp.sid&&!NET.swapIn)NET.swap=null;
     if(NET.started)setMsg(`${sp.name} 离开了观战`);
     broadcastPeers();broadcast({t:'mics',m:NET.mics});syncRoomOpt();
     return;
@@ -120,6 +147,12 @@ function hostOnClose(conn,how='drop'){
   NET.conns.delete(conn.peer);
   if(!NET.started){if(info.dir)NET.lobby[info.dir]=null;broadcastLobby();renderLobby();return}
   if(!info.dir)return;
+  // the player who gave way has gone: the spectator who takes the seat is called in
+  if(NET.swapIn&&NET.swapIn.dir===info.dir){
+    const sp=[...NET.specs.values()].find(x=>x.sid===NET.swapIn.sid);
+    if(sp&&sp.conn.open)sp.conn.send({t:'toPlayer',dir:info.dir});
+    NET.swapIn=null;NET.swap=null;
+  }
   // a friend who drops out mid-game: the computer takes over their seat from here on
   const seat=absOf(info.dir,NET.hostDir);
   const list=[...NET.humans].filter(h=>h!==seat);

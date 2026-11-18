@@ -135,6 +135,7 @@ const VC=(()=>{
     const b=$('#micBtn');
     b.hidden=!active;b.classList.toggle('on',on);b.textContent=locked?'语音已关':on?'开麦':'闭麦';b.setAttribute('aria-pressed',on);b.classList.toggle('off',locked);
     if(typeof syncPauseMic==='function')syncPauseMic();
+    paintSpecs();
     for(let q=0;q<4;q++){
       const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
       const a=toAbs(q),mine=q===0&&!SPEC?on:!!NET.mics[a];
@@ -144,10 +145,17 @@ const VC=(()=>{
       el.className='vc'+(here?' show':'')+(here&&mine?' on':'')+(here&&talking.has(a)?' talk':'');
     }
   }
+  // the watchers' marks, in the bar at the top right: lit while their microphone is on, dim while it is off
+  function paintSpecs(){
+    for(const el of document.querySelectorAll('#specBar .vc')){
+      const sid=+el.dataset.sid,mine=SPEC&&sid===NET.sid?on:!!NET.mics[sid];
+      el.className='vc'+(active?' show':'')+(active&&mine?' on':'')+(active&&talking.has(sid)?' talk':'');
+    }
+  }
   // browsers hold sound back until the page is touched: every tap wakes the listening and the lines up again
   function wake(){
     if(ac&&ac.state!=='running')try{ac.resume().catch(()=>{})}catch(_){}
     for(const ln of lines.values())if(ln.audio&&ln.audio.paused)ln.audio.play().catch(()=>{});
   }
-  return {start,update,stop,prune,incoming,toggle,wake,paint,setMuted,lock,info:()=>({active,me:me(),peers,lines:[...lines.keys()],muted:[...muted],locked,on})};
+  return {spk:SPK,start,update,stop,prune,incoming,toggle,wake,paint,setMuted,lock,info:()=>({active,me:me(),peers,lines:[...lines.keys()],muted:[...muted],locked,on})};
 })();

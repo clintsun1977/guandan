@@ -16,11 +16,12 @@ function nextActive(i){for(let k=1;k<=4;k++){const j=(i+k)%4;if(active(j))return
 
 function later(fn,ms){const t=G.tok;setTimeout(()=>{if(G.tok===t)fn()},ms)}
 
-// fewer cards in hand than the play on the table has: nothing you hold can beat it (not even a bomb, which takes four), so
-// the pass is made for you after a moment, nothing to wait for
+// one, two or three cards in hand, fewer than the play on the table has: nothing you hold can beat it (not even a bomb, which takes
+// four), so the pass is made for you after a moment, nothing to wait for. With more cards than three it is never done for you:
+// a bomb of four or five cards beats a run of any size
 function autoPassShort(){
   const cur=G.trick&&G.trick.play;
-  if(TEST||SPEC||!cur||G.hands[0].length>=cur.n)return;
+  if(TEST||SPEC||!cur||G.hands[0].length>3||G.hands[0].length>=cur.n)return;
   const tok=G.tok,len=G.log.length;
   const go=()=>{
     if(G.tok!==tok||G.log.length!==len||G.phase!=='play'||G.turn!==0||!G.trick)return;

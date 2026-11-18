@@ -58,3 +58,30 @@ document.addEventListener('click',e=>{
   if(e.target.closest('button,a,input,textarea,select,label,.card,.peek,.who,.meinfo,#mebar,.handwrap,#tside,#tview,#overlay,.tnbox,.tcount,.optmenu,.tpb,.tq,#fixZone,#fixTags,#tribInfo'))return;
   testStepGo();
 });
+
+// 观战: the names of the people watching, under the buttons at the top right, each with a microphone mark; and, when one of them has asked to
+// play (请战), a notice to the players with 我要休息 for those who may give up their seat
+function renderSpecBar(){
+  const bar=$('#specBar'),list=NET.specList||[];
+  if(bar){
+    bar.hidden=!list.length;
+    bar.innerHTML=list.map(s=>`<div class="stag"><span class="sn">${String(s.name).replace(/[<>&"']/g,'')}</span><span class="vc" data-sid="${s.sid}">${VC.spk}</span></div>`).join('');
+    VC.paint();
+  }
+  const ban=$('#wantBanner'),w=list.filter(s=>s.want),sw=NET.swapInfo;
+  if(!ban)return;
+  const show=!SPEC&&NET.mode!=='solo'&&(w.length||sw);
+  ban.hidden=!show;
+  if(!show)return;
+  $('#wantTxt').textContent=sw?`${sw.rest} 休息，下一局 ${sw.spec} 上场`:`观战人 ${w.map(s=>s.name).join('、')} 请战下一局`;
+  // (the host's page runs the game: the host cannot rest; and once a player has agreed there is nothing more to press)
+  $('#restBtn').hidden=!!sw||NET.mode==='host';
+}
+$('#restBtn').onclick=()=>{
+  if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'rest'});
+  $('#restBtn').hidden=true;
+};
+$('#wantBtn').onclick=()=>{
+  if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'want'});
+  const b=$('#wantBtn');b.disabled=true;b.textContent='已请战';
+};

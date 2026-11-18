@@ -95,3 +95,8 @@
 .handtools.sidetools{justify-content:flex-start;gap:6px}
 .handtools.sidetools .toolgap{display:none}
 .handtools.sidetools #fanBtn,.handtools.sidetools #rowsBtn,.handtools.sidetools #sortBtn{width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1;box-sizing:border-box;border-radius:8px;white-space:nowrap}
+/* the 确认 for a tribute card: under the enlarged card, with 取消 */
+#cfmAct{position:fixed;z-index:41;transform:translateX(-50%);display:flex;gap:14px}
+#cfmAct[hidden]{display:none}
+#cfmAct .btn{font-size:20px;padding:10px 26px;border-radius:14px}
+#returnBtn:disabled{opacity:.35}

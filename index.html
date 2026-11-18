@@ -131,6 +131,18 @@ html.phone .tribpop{left:auto;right:0}
 .vc.talk.show svg{animation:vcTalk .45s ease-in-out infinite alternate}
 .meinfo .vc,html:not(.phone) body:not(.test) #mebar .meinfo .vc,html:not(.phone) body:not(.test) #mebar .meinfo span.vc#myVc{position:absolute;top:50%;bottom:auto;right:5px;translate:0 -50%;z-index:6;pointer-events:none}
 .meinfo .vc svg{width:1.1em;height:1.1em}
+/* the watchers: their names in a column at the top right under the buttons, each with its microphone mark */
+.specbar{position:fixed;z-index:25;top:calc(max(8px,env(safe-area-inset-top,0px)) + 74px);right:max(12px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:5px;align-items:flex-end;pointer-events:none}
+.specbar[hidden]{display:none}
+.stag{display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--felt-deep);border:1px solid var(--line-strong);color:var(--ink);font-size:14px;line-height:1.2}
+.stag .vc{position:static;translate:none;display:none;font-size:15px}
+.stag .vc.show{display:inline-flex}
+.stag .vc svg{width:1em;height:1em}
+/* the notice to the players that a watcher wants to play, with 我要休息 */
+.wantbanner{position:fixed;z-index:45;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:8px 14px;border-radius:14px;background:rgba(19,54,41,.96);border:1.5px solid var(--gold);box-shadow:0 8px 24px rgba(0,0,0,.5);color:var(--ink);font-size:17px}
+.wantbanner[hidden]{display:none}
+.wantbanner .btn{padding:6px 16px;font-size:17px;border-radius:10px}
+#wantBtn:disabled{opacity:.5}
 /* the deck: shuffled and cut in the middle of the table before every deal */
 .stack{position:absolute;left:0;top:0;width:var(--cw);height:calc(var(--cw)*1.4);margin:calc(var(--cw)*-.7) 0 0 calc(var(--cw)*-.5);
   transition:transform .32s cubic-bezier(.3,.7,.3,1);pointer-events:none;z-index:7000}
@@ -465,6 +477,11 @@ html body.test #seat1 .stat{top:auto;bottom:calc(100% + 35px);right:0;left:auto;
 .handtools.sidetools{justify-content:flex-start;gap:6px}
 .handtools.sidetools .toolgap{display:none}
 .handtools.sidetools #fanBtn,.handtools.sidetools #rowsBtn,.handtools.sidetools #sortBtn{width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:14px;line-height:1;box-sizing:border-box;border-radius:8px;white-space:nowrap}
+/* the 确认 for a tribute card: under the enlarged card, with 取消 */
+#cfmAct{position:fixed;z-index:41;transform:translateX(-50%);display:flex;gap:14px}
+#cfmAct[hidden]{display:none}
+#cfmAct .btn{font-size:20px;padding:10px 26px;border-radius:14px}
+#returnBtn:disabled{opacity:.35}
 /* card face */
 .card{width:var(--cw);height:calc(var(--cw)*var(--cr,1.4));background:var(--card);border:1px solid var(--card-edge);border-radius:calc(var(--cw)*.1);
   box-shadow:0 1px 3px rgba(0,0,0,.35);color:var(--card-ink);font-family:var(--font-display);font-weight:600;flex:none;overflow:hidden}
@@ -1966,8 +1983,11 @@ html.phone .handtools .emote-fab {
     <span class="brand">掼蛋</span>
     <span class="score"><span class="ours" id="team0" title=""><span class="tn" id="tn0">我方</span><b id="lv0">2</b><small class="lvx" id="lvx0"></small></span><span id="team1" title=""><span class="tn" id="tn1">对方</span><b id="lv1">2</b><small class="lvx" id="lvx1"></small></span></span>
     <div class="tribinfo" id="tribInfo"></div>
-    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><span class="optinfo" id="roomOpt" hidden>房间号 <b id="roomOptNum"></b></span><span class="optspec" id="specVoice" hidden></span><span class="optinfo" id="collectStatus" hidden></span><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹、无（无：一轮打完，牌直接消失，不收牌）">牌背：<span id="backName">大雁</span></button><button class="link tog" id="watchBtn" aria-pressed="false" title="自己打完这一局后，能看到其他人手里的牌">观战</button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="quitBtn">退出</button></span>
+    <span class="acts"><span class="optwrap"><button class="link" id="optBtn" aria-expanded="false">选项</button><span class="optmenu" id="optMenu" hidden><span class="optinfo" id="roomOpt" hidden>房间号 <b id="roomOptNum"></b></span><span class="optspec" id="specVoice" hidden></span><span class="optinfo" id="collectStatus" hidden></span><button class="link tog" id="sfxBtn" aria-pressed="true">音效</button><button class="link" id="cardBackBtn" title="点一下换牌背：大雁、枫叶、花纹、无（无：一轮打完，牌直接消失，不收牌）">牌背：<span id="backName">大雁</span></button><button class="link tog" id="watchBtn" aria-pressed="false" title="自己打完这一局后，能看到其他人手里的牌">观战</button><button class="link tog" id="confirmBtn" aria-pressed="false" title="选好牌点出牌后，牌先放大，再点确认才出">出牌需确认</button><button class="link tog" id="fsOptBtn" aria-pressed="false" hidden title="让游戏占满整个屏幕，再点一下退出">全屏</button></span></span><button class="link tog" id="micBtn" aria-pressed="false" hidden title="开麦后同桌的人能听到你说话">闭麦</button><button class="link" id="rulesBtn">规则</button><button class="link" id="pauseBtn">暂停</button><button class="link" id="tsBtn">出牌记录</button><button class="link" id="fsBtn">全屏</button><button class="link" id="wantBtn" hidden title="请玩家让出一个位子，下一局你上场">请战</button><button class="link" id="quitBtn">退出</button></span>
   </header>
+
+  <div class="specbar" id="specBar" hidden></div>
+  <div class="wantbanner" id="wantBanner" hidden><span id="wantTxt"></span><button class="btn primary" id="restBtn" hidden>我要休息</button></div>
 
   <main class="table" id="table">
     <section class="seat" id="seat2">
@@ -4314,11 +4334,12 @@ function nextActive(i){for(let k=1;k<=4;k++){const j=(i+k)%4;if(active(j))return
 
 function later(fn,ms){const t=G.tok;setTimeout(()=>{if(G.tok===t)fn()},ms)}
 
-// fewer cards in hand than the play on the table has: nothing you hold can beat it (not even a bomb, which takes four), so
-// the pass is made for you after a moment, nothing to wait for
+// one, two or three cards in hand, fewer than the play on the table has: nothing you hold can beat it (not even a bomb, which takes
+// four), so the pass is made for you after a moment, nothing to wait for. With more cards than three it is never done for you:
+// a bomb of four or five cards beats a run of any size
 function autoPassShort(){
   const cur=G.trick&&G.trick.play;
-  if(TEST||SPEC||!cur||G.hands[0].length>=cur.n)return;
+  if(TEST||SPEC||!cur||G.hands[0].length>3||G.hands[0].length>=cur.n)return;
   const tok=G.tok,len=G.log.length;
   const go=()=>{
     if(G.tok!==tok||G.log.length!==len||G.phase!=='play'||G.turn!==0||!G.trick)return;
@@ -4365,7 +4386,7 @@ function startTurn(){
 }
 
 /* ---------- clocks: one ticker drives turn limits, computer thinking and the pre-play countdown ---------- */
-const TRIB_MS=30000,RET_MS=60000,HURRY_MS=10000;
+const TRIB_MS=60000,RET_MS=60000,HURRY_MS=10000;
 // the sorting and playing times are the host's choice in the lobby (RULES.prepSec; RULES.playMode: a room of an older page sends none: 90 s, and 60 s a move).
 // Playing: '20+60' is 20 s for each move and, over the whole round, 60 s of overtime for each player to draw on once a move has run past its 20 s;
 // when that is used up the next move that runs over is made for the player. '30+60' the same with 30 s, and '60' is 60 s a move with no overtime
@@ -4895,6 +4916,11 @@ function syncMini(){
   if(b.classList.contains('mini')!==on){b.classList.toggle('mini',on);if(!on){const t=$('#tplays');if(t){t.innerHTML='';t.dataset.k=''}}}
 }
 const selKey=()=>[...sel].sort((a,b)=>a-b).join(',');
+// paying or returning a tribute card always asks twice: the first press shows the card at twice its size, the second sends it
+function askConfirmNow(){
+  if(cfm===selKey())return false;
+  cfm=selKey();renderControls();return true;
+}
 function askConfirm(){
   if(!confirmPlay||cfm===selKey())return false;
   cfm=selKey();renderControls();return true;
@@ -4903,16 +4929,30 @@ function askConfirm(){
 // middle of the table; a long play keeps every card's corner in view by overlapping, and shrinks only if it must
 function syncCfmShow(){
   let box=$('#cfmShow');
-  if(!cfm){if(box)box.hidden=true;return}
+  const act=$('#cfmAct');
+  if(!cfm){if(box)box.hidden=true;if(act)act.hidden=true;return}
   if(!box){box=document.createElement('div');box.id='cfmShow';document.body.appendChild(box)}
   const cards=selectedCards(),r=analyze(cards,G.L)[0],shown=r?displayOrder({...r,cards},G.L):cards,n=shown.length;
   const t=$('#table').getBoundingClientRect(),hc=$('#hand .card'),maxW=t.width*.9;
-  const cw=Math.min((hc?hc.offsetWidth:60)*1.8,t.height*.5/1.4,maxW/(1+.45*(n-1)));
+  const big=(G.phase==='tribPick'||G.phase==='return'||owesReturn(0))?2:1.8; // (a tribute card shows twice the size)
+  const cw=Math.min((hc?hc.offsetWidth:60)*big,t.height*.5/1.4,maxW/(1+.45*(n-1)));
   const step=n>1?Math.min(cw*1.08,(maxW-cw)/(n-1)):cw;
   box.style.setProperty('--cw',cw+'px');box.style.setProperty('--step',step-cw+'px');
   box.innerHTML=shown.map(c=>cardHTML(c,G.L)).join('');
   box.style.left=t.left+t.width/2+'px';box.style.top=t.top+t.height/2+'px';
   box.hidden=false;
+  // a payment or a return is confirmed with a button of its own under the card, well away from the one just pressed (and that one is
+  // dimmed meanwhile), so a quick second press cannot send the card
+  const pay=G.phase==='tribPick'?'进贡':'还贡',tribute=G.phase==='tribPick'||G.phase==='return'||owesReturn(0);
+  let a=act;
+  if(tribute){
+    if(!a){a=document.createElement('div');a.id='cfmAct';a.innerHTML='<button type="button" class="btn primary" id="cfmGo"></button><button type="button" class="btn" id="cfmNo">取消</button>';document.body.appendChild(a);
+      $('#cfmGo').onclick=()=>onReturn();
+      $('#cfmNo').onclick=()=>{cfm=null;syncCfmShow();renderControls()}}
+    $('#cfmGo').textContent='确认'+pay;
+    const br=box.getBoundingClientRect();
+    a.style.left=t.left+t.width/2+'px';a.style.top=br.bottom+16+'px';a.hidden=false;
+  }else if(a)a.hidden=true;
 }
 addEventListener('resize',()=>{if(cfm)syncCfmShow()});
 function onPass(){
@@ -4934,6 +4974,8 @@ function onReturn(){
     if(!G.tribGivers.includes(0)||G.tribPick[0]!=null)return;
     const cards=selectedCards(),ok=tribOptions(0);
     if(cards.length!==1||!ok.includes(cards[0])){setMsg('要进贡手里最大的一张牌（百搭除外）',true);return}
+    if(askConfirmNow())return;
+    cfm=null;syncCfmShow();
     act({k:'tribute',p:toAbs(0),id:cards[0].id});
     return;
   }
@@ -4942,6 +4984,8 @@ function onReturn(){
   if(cards.length!==1){setMsg('选一张 10 或以下的牌还贡',true);return}
   const c=cards[0];
   if(c.r>10||isWild(c,G.L)){setMsg('还贡的牌要在 10 或以下，且不能是百搭',true);return}
+  if(askConfirmNow())return;
+  cfm=null;syncCfmShow();
   act({k:'return',p:toAbs(0),id:c.id});
 }
 
@@ -5594,7 +5638,10 @@ function renderControls(){
   // cards are still on show made players press it again and again)
   const playable=my&&picked&&analyze(selectedCards(),G.L).some(r=>beats(r,cur));
   const can={playBtn:playable,hintBtn:my,passBtn:my&&!!G.trick,clearBtn:picked};
-  if(cfm&&(!playable||cfm!==selKey()))cfm=null;
+  if(cfm&&(!(playable||(ret&&picked))||cfm!==selKey()))cfm=null;
+  // (a payment or a return waits for a second press: the button then says 确认)
+  $('#returnBtn').textContent=pay?'进贡':'还贡';
+  $('#returnBtn').disabled=!!(cfm&&ret);
   $('#playBtn').textContent=cfm?'确认':'出牌';
   $('#playBtn').classList.toggle('cfm',!!cfm);
   syncCfmShow();
@@ -7119,7 +7166,7 @@ function rulesPages(){
       ]},
       {label:'计时',items:[
         ruleItem('一局的流程','洗牌、切牌（上一局头游的上家洗、头游切，第一局随机）→ 发牌 → 进贡 → '+prepMs()/1000+' 秒理牌（理好点「理牌结束」）→ 还贡 → 出牌。',{tag:'每局开始'}),
-        ruleItem('限时','进贡 30 秒，理牌 '+prepMs()/1000+' 秒，还贡 60 秒，'+playText()+'（理牌和出牌的时间由房主在大厅选）；最后 10 秒会闪烁倒计时。'),
+        ruleItem('限时','进贡 60 秒，理牌 '+prepMs()/1000+' 秒，还贡 60 秒，'+playText()+'（理牌和出牌的时间由房主在大厅选）；最后 10 秒会闪烁倒计时。'),
         ruleItem('超时代打','超时由系统代你出：跟牌时一律过；先出时出活动区里最小的单张、对子、三张、三带二、顺子、连对、钢板（整组出，不拆对子），没有就出成组区里不是炸弹的一手，再没有出最小的炸弹。',{tag:'超时'}),
       ]},
     ]},
@@ -7573,6 +7620,33 @@ document.addEventListener('click',e=>{
   if(e.target.closest('button,a,input,textarea,select,label,.card,.peek,.who,.meinfo,#mebar,.handwrap,#tside,#tview,#overlay,.tnbox,.tcount,.optmenu,.tpb,.tq,#fixZone,#fixTags,#tribInfo'))return;
   testStepGo();
 });
+
+// 观战: the names of the people watching, under the buttons at the top right, each with a microphone mark; and, when one of them has asked to
+// play (请战), a notice to the players with 我要休息 for those who may give up their seat
+function renderSpecBar(){
+  const bar=$('#specBar'),list=NET.specList||[];
+  if(bar){
+    bar.hidden=!list.length;
+    bar.innerHTML=list.map(s=>`<div class="stag"><span class="sn">${String(s.name).replace(/[<>&"']/g,'')}</span><span class="vc" data-sid="${s.sid}">${VC.spk}</span></div>`).join('');
+    VC.paint();
+  }
+  const ban=$('#wantBanner'),w=list.filter(s=>s.want),sw=NET.swapInfo;
+  if(!ban)return;
+  const show=!SPEC&&NET.mode!=='solo'&&(w.length||sw);
+  ban.hidden=!show;
+  if(!show)return;
+  $('#wantTxt').textContent=sw?`${sw.rest} 休息，下一局 ${sw.spec} 上场`:`观战人 ${w.map(s=>s.name).join('、')} 请战下一局`;
+  // (the host's page runs the game: the host cannot rest; and once a player has agreed there is nothing more to press)
+  $('#restBtn').hidden=!!sw||NET.mode==='host';
+}
+$('#restBtn').onclick=()=>{
+  if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'rest'});
+  $('#restBtn').hidden=true;
+};
+$('#wantBtn').onclick=()=>{
+  if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'want'});
+  const b=$('#wantBtn');b.disabled=true;b.textContent='已请战';
+};
 let resizeT=0;
 window.addEventListener('resize',()=>{layoutHand();symPlates();clearTimeout(resizeT);resizeT=setTimeout(()=>{centerRank();placeLastPlay();pileRebuild()},150)});
 // 转屏: an iPad turned from landscape to upright (or back) reports its new size late, in pieces, or at times not by a resize event at
@@ -8395,9 +8469,18 @@ function boot(data){
     }else{if(G.phase==='roundEnd'||G.phase==='over')G.reveal=4;render();if(G.phase==='roundEnd'||G.phase==='over')showResult()}
   }else{
     showStart();
+    autoEnter();
     // a host's table kept by an earlier version of the page (it took the host straight back after a refresh): no longer used
     try{localStorage.removeItem('guandan-host-table-v1')}catch(_){}
   }
+}
+// a page reloaded by autoGo (network/guest.js) goes straight on: to watch the room it left, or to take the seat that was freed for it
+function autoEnter(){
+  let o=null;
+  try{o=JSON.parse(sessionStorage.getItem('guandan-auto')||'null');sessionStorage.removeItem('guandan-auto')}catch(_){}
+  if(!o||Date.now()-o.t>60000||!/^\d{4}$/.test(o.code||'')||!myNick)return;
+  if(o.act==='watch'){$('#specCode').value=o.code;$('#specGo').click()}
+  else if(o.act==='join'){setMode('join');$('#roomCode').value=o.code;$('#joinBtn').click()}
 }
 /* ---------- the lobby: a nickname, then play alone or with friends ---------- */
 // Solo: pick a seat and the computer takes the other three. Online: one player opens a room and gets a
@@ -9838,9 +9921,9 @@ const ROOM_PREFIX='guandan-room-';
 const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.miwifi.com:3478'},{urls:'stun:stun.qq.com:3478'},{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1114-1114';
+const VERSION='1118-0831';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19777b92d';
+const APP_HASH='c1977e25a4';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 document.querySelectorAll('.lobby-ver2').forEach(e=>{e.textContent=$('#verTag').textContent});
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
@@ -9997,6 +10080,7 @@ const VC=(()=>{
     const b=$('#micBtn');
     b.hidden=!active;b.classList.toggle('on',on);b.textContent=locked?'语音已关':on?'开麦':'闭麦';b.setAttribute('aria-pressed',on);b.classList.toggle('off',locked);
     if(typeof syncPauseMic==='function')syncPauseMic();
+    paintSpecs();
     for(let q=0;q<4;q++){
       const el=$(q?`#seat${q} .vc`:'#myVc');if(!el)continue;
       const a=toAbs(q),mine=q===0&&!SPEC?on:!!NET.mics[a];
@@ -10006,17 +10090,24 @@ const VC=(()=>{
       el.className='vc'+(here?' show':'')+(here&&mine?' on':'')+(here&&talking.has(a)?' talk':'');
     }
   }
+  // the watchers' marks, in the bar at the top right: lit while their microphone is on, dim while it is off
+  function paintSpecs(){
+    for(const el of document.querySelectorAll('#specBar .vc')){
+      const sid=+el.dataset.sid,mine=SPEC&&sid===NET.sid?on:!!NET.mics[sid];
+      el.className='vc'+(active?' show':'')+(active&&mine?' on':'')+(active&&talking.has(sid)?' talk':'');
+    }
+  }
   // browsers hold sound back until the page is touched: every tap wakes the listening and the lines up again
   function wake(){
     if(ac&&ac.state!=='running')try{ac.resume().catch(()=>{})}catch(_){}
     for(const ln of lines.values())if(ln.audio&&ln.audio.paused)ln.audio.play().catch(()=>{});
   }
-  return {start,update,stop,prune,incoming,toggle,wake,paint,setMuted,lock,info:()=>({active,me:me(),peers,lines:[...lines.keys()],muted:[...muted],locked,on})};
+  return {spk:SPK,start,update,stop,prune,incoming,toggle,wake,paint,setMuted,lock,info:()=>({active,me:me(),peers,lines:[...lines.keys()],muted:[...muted],locked,on})};
 })();
 function leaveNet(){
   VC.stop();
   try{NET.peer&&NET.peer.destroy()}catch(_){}
-  NET.peer=null;NET.peerOpen=false;NET.hostConn=null;NET.refused=false;NET.conns=new Map();NET.specs=new Map();NET.watching=false;NET.inbox=[];
+  NET.peer=null;NET.peerOpen=false;NET.hostConn=null;NET.refused=false;NET.specList=[];NET.swap=null;NET.swapIn=null;NET.swapInfo=null;NET.conns=new Map();NET.specs=new Map();NET.watching=false;NET.inbox=[];
 }
 // the host: claims a free room number and keeps the seat list
 // the room number 8888 belongs to Clint: whoever opens a room under that nickname gets 8888 (and only 8888), and nobody else is given it
@@ -10073,7 +10164,7 @@ function hostListen(peer){
 function broadcast(msg){
   for(const v of NET.conns.values())if(v.conn.open)v.conn.send(msg);
   // spectators get the moves (once they have been sent the table) and the goodbye
-  if(['evt','bye','mics','vpeers','vmuted'].includes(msg.t))for(const v of NET.specs.values())if(v.conn.open&&(v.ready||msg.t==='bye'))v.conn.send(msg);
+  if(['evt','bye','mics','vpeers','vmuted','specs'].includes(msg.t))for(const v of NET.specs.values())if(v.conn.open&&(v.ready||msg.t==='bye'))v.conn.send(msg);
 }
 function broadcastLobby(){for(const v of NET.conns.values())if(v.conn.open)v.conn.send({t:'lobby',seats:NET.lobby,you:v.dir,rules:RULES,ver:VERSION})}
 function hostOnData(conn,d){
@@ -10082,12 +10173,16 @@ function hostOnData(conn,d){
     sp.seen=Date.now();
     // a spectator's microphone: on only if the host has not turned the spectator's voice off
     if(d&&d.t==='mic'){NET.mics[sp.sid]=!!d.on&&!sp.muted;broadcast({t:'mics',m:NET.mics});VC.paint()}
+    // 请战: the spectator asks to play the next round
+    if(d&&d.t==='want'&&NET.started){sp.want=true;broadcastSpecs()}
     return;
   }
   const info=NET.conns.get(conn.peer);if(!info||!d)return;
   info.seen=Date.now();
   if(d.t==='bye'){hostOnClose(conn,'quit');try{conn.close()}catch(_){}return}
   if(d.t==='watch'){hostWatch(conn,info,d);return}
+  // 我要休息: a player gives up the seat to the spectator who asked
+  if(d.t==='rest'){if(NET.started&&info.dir)hostRest(info);return}
   if(d.t==='emote'){if(NET.started&&info.dir)Emotes.hostEmote(absOf(info.dir,NET.hostDir),d.id,d.to);return}
   if(d.t==='mic'){if(NET.started&&info.dir){NET.mics[absOf(info.dir,NET.hostDir)]=!!d.on;broadcast({t:'mics',m:NET.mics});VC.paint()}return}
   if(d.t==='sit'&&!NET.started){
@@ -10248,7 +10343,33 @@ function vcPeers(){
   return peers;
 }
 const mutedIds=()=>[...NET.specs.values()].filter(v=>v.muted).map(v=>v.sid);
-function broadcastPeers(){const peers=vcPeers();broadcast({t:'vpeers',peers});VC.update(peers)}
+function broadcastPeers(){const peers=vcPeers();broadcast({t:'vpeers',peers});VC.update(peers);broadcastSpecs()}
+// who is watching (names, and who has asked to play) and, once a player has agreed to rest, who gives way to whom: told to everyone
+function specsMsg(){
+  return{t:'specs',list:[...NET.specs.values()].filter(v=>v.ready).map(v=>({sid:v.sid,name:v.name,want:!!v.want})),
+    swap:NET.swap?{spec:NET.swap.specName,rest:NET.swap.restName}:null};
+}
+function broadcastSpecs(){const m=specsMsg();NET.specList=m.list;NET.swapInfo=m.swap;broadcast(m);renderSpecBar()}
+// a player (a friend, never the host, whose page runs the game) presses 我要休息 while a spectator has asked to play
+function hostRest(info){
+  const seat=absOf(info.dir,NET.hostDir);
+  const w=[...NET.specs.values()].find(v=>v.ready&&v.want);
+  if(!w||NET.swap||seat===0)return;
+  NET.swap={seat,dir:info.dir,sid:w.sid,specName:w.name,restName:info.name};
+  setMsg(`${info.name} 休息，下一局 ${w.name} 上场`);
+  broadcastSpecs();
+}
+// when the round is over the two change places: the player's page goes to watching, and once the seat is free the spectator's page
+// comes in to it (as a player who dropped out comes back)
+setInterval(()=>{
+  if(NET.mode!=='host'||!NET.swap||NET.swapIn)return;
+  if(!(G&&(G.phase==='roundEnd'||G.phase==='over')&&G.reveal>=4))return;
+  const sw=NET.swap,v=[...NET.conns.values()].find(x=>x.dir===sw.dir),sp=[...NET.specs.values()].find(x=>x.sid===sw.sid);
+  if(!v||!sp||!v.conn.open||!sp.conn.open){NET.swap=null;if(sp)sp.want=false;broadcastSpecs();return}
+  NET.swapIn={dir:sw.dir,sid:sw.sid};
+  v.conn.send({t:'toSpec'});
+  setTimeout(()=>{if(NET.swapIn){try{v.conn.close()}catch(_){}}},5000);
+},500);
 function hostSpecMute(sid){
   const sp=[...NET.specs.values()].find(v=>v.sid===sid);if(!sp)return;
   sp.muted=!sp.muted;
@@ -10261,6 +10382,7 @@ function hostOnClose(conn,how='drop'){
   const sp=NET.specs.get(conn.peer);
   if(sp&&sp.conn===conn){
     NET.specs.delete(conn.peer);delete NET.mics[sp.sid];
+    if(NET.swap&&NET.swap.sid===sp.sid&&!NET.swapIn)NET.swap=null;
     if(NET.started)setMsg(`${sp.name} 离开了观战`);
     broadcastPeers();broadcast({t:'mics',m:NET.mics});syncRoomOpt();
     return;
@@ -10269,6 +10391,12 @@ function hostOnClose(conn,how='drop'){
   NET.conns.delete(conn.peer);
   if(!NET.started){if(info.dir)NET.lobby[info.dir]=null;broadcastLobby();renderLobby();return}
   if(!info.dir)return;
+  // the player who gave way has gone: the spectator who takes the seat is called in
+  if(NET.swapIn&&NET.swapIn.dir===info.dir){
+    const sp=[...NET.specs.values()].find(x=>x.sid===NET.swapIn.sid);
+    if(sp&&sp.conn.open)sp.conn.send({t:'toPlayer',dir:info.dir});
+    NET.swapIn=null;NET.swap=null;
+  }
   // a friend who drops out mid-game: the computer takes over their seat from here on
   const seat=absOf(info.dir,NET.hostDir);
   const list=[...NET.humans].filter(h=>h!==seat);
@@ -10370,6 +10498,8 @@ function watchRoom(code){
 function specOnData(d){
   if(!d)return;
   NET.hostSeen=Date.now();
+  if(d.t==='specs'){NET.specList=d.list||[];NET.swapInfo=d.swap||null;renderSpecBar();return}
+  if(d.t==='toPlayer'){autoGo({act:'join',code:NET.specCode,dir:d.dir});return}
   if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
   if(d.t==='bye'){hostGone(false);return}
   if(d.t==='old'||d.t==='specfull'){
@@ -10400,6 +10530,7 @@ function enterSpec(d){
   NET.inbox=[];NET.pending=false;sel=new Set();
   hideOverlay();pileRebuild();
   $('#quitBtn').textContent='退出观战';
+  $('#wantBtn').hidden=false;
   if(G.phase==='tribPick'){G.clock=null;tribWait()}
   else if(G.phase==='return')retWait();
   else if(G.phase==='play')startTurn();
@@ -10417,9 +10548,13 @@ function specGone(lost){
   $('#specBack').onclick=()=>location.reload();
 }
 function sendSit(d){if(NET.hostConn&&NET.hostConn.open)NET.hostConn.send({t:'sit',dir:d,name:nickNow(),ver:VERSION})}
+// the page starts over as the other kind of person at the same table: it is reloaded with a note to itself (sessionStorage) saying where to go
+function autoGo(o){try{sessionStorage.setItem('guandan-auto',JSON.stringify({...o,t:Date.now()}))}catch(_){}location.reload()}
 function guestOnData(d){
   if(!d)return;
   NET.hostSeen=Date.now();
+  if(d.t==='specs'){NET.specList=d.list||[];NET.swapInfo=d.swap||null;renderSpecBar();return}
+  if(d.t==='toSpec'){autoGo({act:'watch',code:NET.lastCode});return}
   if(d.t==='ping'){NET.hostConn&&NET.hostConn.open&&NET.hostConn.send({t:'pong'});return}
   if(d.t==='bye'){hostGone(false);return}
   if(d.t==='mics'){NET.mics=d.m||{};VC.paint();return}
