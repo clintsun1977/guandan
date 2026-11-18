@@ -27,7 +27,8 @@ const phoneSignTop=()=>{const r=$('#seat2 .whorow').getBoundingClientRect();retu
 function syncTribBox(){
   let b=$('#tribBox');
   if(!b){b=document.createElement('div');b.id='tribBox';document.body.appendChild(b)}
-  const on=!!G&&(G.phase==='tribute'||G.phase==='prep'||(G.phase==='play'&&G.tribHold))&&((G.trib&&G.trib.length)||!!G.kang);
+  // (not while you still owe your return: the lines come once it is made)
+  const on=!!G&&(G.phase==='tribute'||G.phase==='prep'||(G.phase==='play'&&G.tribHold))&&((G.trib&&G.trib.length)||!!G.kang)&&!owesReturn(0);
   b.hidden=!on;
   if(!on)return;
   const html=tribHtml()+kangHtml();

@@ -151,8 +151,8 @@ function renderMsg(){
   let t='';
   if(G.phase==='return'){
     const mine=G.returns.find(x=>x.from===0);
-    t=tribHtml();
-    if(owesReturn(0))t+=`<div>还一张 10 或以下的牌给${NAMES[mine.to]}</div>`;
+    // who paid whom is shown once your own return is made (not while you are choosing it); no line spells out the rule
+    t=owesReturn(0)?'':tribHtml();
     const wait=G.returns.filter(x=>x.from!==0&&G.retPick[x.from]==null);
     if(wait.length)t+=`<div>等待${wait.map(x=>NAMES[x.from]).join('、')}还贡</div>`;
   }else if(G.phase==='tribPick'){
@@ -162,8 +162,6 @@ function renderMsg(){
     if(wait.length)t+=`<div>等待${wait.map(g=>NAMES[g]).join('、')}进贡</div>`;
   }else if(G.phase==='tribute'||G.phase==='prep'){
     t=G.notice?`<div>${G.notice}</div>`:'';
-    // done sorting and owing a return: it can go now, without waiting for the others to finish sorting
-    if(owesReturn(0))t+=`<div class="trib">还一张 10 或以下的牌给${NAMES[G.returns.find(x=>x.from===0).to]}</div>`;
   }else if(G.phase==='play'){
     t=G.notice?`<div>${G.notice}</div>`:'';
   }
