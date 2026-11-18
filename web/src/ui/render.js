@@ -60,7 +60,8 @@ function renderLastPlay(){
   // (what each player has just played is no longer written out here: the cards are on the table to be seen)
   if(G.phase==='play'&&G.trick){
     t='';
-  }else if(G.phase==='play'&&G.turn>=0)t=`${G.turn===0?'你':NAMES[G.turn]} 先出`;
+  }
+  // (no line says who leads: that is a hint, not something the table cannot show)
   const el=$('#lastPlay');
   if(el.dataset.t!==t){el.dataset.t=t;el.innerHTML=t}
   placeLastPlay();

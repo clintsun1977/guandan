@@ -4676,7 +4676,8 @@ function renderClocks(){
     $('#prepBigNum').textContent=Math.max(0,Math.ceil(c.left/1000));
     $('#prepR').classList.toggle('hurry',c.left<=HURRY_MS);
     placePrepBig();
-    $('#prepText').textContent=(G.returns&&G.returns.length?'理牌后还贡，':'')+`${G.turn===0?'你':NAMES[G.turn]}先出`;
+    // (no hint beside 理牌结束 any more: neither who leads nor that a return follows)
+    $('#prepText').textContent='';$('#prepText').hidden=true;
     $('#readyBtn').hidden=(G.ready||[]).includes(0);
   }
 }
@@ -5582,7 +5583,8 @@ function renderLastPlay(){
   // (what each player has just played is no longer written out here: the cards are on the table to be seen)
   if(G.phase==='play'&&G.trick){
     t='';
-  }else if(G.phase==='play'&&G.turn>=0)t=`${G.turn===0?'你':NAMES[G.turn]} 先出`;
+  }
+  // (no line says who leads: that is a hint, not something the table cannot show)
   const el=$('#lastPlay');
   if(el.dataset.t!==t){el.dataset.t=t;el.innerHTML=t}
   placeLastPlay();
@@ -9920,9 +9922,9 @@ const ROOM_PREFIX='guandan-room-';
 const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.miwifi.com:3478'},{urls:'stun:stun.qq.com:3478'},{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1118-0851';
+const VERSION='1118-0905';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c1977b85bf';
+const APP_HASH='c19774a278';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 document.querySelectorAll('.lobby-ver2').forEach(e=>{e.textContent=$('#verTag').textContent});
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';

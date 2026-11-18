@@ -125,7 +125,8 @@ function renderClocks(){
     $('#prepBigNum').textContent=Math.max(0,Math.ceil(c.left/1000));
     $('#prepR').classList.toggle('hurry',c.left<=HURRY_MS);
     placePrepBig();
-    $('#prepText').textContent=(G.returns&&G.returns.length?'理牌后还贡，':'')+`${G.turn===0?'你':NAMES[G.turn]}先出`;
+    // (no hint beside 理牌结束 any more: neither who leads nor that a return follows)
+    $('#prepText').textContent='';$('#prepText').hidden=true;
     $('#readyBtn').hidden=(G.ready||[]).includes(0);
   }
 }
