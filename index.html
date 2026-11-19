@@ -4192,6 +4192,17 @@ function doTribute(){
     return;
   }
   G.tribGivers=givers;G.tribPick={};G.clock=null;
+  // Each payer is independent of the other: who pays whom, and who leads, are settled here, at the start, because the card a payer owes is
+  // always the largest there is (only its suit can be chosen). Two payers with cards of one size: 贡左还右, each pays their 上家 and the
+  // return goes back to them; the 头游's 下家 leads. Otherwise the larger card goes to 头游, the smaller to 二游, and its payer leads.
+  const hv=g=>Math.max(...G.hands[g].filter(c=>!isWild(c,L)).map(c=>val(c,L)));
+  G.tribTo={};
+  if(dbl){
+    const [a,b]=givers.slice().sort((x,y)=>hv(y)-hv(x));
+    if(hv(a)===hv(b)){G.tribTo[a]=(a+3)%4;G.tribTo[b]=(b+3)%4;G.leader=(o[0]+1)%4}
+    else{G.tribTo[a]=o[0];G.tribTo[b]=o[1];G.leader=a}
+  }else{G.tribTo[givers[0]]=o[0];G.leader=givers[0]}
+  G.tribSent=[];G.tribArrived=0;G.tribPrep=false;G.tribFlying=0;G.returns=[];G.gives=[];
   if(givers.includes(0))sel=new Set();
   tribWait();
 }
@@ -4204,30 +4215,36 @@ function tribOptions(p){
 // largest card comes in several suits gets 30 seconds to choose, after which one goes for them
 const tribChoice=g=>new Set(tribOptions(g).map(c=>c.s)).size>1;
 function tribWait(){
-  for(const g of G.tribGivers)if(G.tribPick[g]==null&&(!isHumanSeat(g)||!tribChoice(g)))G.tribPick[g]=tributeCard(G.hands[g],G.L).id;
-  const left=G.tribGivers.filter(g=>G.tribPick[g]==null);
-  if(!left.length){G.clock=null;payTribute();return}
   G.phase='tribPick';
+  for(const g of G.tribGivers)if(G.tribPick[g]==null&&(!isHumanSeat(g)||!tribChoice(g)))G.tribPick[g]=tributeCard(G.hands[g],G.L).id;
+  // every payer who has chosen pays at once: nobody waits for the other payer's choosing, and whoever receives may return and sort meanwhile
+  for(const g of G.tribGivers)if(G.tribPick[g]!=null&&!G.tribSent.includes(g))payOne(g);
+  const left=G.tribGivers.filter(g=>G.tribPick[g]==null);
+  if(!left.length){G.clock=null;checkTribDone();if(G.phase==='tribPick')render();return}
   if(G.clock&&G.clock.who==='tribute')G.clock.seats=left;
   else G.clock={who:'tribute',seats:left,left:TRIB_MS,total:TRIB_MS};
   if(left.includes(0)&&!sel.size){const op=tribOptions(0);if(op.length===1)sel=new Set([op[0].id])}
   if(left.includes(0))Sound.play('turn');
   render();
 }
-function payTribute(){
-  const o=G.prevOut,L=G.L,dbl=o[1]%2===o[0]%2;
-  let tribs=G.tribGivers.map(g=>({g,card:G.hands[g].find(c=>c.id===G.tribPick[g])}));
-  if(dbl)tribs.sort((a,b)=>val(b.card,L)-val(a.card,L));
-  // two payers whose cards are equal: 贡左还右, each pays their 上家 (the seat before) and the return comes back from them to the payer, their 下家
-  const same=dbl&&val(tribs[0].card,L)===val(tribs[1].card,L);
-  const recv=same?tribs.map(t=>(t.g+3)%4):dbl?[o[0],o[1]]:[o[0]];
-  G.gives=tribs.map((t,i)=>({from:t.g,to:recv[i],id:t.card.id,label:'进贡'}));
-  G.trib=[];
-  // who leads: the payer of the larger card; with two equal cards, the 下家 of whoever came first (头游)
-  G.leader=same?(o[0]+1)%4:tribs[0].g;
-  G.returns=tribs.map((t,i)=>({from:recv[i],to:t.g}));
-  G.notice='';G.afterTrib=true;
-  runGives();
+// one payer's card goes across now, and its receiver owes a return that may be made as soon as the card is in their hand
+function payOne(g){
+  G.tribSent.push(g);
+  const to=G.tribTo[g],id=G.tribPick[g],tok=G.tok,entry={from:to,to:g,ready:false};
+  G.returns.push(entry);G.tribFlying=(G.tribFlying||0)+1;G.notice='';
+  handOver({from:g,to,id,label:'进贡'},tok).then(ok=>{
+    if(!ok)return;
+    G.tribFlying--;entry.ready=true;G.tribArrived++;
+    // a computer returns early, one after the other
+    if(!isHumanSeat(to))later(()=>{if((G.phase==='tribPick'||G.phase==='prep')&&G.returns.includes(entry))returnNow(to,aiReturnCard(G.hands[to],G.L).id)},1500);
+    checkTribDone();render();
+  });
+}
+// every payer has chosen and every card has arrived: the sorting minute begins (its clock starts here, not before)
+function checkTribDone(){
+  if(G.tribPrep||G.phase!=='tribPick'||G.tribArrived<G.tribGivers.length||G.tribGivers.some(g=>G.tribPick[g]==null))return;
+  G.tribPrep=true;G.clock=null;G.afterTrib=false;
+  startPrep(G.leader);
 }
 // one card changes hands: it leaves the giver's hand as it sets off and joins the receiver's on arrival;
 // false if a new round started meanwhile
@@ -4289,7 +4306,8 @@ function retWait(){
 }
 // owes a return now: in the return phase, or during the sorting minute once they have said they are done sorting
 // a player owing a return may give it any time from the start of the sorting, without first finishing their sorting
-const owesReturn=p=>(G.phase==='return'||G.phase==='prep')&&(G.returns||[]).some(x=>x.from===p)&&(G.retPick||{})[p]==null;
+// (a return can be made while the other payer is still choosing, once the card it answers has arrived)
+const owesReturn=p=>(G.phase==='return'||G.phase==='prep'||G.phase==='tribPick')&&(G.returns||[]).some(x=>x.from===p&&x.ready!==false)&&(G.retPick||{})[p]==null;
 // a return made during the sorting minute goes across at once, while the others are still sorting
 function returnNow(p,id){
   const x=G.returns.find(r=>r.from===p);if(!x)return;
@@ -4899,7 +4917,10 @@ function onPlay(){
   const ok=reads.filter(r=>beats(r,cur)).sort((a,b)=>strength(b)-strength(a));
   if(!ok.length){setMsg(`管不上${cur?TYPE_NAME[cur.type]:''}`,true);return}
   if(waitingHost())return;
-  if(askConfirm())return;
+  // leading with a bomb, a straight flush or the four jokers asks for one more press, unless it is the last play of the hand
+  // (any other play asks only if the 出牌需确认 option is on)
+  const lead=!cur&&isBomb(ok[0])&&cards.length<G.hands[0].length;
+  if(lead?askConfirmNow():askConfirm())return;
   coachRemember({...ok[0],cards});
   act({...playEvt(0,{...ok[0],cards}),...(coachAssisted()?{as:1}:{})});
 }
@@ -4942,18 +4963,18 @@ function syncCfmShow(){
   box.innerHTML=shown.map(c=>cardHTML(c,G.L)).join('');
   box.style.left=t.left+t.width/2+'px';box.style.top=t.top+t.height/2+'px';
   box.hidden=false;
-  // a payment or a return is confirmed with a button of its own under the card, well away from the one just pressed (and that one is
-  // dimmed meanwhile), so a quick second press cannot send the card
-  const pay=G.phase==='tribPick'?'进贡':'还贡',tribute=G.phase==='tribPick'||G.phase==='return'||owesReturn(0);
+  // a payment, a return or a play waiting for 确认 is confirmed with a button of its own under the cards, well away from the one just pressed
+  // (and that one is dimmed meanwhile), so a quick second press cannot send them
+  const pay=G.phase==='tribPick'&&G.tribGivers.includes(0)&&G.tribPick[0]==null?'进贡':'还贡',tribute=G.phase==='tribPick'||G.phase==='return'||owesReturn(0);
   let a=act;
-  if(tribute){
+  {
     if(!a){a=document.createElement('div');a.id='cfmAct';a.innerHTML='<button type="button" class="btn primary" id="cfmGo"></button><button type="button" class="btn" id="cfmNo">取消</button>';document.body.appendChild(a);
-      $('#cfmGo').onclick=()=>onReturn();
+      $('#cfmGo').onclick=()=>{if(G.phase==='play')onPlay();else onReturn()};
       $('#cfmNo').onclick=()=>{cfm=null;syncCfmShow();renderControls()}}
-    $('#cfmGo').textContent='确认'+pay;
+    $('#cfmGo').textContent=G.phase==='play'?'确认出牌':'确认'+pay;
     const br=box.getBoundingClientRect();
     a.style.left=t.left+t.width/2+'px';a.style.top=br.bottom+16+'px';a.hidden=false;
-  }else if(a)a.hidden=true;
+  }
 }
 addEventListener('resize',()=>{if(cfm)syncCfmShow()});
 function onPass(){
@@ -4971,8 +4992,7 @@ function onHint(){
 }
 function onReturn(){
   if(waitingHost())return;
-  if(G.phase==='tribPick'){
-    if(!G.tribGivers.includes(0)||G.tribPick[0]!=null)return;
+  if(G.phase==='tribPick'&&G.tribGivers.includes(0)&&G.tribPick[0]==null){
     const cards=selectedCards(),ok=tribOptions(0);
     if(cards.length!==1||!ok.includes(cards[0])){setMsg('要进贡手里最大的一张牌（百搭除外）',true);return}
     if(askConfirmNow())return;
@@ -5019,11 +5039,11 @@ function applyEvt(e){
       if(G.phase!=='cut'||G.busy)return false;
       doCut();return true;
     case'return':{
-      if(G.phase!=='return'&&G.phase!=='prep')return false;
+      if(G.phase!=='return'&&G.phase!=='prep'&&G.phase!=='tribPick')return false;
       if(!owesReturn(p)||!G.hands[p].some(c=>c.id===e.id))return true;
       G.fresh=G.fresh.filter(id=>id!==e.id);
       if(p===0){sel=new Set();NET.pending=false}
-      if(G.phase==='prep'){returnNow(p,e.id);return true}
+      if(G.phase==='prep'||G.phase==='tribPick'){returnNow(p,e.id);return true}
       G.retPick[p]=e.id;
       retWait();
       return true;
@@ -5644,8 +5664,10 @@ function renderControls(){
   // (a payment or a return waits for a second press: the button then says 确认)
   $('#returnBtn').textContent=pay?'进贡':'还贡';
   $('#returnBtn').disabled=!!(cfm&&ret);
-  $('#playBtn').textContent=cfm?'确认':'出牌';
-  $('#playBtn').classList.toggle('cfm',!!cfm);
+  // (while the play waits for 确认 this button is dimmed: the 确认出牌 under the cards is the one to press)
+  $('#playBtn').textContent='出牌';
+  $('#playBtn').classList.remove('cfm');
+  if(cfm&&G.phase==='play')can.playBtn=false;
   syncCfmShow();
   for(const id in can){const b=$('#'+id);b.disabled=!can[id];b.classList.toggle('primary',can[id])}
   // 同花顺 beside your name while you sort your cards and while you play them
@@ -9922,9 +9944,9 @@ const ROOM_PREFIX='guandan-room-';
 const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.miwifi.com:3478'},{urls:'stun:stun.qq.com:3478'},{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1118-0905';
+const VERSION='1119-0910';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19774a278';
+const APP_HASH='c19773dadf';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 document.querySelectorAll('.lobby-ver2').forEach(e=>{e.textContent=$('#verTag').textContent});
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
@@ -10269,7 +10291,8 @@ function hostResume(conn,info,d){
 function tableStill(){
   if(!G||G.busy||G.stepWait!=null)return false;
   switch(G.phase){
-    case'tribPick':case'return':case'prep':return true;
+    case'tribPick':return !(G.tribFlying>0);
+    case'return':case'prep':return true;
     case'play':return G.turn>=0&&!G.tribHold;
     case'roundEnd':case'over':return G.reveal>=4;
   }
@@ -10293,7 +10316,8 @@ function rotateG(g,k){
   const tm=t=>typeof t==='number'?(t+k)%2:t;
   const swap=a=>Array.isArray(a)&&k%2?[a[1],a[0]]:a;
   g.hands=perm(g.hands);g.last=perm(g.last);
-  for(const q of['out','prevOut','ready','nextReady','tribGivers'])g[q]=fl(g[q]);
+  for(const q of['out','prevOut','ready','nextReady','tribGivers','tribSent'])g[q]=fl(g[q]);
+  if(g.tribTo){const r={};for(const q in g.tribTo)r[f(+q)]=f(g.tribTo[q]);g.tribTo=r}
   for(const q of['turn','nextLeader','leader','firstLeader','cutter','shuffler','dealIdx','pausedBy'])if(q in g)g[q]=f(g[q]);
   if(g.trick)g.trick.player=f(g.trick.player);
   for(const t of g.trickPlays||[])t.p=f(t.p);

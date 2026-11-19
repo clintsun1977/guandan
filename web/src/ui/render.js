@@ -121,8 +121,10 @@ function renderControls(){
   // (a payment or a return waits for a second press: the button then says 确认)
   $('#returnBtn').textContent=pay?'进贡':'还贡';
   $('#returnBtn').disabled=!!(cfm&&ret);
-  $('#playBtn').textContent=cfm?'确认':'出牌';
-  $('#playBtn').classList.toggle('cfm',!!cfm);
+  // (while the play waits for 确认 this button is dimmed: the 确认出牌 under the cards is the one to press)
+  $('#playBtn').textContent='出牌';
+  $('#playBtn').classList.remove('cfm');
+  if(cfm&&G.phase==='play')can.playBtn=false;
   syncCfmShow();
   for(const id in can){const b=$('#'+id);b.disabled=!can[id];b.classList.toggle('primary',can[id])}
   // 同花顺 beside your name while you sort your cards and while you play them

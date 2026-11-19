@@ -15,7 +15,10 @@ function onPlay(){
   const ok=reads.filter(r=>beats(r,cur)).sort((a,b)=>strength(b)-strength(a));
   if(!ok.length){setMsg(`管不上${cur?TYPE_NAME[cur.type]:''}`,true);return}
   if(waitingHost())return;
-  if(askConfirm())return;
+  // leading with a bomb, a straight flush or the four jokers asks for one more press, unless it is the last play of the hand
+  // (any other play asks only if the 出牌需确认 option is on)
+  const lead=!cur&&isBomb(ok[0])&&cards.length<G.hands[0].length;
+  if(lead?askConfirmNow():askConfirm())return;
   coachRemember({...ok[0],cards});
   act({...playEvt(0,{...ok[0],cards}),...(coachAssisted()?{as:1}:{})});
 }
@@ -58,18 +61,18 @@ function syncCfmShow(){
   box.innerHTML=shown.map(c=>cardHTML(c,G.L)).join('');
   box.style.left=t.left+t.width/2+'px';box.style.top=t.top+t.height/2+'px';
   box.hidden=false;
-  // a payment or a return is confirmed with a button of its own under the card, well away from the one just pressed (and that one is
-  // dimmed meanwhile), so a quick second press cannot send the card
-  const pay=G.phase==='tribPick'?'进贡':'还贡',tribute=G.phase==='tribPick'||G.phase==='return'||owesReturn(0);
+  // a payment, a return or a play waiting for 确认 is confirmed with a button of its own under the cards, well away from the one just pressed
+  // (and that one is dimmed meanwhile), so a quick second press cannot send them
+  const pay=G.phase==='tribPick'&&G.tribGivers.includes(0)&&G.tribPick[0]==null?'进贡':'还贡',tribute=G.phase==='tribPick'||G.phase==='return'||owesReturn(0);
   let a=act;
-  if(tribute){
+  {
     if(!a){a=document.createElement('div');a.id='cfmAct';a.innerHTML='<button type="button" class="btn primary" id="cfmGo"></button><button type="button" class="btn" id="cfmNo">取消</button>';document.body.appendChild(a);
-      $('#cfmGo').onclick=()=>onReturn();
+      $('#cfmGo').onclick=()=>{if(G.phase==='play')onPlay();else onReturn()};
       $('#cfmNo').onclick=()=>{cfm=null;syncCfmShow();renderControls()}}
-    $('#cfmGo').textContent='确认'+pay;
+    $('#cfmGo').textContent=G.phase==='play'?'确认出牌':'确认'+pay;
     const br=box.getBoundingClientRect();
     a.style.left=t.left+t.width/2+'px';a.style.top=br.bottom+16+'px';a.hidden=false;
-  }else if(a)a.hidden=true;
+  }
 }
 addEventListener('resize',()=>{if(cfm)syncCfmShow()});
 function onPass(){
@@ -87,8 +90,7 @@ function onHint(){
 }
 function onReturn(){
   if(waitingHost())return;
-  if(G.phase==='tribPick'){
-    if(!G.tribGivers.includes(0)||G.tribPick[0]!=null)return;
+  if(G.phase==='tribPick'&&G.tribGivers.includes(0)&&G.tribPick[0]==null){
     const cards=selectedCards(),ok=tribOptions(0);
     if(cards.length!==1||!ok.includes(cards[0])){setMsg('要进贡手里最大的一张牌（百搭除外）',true);return}
     if(askConfirmNow())return;

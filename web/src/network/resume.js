@@ -24,7 +24,8 @@ function hostResume(conn,info,d){
 function tableStill(){
   if(!G||G.busy||G.stepWait!=null)return false;
   switch(G.phase){
-    case'tribPick':case'return':case'prep':return true;
+    case'tribPick':return !(G.tribFlying>0);
+    case'return':case'prep':return true;
     case'play':return G.turn>=0&&!G.tribHold;
     case'roundEnd':case'over':return G.reveal>=4;
   }
@@ -48,7 +49,8 @@ function rotateG(g,k){
   const tm=t=>typeof t==='number'?(t+k)%2:t;
   const swap=a=>Array.isArray(a)&&k%2?[a[1],a[0]]:a;
   g.hands=perm(g.hands);g.last=perm(g.last);
-  for(const q of['out','prevOut','ready','nextReady','tribGivers'])g[q]=fl(g[q]);
+  for(const q of['out','prevOut','ready','nextReady','tribGivers','tribSent'])g[q]=fl(g[q]);
+  if(g.tribTo){const r={};for(const q in g.tribTo)r[f(+q)]=f(g.tribTo[q]);g.tribTo=r}
   for(const q of['turn','nextLeader','leader','firstLeader','cutter','shuffler','dealIdx','pausedBy'])if(q in g)g[q]=f(g[q]);
   if(g.trick)g.trick.player=f(g.trick.player);
   for(const t of g.trickPlays||[])t.p=f(t.p);

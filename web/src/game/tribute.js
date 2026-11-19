@@ -14,6 +14,17 @@ function doTribute(){
     return;
   }
   G.tribGivers=givers;G.tribPick={};G.clock=null;
+  // Each payer is independent of the other: who pays whom, and who leads, are settled here, at the start, because the card a payer owes is
+  // always the largest there is (only its suit can be chosen). Two payers with cards of one size: 贡左还右, each pays their 上家 and the
+  // return goes back to them; the 头游's 下家 leads. Otherwise the larger card goes to 头游, the smaller to 二游, and its payer leads.
+  const hv=g=>Math.max(...G.hands[g].filter(c=>!isWild(c,L)).map(c=>val(c,L)));
+  G.tribTo={};
+  if(dbl){
+    const [a,b]=givers.slice().sort((x,y)=>hv(y)-hv(x));
+    if(hv(a)===hv(b)){G.tribTo[a]=(a+3)%4;G.tribTo[b]=(b+3)%4;G.leader=(o[0]+1)%4}
+    else{G.tribTo[a]=o[0];G.tribTo[b]=o[1];G.leader=a}
+  }else{G.tribTo[givers[0]]=o[0];G.leader=givers[0]}
+  G.tribSent=[];G.tribArrived=0;G.tribPrep=false;G.tribFlying=0;G.returns=[];G.gives=[];
   if(givers.includes(0))sel=new Set();
   tribWait();
 }
@@ -26,30 +37,36 @@ function tribOptions(p){
 // largest card comes in several suits gets 30 seconds to choose, after which one goes for them
 const tribChoice=g=>new Set(tribOptions(g).map(c=>c.s)).size>1;
 function tribWait(){
-  for(const g of G.tribGivers)if(G.tribPick[g]==null&&(!isHumanSeat(g)||!tribChoice(g)))G.tribPick[g]=tributeCard(G.hands[g],G.L).id;
-  const left=G.tribGivers.filter(g=>G.tribPick[g]==null);
-  if(!left.length){G.clock=null;payTribute();return}
   G.phase='tribPick';
+  for(const g of G.tribGivers)if(G.tribPick[g]==null&&(!isHumanSeat(g)||!tribChoice(g)))G.tribPick[g]=tributeCard(G.hands[g],G.L).id;
+  // every payer who has chosen pays at once: nobody waits for the other payer's choosing, and whoever receives may return and sort meanwhile
+  for(const g of G.tribGivers)if(G.tribPick[g]!=null&&!G.tribSent.includes(g))payOne(g);
+  const left=G.tribGivers.filter(g=>G.tribPick[g]==null);
+  if(!left.length){G.clock=null;checkTribDone();if(G.phase==='tribPick')render();return}
   if(G.clock&&G.clock.who==='tribute')G.clock.seats=left;
   else G.clock={who:'tribute',seats:left,left:TRIB_MS,total:TRIB_MS};
   if(left.includes(0)&&!sel.size){const op=tribOptions(0);if(op.length===1)sel=new Set([op[0].id])}
   if(left.includes(0))Sound.play('turn');
   render();
 }
-function payTribute(){
-  const o=G.prevOut,L=G.L,dbl=o[1]%2===o[0]%2;
-  let tribs=G.tribGivers.map(g=>({g,card:G.hands[g].find(c=>c.id===G.tribPick[g])}));
-  if(dbl)tribs.sort((a,b)=>val(b.card,L)-val(a.card,L));
-  // two payers whose cards are equal: 贡左还右, each pays their 上家 (the seat before) and the return comes back from them to the payer, their 下家
-  const same=dbl&&val(tribs[0].card,L)===val(tribs[1].card,L);
-  const recv=same?tribs.map(t=>(t.g+3)%4):dbl?[o[0],o[1]]:[o[0]];
-  G.gives=tribs.map((t,i)=>({from:t.g,to:recv[i],id:t.card.id,label:'进贡'}));
-  G.trib=[];
-  // who leads: the payer of the larger card; with two equal cards, the 下家 of whoever came first (头游)
-  G.leader=same?(o[0]+1)%4:tribs[0].g;
-  G.returns=tribs.map((t,i)=>({from:recv[i],to:t.g}));
-  G.notice='';G.afterTrib=true;
-  runGives();
+// one payer's card goes across now, and its receiver owes a return that may be made as soon as the card is in their hand
+function payOne(g){
+  G.tribSent.push(g);
+  const to=G.tribTo[g],id=G.tribPick[g],tok=G.tok,entry={from:to,to:g,ready:false};
+  G.returns.push(entry);G.tribFlying=(G.tribFlying||0)+1;G.notice='';
+  handOver({from:g,to,id,label:'进贡'},tok).then(ok=>{
+    if(!ok)return;
+    G.tribFlying--;entry.ready=true;G.tribArrived++;
+    // a computer returns early, one after the other
+    if(!isHumanSeat(to))later(()=>{if((G.phase==='tribPick'||G.phase==='prep')&&G.returns.includes(entry))returnNow(to,aiReturnCard(G.hands[to],G.L).id)},1500);
+    checkTribDone();render();
+  });
+}
+// every payer has chosen and every card has arrived: the sorting minute begins (its clock starts here, not before)
+function checkTribDone(){
+  if(G.tribPrep||G.phase!=='tribPick'||G.tribArrived<G.tribGivers.length||G.tribGivers.some(g=>G.tribPick[g]==null))return;
+  G.tribPrep=true;G.clock=null;G.afterTrib=false;
+  startPrep(G.leader);
 }
 // one card changes hands: it leaves the giver's hand as it sets off and joins the receiver's on arrival;
 // false if a new round started meanwhile
@@ -111,7 +128,8 @@ function retWait(){
 }
 // owes a return now: in the return phase, or during the sorting minute once they have said they are done sorting
 // a player owing a return may give it any time from the start of the sorting, without first finishing their sorting
-const owesReturn=p=>(G.phase==='return'||G.phase==='prep')&&(G.returns||[]).some(x=>x.from===p)&&(G.retPick||{})[p]==null;
+// (a return can be made while the other payer is still choosing, once the card it answers has arrived)
+const owesReturn=p=>(G.phase==='return'||G.phase==='prep'||G.phase==='tribPick')&&(G.returns||[]).some(x=>x.from===p&&x.ready!==false)&&(G.retPick||{})[p]==null;
 // a return made during the sorting minute goes across at once, while the others are still sorting
 function returnNow(p,id){
   const x=G.returns.find(r=>r.from===p);if(!x)return;

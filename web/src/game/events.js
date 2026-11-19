@@ -27,11 +27,11 @@ function applyEvt(e){
       if(G.phase!=='cut'||G.busy)return false;
       doCut();return true;
     case'return':{
-      if(G.phase!=='return'&&G.phase!=='prep')return false;
+      if(G.phase!=='return'&&G.phase!=='prep'&&G.phase!=='tribPick')return false;
       if(!owesReturn(p)||!G.hands[p].some(c=>c.id===e.id))return true;
       G.fresh=G.fresh.filter(id=>id!==e.id);
       if(p===0){sel=new Set();NET.pending=false}
-      if(G.phase==='prep'){returnNow(p,e.id);return true}
+      if(G.phase==='prep'||G.phase==='tribPick'){returnNow(p,e.id);return true}
       G.retPick[p]=e.id;
       retWait();
       return true;
