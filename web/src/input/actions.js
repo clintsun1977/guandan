@@ -39,7 +39,7 @@ const selKey=()=>[...sel].sort((a,b)=>a-b).join(',');
 // paying or returning a tribute card always asks twice: the first press shows the card at twice its size, the second sends it
 function askConfirmNow(){
   if(cfm===selKey())return false;
-  cfm=selKey();renderControls();return true;
+  cfm=selKey();renderControls();renderMsg();syncTribBox();return true;
 }
 function askConfirm(){
   if(!confirmPlay||cfm===selKey())return false;
@@ -68,7 +68,7 @@ function syncCfmShow(){
   {
     if(!a){a=document.createElement('div');a.id='cfmAct';a.innerHTML='<button type="button" class="btn primary" id="cfmGo"></button><button type="button" class="btn" id="cfmNo">取消</button>';document.body.appendChild(a);
       $('#cfmGo').onclick=()=>{if(G.phase==='play')onPlay();else onReturn()};
-      $('#cfmNo').onclick=()=>{cfm=null;syncCfmShow();renderControls()}}
+      $('#cfmNo').onclick=()=>{cfm=null;syncCfmShow();renderControls();renderMsg();syncTribBox()}}
     $('#cfmGo').textContent=G.phase==='play'?'确认出牌':'确认'+pay;
     const br=box.getBoundingClientRect();
     a.style.left=t.left+t.width/2+'px';a.style.top=br.bottom+16+'px';a.hidden=false;

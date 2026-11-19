@@ -195,7 +195,8 @@ class EsSolver{
 // once, without the long wait) (the exact search of a ten-card endgame is quick in most deals and very slow in a few: such a deal is dropped); the search stops
 // early (after minStop deals) once it is settled, that is when, by the deals so far, some play beats the rules' play by edge with stopZ standard
 // errors to spare, or no play can plausibly do so
-const BRAIN={max:12,k:40,edge:.2,ms:30000,minWorlds:3,worldMs:10000,firstMs:3000,minStop:8,stopZ:2.5,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
+// on: false while the endgame brain is put away (it takes too long); set it to true to have it work again
+const BRAIN={on:false,max:12,k:40,edge:.2,ms:30000,minWorlds:3,worldMs:10000,firstMs:3000,minStop:8,stopZ:2.5,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
 // a position's exact result for seats 0 and 2 (-3..3), from a solver that already holds part of the search (the table is shared)
 function esValue(sv,T){
   if(mcOver(T))return mcReward(T);
@@ -204,7 +205,7 @@ function esValue(sv,T){
   return lo;
 }
 const brainOn=p=>{
-  if(typeof G==='undefined'||!G||G.phase!=='play'||G.turn!==p)return false;
+  if(!BRAIN.on||typeof G==='undefined'||!G||G.phase!=='play'||G.turn!==p)return false;
   for(let i=0;i<4;i++)if(G.hands[i].length>BRAIN.max)return false;
   return G.hands[p].length>0;
 };

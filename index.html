@@ -3467,7 +3467,8 @@ class EsSolver{
 // once, without the long wait) (the exact search of a ten-card endgame is quick in most deals and very slow in a few: such a deal is dropped); the search stops
 // early (after minStop deals) once it is settled, that is when, by the deals so far, some play beats the rules' play by edge with stopZ standard
 // errors to spare, or no play can plausibly do so
-const BRAIN={max:12,k:40,edge:.2,ms:30000,minWorlds:3,worldMs:10000,firstMs:3000,minStop:8,stopZ:2.5,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
+// on: false while the endgame brain is put away (it takes too long); set it to true to have it work again
+const BRAIN={on:false,max:12,k:40,edge:.2,ms:30000,minWorlds:3,worldMs:10000,firstMs:3000,minStop:8,stopZ:2.5,stat:{calls:0,used:0,fallback:0,changed:0,ms:0}};
 // a position's exact result for seats 0 and 2 (-3..3), from a solver that already holds part of the search (the table is shared)
 function esValue(sv,T){
   if(mcOver(T))return mcReward(T);
@@ -3476,7 +3477,7 @@ function esValue(sv,T){
   return lo;
 }
 const brainOn=p=>{
-  if(typeof G==='undefined'||!G||G.phase!=='play'||G.turn!==p)return false;
+  if(!BRAIN.on||typeof G==='undefined'||!G||G.phase!=='play'||G.turn!==p)return false;
   for(let i=0;i<4;i++)if(G.hands[i].length>BRAIN.max)return false;
   return G.hands[p].length>0;
 };
@@ -4941,7 +4942,7 @@ const selKey=()=>[...sel].sort((a,b)=>a-b).join(',');
 // paying or returning a tribute card always asks twice: the first press shows the card at twice its size, the second sends it
 function askConfirmNow(){
   if(cfm===selKey())return false;
-  cfm=selKey();renderControls();return true;
+  cfm=selKey();renderControls();renderMsg();syncTribBox();return true;
 }
 function askConfirm(){
   if(!confirmPlay||cfm===selKey())return false;
@@ -4970,7 +4971,7 @@ function syncCfmShow(){
   {
     if(!a){a=document.createElement('div');a.id='cfmAct';a.innerHTML='<button type="button" class="btn primary" id="cfmGo"></button><button type="button" class="btn" id="cfmNo">取消</button>';document.body.appendChild(a);
       $('#cfmGo').onclick=()=>{if(G.phase==='play')onPlay();else onReturn()};
-      $('#cfmNo').onclick=()=>{cfm=null;syncCfmShow();renderControls()}}
+      $('#cfmNo').onclick=()=>{cfm=null;syncCfmShow();renderControls();renderMsg();syncTribBox()}}
     $('#cfmGo').textContent=G.phase==='play'?'确认出牌':'确认'+pay;
     const br=box.getBoundingClientRect();
     a.style.left=t.left+t.width/2+'px';a.style.top=br.bottom+16+'px';a.hidden=false;
@@ -5697,8 +5698,9 @@ function renderMsg(){
   let t='';
   if(G.phase==='return'){
     const mine=G.returns.find(x=>x.from===0);
-    // who paid whom is shown once your own return is made (not while you are choosing it); no line spells out the rule
-    t=owesReturn(0)?'':tribHtml();
+    // who paid whom is on every screen from the first moment; on the screen of the one returning it goes while 确认还贡 is up (so the two do not
+    // meet), and comes back if that is called off or once the return is made
+    t=cfm&&owesReturn(0)?'':tribHtml();
     const wait=G.returns.filter(x=>x.from!==0&&G.retPick[x.from]==null);
     if(wait.length)t+=`<div>等待${wait.map(x=>NAMES[x.from]).join('、')}还贡</div>`;
   }else if(G.phase==='tribPick'){
@@ -5766,8 +5768,9 @@ const phoneSignTop=()=>{const r=$('#seat2 .whorow').getBoundingClientRect();retu
 function syncTribBox(){
   let b=$('#tribBox');
   if(!b){b=document.createElement('div');b.id='tribBox';document.body.appendChild(b)}
-  // (not while you still owe your return: the lines come once it is made)
-  const on=!!G&&(G.phase==='tribute'||G.phase==='prep'||(G.phase==='play'&&G.tribHold))&&((G.trib&&G.trib.length)||!!G.kang)&&!owesReturn(0);
+  // (shown as the cards go across, in the sorting, and for the three seconds before the first play; not on the screen of one who has a return
+  // waiting for 确认, where it would meet the button)
+  const on=!!G&&(G.phase==='tribute'||G.phase==='tribPick'||G.phase==='prep'||(G.phase==='play'&&G.tribHold))&&((G.trib&&G.trib.length)||!!G.kang)&&!(cfm&&owesReturn(0));
   b.hidden=!on;
   if(!on)return;
   const html=tribHtml()+kangHtml();
@@ -9944,9 +9947,9 @@ const ROOM_PREFIX='guandan-room-';
 const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.miwifi.com:3478'},{urls:'stun:stun.qq.com:3478'},{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1119-0910';
+const VERSION='1119-1050';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19773dadf';
+const APP_HASH='c19775f648';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 document.querySelectorAll('.lobby-ver2').forEach(e=>{e.textContent=$('#verTag').textContent});
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';

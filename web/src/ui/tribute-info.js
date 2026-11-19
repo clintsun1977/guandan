@@ -27,8 +27,9 @@ const phoneSignTop=()=>{const r=$('#seat2 .whorow').getBoundingClientRect();retu
 function syncTribBox(){
   let b=$('#tribBox');
   if(!b){b=document.createElement('div');b.id='tribBox';document.body.appendChild(b)}
-  // (not while you still owe your return: the lines come once it is made)
-  const on=!!G&&(G.phase==='tribute'||G.phase==='prep'||(G.phase==='play'&&G.tribHold))&&((G.trib&&G.trib.length)||!!G.kang)&&!owesReturn(0);
+  // (shown as the cards go across, in the sorting, and for the three seconds before the first play; not on the screen of one who has a return
+  // waiting for 确认, where it would meet the button)
+  const on=!!G&&(G.phase==='tribute'||G.phase==='tribPick'||G.phase==='prep'||(G.phase==='play'&&G.tribHold))&&((G.trib&&G.trib.length)||!!G.kang)&&!(cfm&&owesReturn(0));
   b.hidden=!on;
   if(!on)return;
   const html=tribHtml()+kangHtml();

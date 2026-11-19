@@ -154,8 +154,9 @@ function renderMsg(){
   let t='';
   if(G.phase==='return'){
     const mine=G.returns.find(x=>x.from===0);
-    // who paid whom is shown once your own return is made (not while you are choosing it); no line spells out the rule
-    t=owesReturn(0)?'':tribHtml();
+    // who paid whom is on every screen from the first moment; on the screen of the one returning it goes while 确认还贡 is up (so the two do not
+    // meet), and comes back if that is called off or once the return is made
+    t=cfm&&owesReturn(0)?'':tribHtml();
     const wait=G.returns.filter(x=>x.from!==0&&G.retPick[x.from]==null);
     if(wait.length)t+=`<div>等待${wait.map(x=>NAMES[x.from]).join('、')}还贡</div>`;
   }else if(G.phase==='tribPick'){
