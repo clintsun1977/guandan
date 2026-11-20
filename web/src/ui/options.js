@@ -61,12 +61,21 @@ document.addEventListener('click',e=>{
 
 // 观战: the names of the people watching, under the buttons at the top right, each with a microphone mark; and, when one of them has asked to
 // play (请战), a notice to the players with 我要休息 for those who may give up their seat
+// (the bar stands just under the lowest of the buttons at the top right, whatever number of rows they make)
+function placeSpecBar(){
+  const bar=$('#specBar'),acts=document.querySelector('.bar .acts');
+  if(!bar||bar.hidden||!acts)return;
+  const top=Math.round(Math.max(...[...acts.querySelectorAll('button')].filter(b=>b.offsetHeight&&!b.dataset.side).map(b=>b.getBoundingClientRect().bottom),acts.getBoundingClientRect().bottom))+8+'px';
+  if(bar.style.top!==top)bar.style.top=top;
+}
+setInterval(placeSpecBar,400);
+addEventListener('resize',placeSpecBar);
 function renderSpecBar(){
   const bar=$('#specBar'),list=NET.specList||[];
   if(bar){
     bar.hidden=!list.length;
     bar.innerHTML=list.map(s=>`<div class="stag"><span class="sn">${String(s.name).replace(/[<>&"']/g,'')}</span><span class="vc" data-sid="${s.sid}">${VC.spk}</span></div>`).join('');
-    VC.paint();
+    VC.paint();placeSpecBar();
   }
   const ban=$('#wantBanner'),w=list.filter(s=>s.want),sw=NET.swapInfo;
   if(!ban)return;

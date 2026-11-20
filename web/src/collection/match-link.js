@@ -11,7 +11,8 @@ function mlLoad(){
   catch(_){return null}
 }
 function mlStore(m){try{m?localStorage.setItem(MATCH_KEY,JSON.stringify(m)):localStorage.removeItem(MATCH_KEY)}catch(_){}}
-const mlOwn=()=>NET.mode!=='guest'&&!TEST&&!SPEC;
+// (a friend at someone else's table keeps the match too: if the line breaks and they come back to the lobby, 选级 offers 「继续上一把」 there as well)
+const mlOwn=()=>!TEST&&!SPEC;
 const mlHostDir=()=>NET.mode==='solo'?myDir:NET.hostDir;
 const mlDir=p=>DIRS[(DIRS.indexOf(mlHostDir())+toAbs(p))%4];
 const mlSide=t=>dirSide(mlDir(t)); // team t sits at seats t and t+2

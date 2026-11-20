@@ -79,3 +79,9 @@ html.phone .tribpop{left:auto;right:0}
 .wantbanner[hidden]{display:none}
 .wantbanner .btn{padding:6px 16px;font-size:17px;border-radius:10px}
 #wantBtn:disabled{opacity:.5}
+/* the notice that a watcher wants to play: at the top left, to the right of 掼蛋, narrow enough to stay clear of the partner's plate in the middle */
+.wantbanner{top:10px;left:74px;transform:none;flex-wrap:wrap;gap:6px 10px;max-width:max(190px,calc(50vw - 140px));font-size:15px;padding:6px 10px}
+.wantbanner .btn{padding:4px 12px;font-size:15px}
+/* a watcher's screen: the players' plates are wider, the microphone mark has its own room at the right end and does not meet the name */
+body.spec .seat .who{padding-right:32px}
+body.spec #mebar .meinfo{padding-right:34px}

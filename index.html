@@ -143,6 +143,12 @@ html.phone .tribpop{left:auto;right:0}
 .wantbanner[hidden]{display:none}
 .wantbanner .btn{padding:6px 16px;font-size:17px;border-radius:10px}
 #wantBtn:disabled{opacity:.5}
+/* the notice that a watcher wants to play: at the top left, to the right of 掼蛋, narrow enough to stay clear of the partner's plate in the middle */
+.wantbanner{top:10px;left:74px;transform:none;flex-wrap:wrap;gap:6px 10px;max-width:max(190px,calc(50vw - 140px));font-size:15px;padding:6px 10px}
+.wantbanner .btn{padding:4px 12px;font-size:15px}
+/* a watcher's screen: the players' plates are wider, the microphone mark has its own room at the right end and does not meet the name */
+body.spec .seat .who{padding-right:32px}
+body.spec #mebar .meinfo{padding-right:34px}
 /* the deck: shuffled and cut in the middle of the table before every deal */
 .stack{position:absolute;left:0;top:0;width:var(--cw);height:calc(var(--cw)*1.4);margin:calc(var(--cw)*-.7) 0 0 calc(var(--cw)*-.5);
   transition:transform .32s cubic-bezier(.3,.7,.3,1);pointer-events:none;z-index:7000}
@@ -7649,12 +7655,21 @@ document.addEventListener('click',e=>{
 
 // 观战: the names of the people watching, under the buttons at the top right, each with a microphone mark; and, when one of them has asked to
 // play (请战), a notice to the players with 我要休息 for those who may give up their seat
+// (the bar stands just under the lowest of the buttons at the top right, whatever number of rows they make)
+function placeSpecBar(){
+  const bar=$('#specBar'),acts=document.querySelector('.bar .acts');
+  if(!bar||bar.hidden||!acts)return;
+  const top=Math.round(Math.max(...[...acts.querySelectorAll('button')].filter(b=>b.offsetHeight&&!b.dataset.side).map(b=>b.getBoundingClientRect().bottom),acts.getBoundingClientRect().bottom))+8+'px';
+  if(bar.style.top!==top)bar.style.top=top;
+}
+setInterval(placeSpecBar,400);
+addEventListener('resize',placeSpecBar);
 function renderSpecBar(){
   const bar=$('#specBar'),list=NET.specList||[];
   if(bar){
     bar.hidden=!list.length;
     bar.innerHTML=list.map(s=>`<div class="stag"><span class="sn">${String(s.name).replace(/[<>&"']/g,'')}</span><span class="vc" data-sid="${s.sid}">${VC.spk}</span></div>`).join('');
-    VC.paint();
+    VC.paint();placeSpecBar();
   }
   const ban=$('#wantBanner'),w=list.filter(s=>s.want),sw=NET.swapInfo;
   if(!ban)return;
@@ -8365,7 +8380,8 @@ function mlLoad(){
   catch(_){return null}
 }
 function mlStore(m){try{m?localStorage.setItem(MATCH_KEY,JSON.stringify(m)):localStorage.removeItem(MATCH_KEY)}catch(_){}}
-const mlOwn=()=>NET.mode!=='guest'&&!TEST&&!SPEC;
+// (a friend at someone else's table keeps the match too: if the line breaks and they come back to the lobby, 选级 offers 「继续上一把」 there as well)
+const mlOwn=()=>!TEST&&!SPEC;
 const mlHostDir=()=>NET.mode==='solo'?myDir:NET.hostDir;
 const mlDir=p=>DIRS[(DIRS.indexOf(mlHostDir())+toAbs(p))%4];
 const mlSide=t=>dirSide(mlDir(t)); // team t sits at seats t and t+2
@@ -9947,9 +9963,9 @@ const ROOM_PREFIX='guandan-room-';
 const PEER_OPTS={config:{iceServers:[{urls:'stun:stun.miwifi.com:3478'},{urls:'stun:stun.qq.com:3478'},{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'}]}};
 // the page's version (stamped by build.py when the public page is built). A browser can keep an older copy of
 // the page for a while, and players on different versions can fall out of step, so a room compares them.
-const VERSION='1119-1050';
+const VERSION='1119-2208';
 // the page's content hash for the round records (stamped by build.py: c1977 and five hex digits)
-const APP_HASH='c19775f648';
+const APP_HASH='c197715bd6';
 $('#verTag').textContent=VERSION==='dev'?'':'版本 '+VERSION;
 document.querySelectorAll('.lobby-ver2').forEach(e=>{e.textContent=$('#verTag').textContent});
 const OLD_PAGE='页面版本和房主不同，请刷新页面（电脑按 Ctrl+F5）后重新加入';
