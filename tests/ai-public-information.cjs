@@ -18,6 +18,7 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
     const ctx = vm.createContext({assert,m,performance,console,NeuralBot:{},
       setTimeout:fn=>jobs.push(fn),crypto:{getRandomValues:a=>a.fill(123)}});
     vm.runInContext((file==='sources'?script:script.split('function resetGame(){')[0])+'\n'+
+      read('web/src/game/clock.js')+'\n'+
       read('web/src/game/reason-bot.js')+'\n'+read('web/src/game/computer-players.js')+'\n'+
       read('web/src/coach/coach.js').split("$('#coachName').textContent=")[0]+`
       let myNick='stezer0';const TOP5_NAMES=['stezer0','koala'];
@@ -35,7 +36,12 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
         assert.equal(G.nn.id,model);assert.equal(G.brain,undefined);
         assert.equal((model===REASON_ID?reasonCalls:nnCalls),before+1);
       }
-      assert.equal(BOT_WAIT_MS,60000);
+      assert.equal(botWaitMs(),60000);
+      for(const [mode,limit] of [['20+60',20000],['30+60',30000]]){
+        RULES.playMode=mode;
+        assert.equal(botWaitMs(),limit);
+      }
+      RULES.playMode='60';
       assert.equal(inferNow(2),false); // Early-game knowledge never depends on the nickname.
       const hidden={get id(){throw Error('Another hand was read')}};
       G.hands=[Array(27).fill(hidden),Array(27).fill(hidden),deck.slice(54,81),Array(27).fill(hidden)];

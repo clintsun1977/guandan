@@ -8,7 +8,7 @@
 | [neural/](neural) | 神经网络电脑的浏览器代码：特征编码、候选出牌、两人残局求解、onnxruntime-web 推理 |
 | [danmcai/](danmcai) | `danmcai-v000855042.onnx`：guandanai 发布编号 017，danMCai 现任门控冠军。搜索没算完时按它出牌，出牌评价先用它打分 |
 | [reason/](reason) | danMCai 的搜索（guandanai 搜索机器人 `9001`）：guandanai 打包的 Worker 和客户端、onnxruntime-web、017 与推断网络，原样引用。大厅里选“danMCai”用的就是它 |
-| [guanzero/](guanzero) | `guanzero-adp-io48-303975.onnx`：guandanai 发布编号 023，最新 GuanZero（带 20 步公开出牌历史） |
+| [guanzero/](guanzero) | `guanzero-adp-io48-749529.onnx`：guandanai 发布编号 038，最新 GuanZero 实验快照（带 20 步公开出牌历史） |
 
 ## 来源：引用 guandanai
 
@@ -18,8 +18,8 @@
   的 `bot-017.onnx`（guandanai 网页默认的 danMCai 现任门控冠军），SHA-256 `462afc99…b3f7`。
 - **danMCai 的搜索**：`reason/` 按 guandanai 的 [接入指南](https://github.com/stevensun1005/guandanai/blob/main/web/docs/REASON_BOT_INTEGRATION.md)
   打包，未作任何修改，详见 [reason/README](reason/README.md)。
-- **GuanZero**：`guanzero/guanzero-adp-io48-303975.onnx` 即 guandanai Release [`web-model-023`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-023)
-  的 `bot-023.onnx`，SHA-256 `e02bd26f…d4b`。
+- **GuanZero**：`guanzero/guanzero-adp-io48-749529.onnx` 即 guandanai Release [`web-model-038`](https://github.com/stevensun1005/guandanai/releases/tag/web-model-038)
+  的 `bot-038.onnx`，SHA-256 `7a59ede2…f14b`。
 - **`neural/neural-bot.js`**：移植自 guandanai `web/src/ai/`（`encoding.mjs`、`history.mjs`、`candidates.js`、`observation.js`、
   `endgame.js`、`policy-inference.mjs`、`table-policy.mjs`）和 `web/src/coach/evaluation.mjs`，基于 guandanai `main` 提交 `fe066bc`（2026-11-07）。
 

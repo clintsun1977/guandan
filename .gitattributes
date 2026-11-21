@@ -1,0 +1,2 @@
+# The build verifies the vendored search bundle byte for byte.
+bot/reason/assets/**/*.mjs text eol=lf

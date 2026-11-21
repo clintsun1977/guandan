@@ -55,11 +55,11 @@
     {
       "id": "guanzero",
       "name": "GuanZero",
-      "label": "guanzero-adp-io48-303975",
+      "label": "guanzero-adp-io48-749529",
       "kind": "onnx",
-      "path": "guanzero/guanzero-adp-io48-303975.onnx",
-      "file": "guanzero-adp-io48-303975.onnx",
-      "sha256": "e02bd26f3d90cb9ef90f7075ad1acd845c709bebac734611c44eb66d48fdbd4b",
+      "path": "guanzero/guanzero-adp-io48-749529.onnx",
+      "file": "guanzero-adp-io48-749529.onnx",
+      "sha256": "7a59ede246288ecfa59bb5d92d5abbd7fb51bb0b55f310f361cc660bc608f14b",
       "bytes": 6346014,
       "config": {
         "stateFeatures": 513,
@@ -68,13 +68,14 @@
       },
       "source": {
         "repo": "stevensun1005/guandanai",
-        "release": "web-model-023",
+        "release": "web-model-038",
         "run": "guanzero-adp-io48",
-        "version": "model-000000303975",
-        "step": 303975,
-        "note": "guandanai 最新发布的 GuanZero（归档 023）"
+        "version": "model-000000749529",
+        "status": "experimental-not-heldout-accepted",
+        "step": 749529,
+        "note": "guandanai 最新发布的 GuanZero 实验快照（归档 038，尚未通过独立留出验收）"
       },
-      "guandanaiId": "023"
+      "guandanaiId": "038"
     }
   ]
 }
